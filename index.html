@@ -179,10 +179,6 @@
             <h3>Kategorien</h3>
             <p>Jugendliche · Erwachsene Plausch · Erwachsene Ambitioniert</p>
           </div>
-          <div>
-            <h3>Kontakt</h3>
-            <p>Annina von Allmen · 078 677 61 97 · annina.vonallmen@gmail.com</p>
-          </div>
         </div>
       </header>
 
@@ -203,10 +199,6 @@
                   <option>Erwachsene Plausch</option>
                   <option>Erwachsene Ambitioniert</option>
                 </select>
-              </div>
-              <div>
-                <label for="team-contact">Kontaktperson (optional)</label>
-                <input id="team-contact" placeholder="Name / Telefon" />
               </div>
             </div>
 
@@ -310,7 +302,6 @@
               <strong>${team.name}</strong>
               <span class="pill">${team.category}</span>
             </div>
-            <div class="small">${team.contact || "Keine Kontaktperson hinterlegt"}</div>
             <button data-del-team="${idx}" class="secondary">Entfernen</button>
           `;
           teamsEl.appendChild(node);
@@ -409,15 +400,13 @@
         e.preventDefault();
         const name = document.getElementById("team-name").value.trim();
         const category = document.getElementById("team-category").value;
-        const contact = document.getElementById("team-contact").value.trim();
-
         if (!name) return;
         if (teams.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
           alert("Dieses Team existiert bereits.");
           return;
         }
 
-        teams.push({ name, category, contact });
+        teams.push({ name, category });
         save();
         refresh();
         teamForm.reset();
