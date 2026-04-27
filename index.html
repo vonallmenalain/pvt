@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pfahl Volleyball Turnier 2026</title>
+    <style>
+      :root {
+        --bg: #0f0b0b;
+        --card: #1a1414;
+        --text: #f5f5f5;
+        --muted: #c9c9c9;
+        --accent: #283593;
+        --accent-2: #ffb300;
+        --ok: #1b9e5a;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        color: var(--text);
+        background: linear-gradient(180deg, #140e0e 0%, var(--bg) 100%);
+      }
+
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+
+      .hero {
+        background: linear-gradient(120deg, rgba(40,53,147,0.92), rgba(20,20,40,0.95));
+        border-radius: 1rem;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+      }
+
+      h1, h2, h3 { margin: 0 0 .6rem; }
+      p { margin: 0 0 .5rem; color: var(--muted); }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: .75rem;
+        margin-top: .8rem;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: .2rem .55rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,.12);
+        margin-bottom: .4rem;
+        font-size: .82rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      @media (min-width: 900px) {
+        .grid { grid-template-columns: 1fr 1fr; }
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid rgba(255,255,255,.09);
+        border-radius: .9rem;
+        padding: 1rem;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin: .6rem 0 .3rem;
+      }
+
+      input, select {
+        width: 100%;
+        background: #2a2121;
+        border: 1px solid #3c3030;
+        border-radius: .55rem;
+        padding: .6rem .65rem;
+        color: var(--text);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: .55rem;
+      }
+
+      @media (min-width: 620px) {
+        .row-2 { grid-template-columns: 1fr 1fr; }
+        .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+      }
+
+      button {
+        margin-top: .8rem;
+        background: var(--accent);
+        color: white;
+        border: 0;
+        border-radius: .6rem;
+        padding: .65rem .9rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #3e3e3e;
+      }
+
+      .list {
+        display: grid;
+        gap: .5rem;
+        margin-top: .8rem;
+      }
+
+      .item {
+        background: #251d1d;
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: .65rem;
+        padding: .65rem;
+      }
+
+      .item-top {
+        display: flex;
+        justify-content: space-between;
+        gap: .5rem;
+        align-items: center;
+      }
+
+      .small {
+        font-size: .87rem;
+        color: var(--muted);
+      }
+
+      .pill {
+        display: inline-block;
+        padding: .2rem .45rem;
+        border-radius: 999px;
+        background: rgba(255,179,0,.13);
+        color: #ffd46f;
+        font-size: .78rem;
+      }
+
+      .upcoming {
+        border-left: 4px solid var(--ok);
+      }
+
+      .empty {
+        color: #9b8e8e;
+        font-style: italic;
+        margin-top: .55rem;
+      }
+
+      .footer {
+        text-align: center;
+        margin: 1rem 0 2rem;
+        color: #b8a8a8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <div class="badge">Pfahl Volleyball Turnier</div>
+        <h1>Turnier-Webapp</h1>
+        <p>30. Mai 2026 · 11:30–17:30 Uhr · Burgdorf, Sporthalle Lindenfeld</p>
+        <div class="meta">
+          <div>
+            <h3>Format</h3>
+            <p>Mixed (mind. 2 Frauen auf dem Feld), max. 18 Teams.</p>
+          </div>
+          <div>
+            <h3>Kategorien</h3>
+            <p>Jugendliche · Erwachsene Plausch · Erwachsene Ambitioniert</p>
+          </div>
+          <div>
+            <h3>Kontakt</h3>
+            <p>Annina von Allmen · 078 677 61 97 · annina.vonallmen@gmail.com</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card">
+          <h2>Teams verwalten</h2>
+          <p>Hier kannst du Teams erfassen, damit sie für den Spielplan verfügbar sind.</p>
+
+          <form id="team-form">
+            <label for="team-name">Teamname</label>
+            <input id="team-name" required placeholder="z. B. Blockbusters" />
+
+            <div class="row row-2">
+              <div>
+                <label for="team-category">Kategorie</label>
+                <select id="team-category" required>
+                  <option>Jugendliche</option>
+                  <option>Erwachsene Plausch</option>
+                  <option>Erwachsene Ambitioniert</option>
+                </select>
+              </div>
+              <div>
+                <label for="team-contact">Kontaktperson (optional)</label>
+                <input id="team-contact" placeholder="Name / Telefon" />
+              </div>
+            </div>
+
+            <button type="submit">Team hinzufügen</button>
+          </form>
+
+          <div id="teams" class="list"></div>
+        </section>
+
+        <section class="card">
+          <h2>Spielplan erstellen</h2>
+          <p>Lege Spiele an. Die nächsten Partien werden für Teilnehmende hervorgehoben.</p>
+
+          <form id="match-form">
+            <div class="row row-2">
+              <div>
+                <label for="team-a">Team A</label>
+                <select id="team-a" required></select>
+              </div>
+              <div>
+                <label for="team-b">Team B</label>
+                <select id="team-b" required></select>
+              </div>
+            </div>
+
+            <div class="row row-3">
+              <div>
+                <label for="match-time">Anpfiff</label>
+                <input id="match-time" type="datetime-local" required />
+              </div>
+              <div>
+                <label for="match-court">Feld</label>
+                <input id="match-court" placeholder="z. B. Feld 1" required />
+              </div>
+              <div>
+                <label for="match-status">Status</label>
+                <select id="match-status">
+                  <option value="geplant">Geplant</option>
+                  <option value="läuft">Läuft</option>
+                  <option value="abgeschlossen">Abgeschlossen</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit">Spiel hinzufügen</button>
+            <button type="button" class="secondary" id="clear-all">Alle Daten löschen</button>
+          </form>
+
+          <h3 style="margin-top:1rem">Kommende Spiele</h3>
+          <div id="upcoming" class="list"></div>
+
+          <h3 style="margin-top:1rem">Gesamter Spielplan</h3>
+          <div id="matches" class="list"></div>
+        </section>
+      </main>
+
+      <div class="footer">Daten werden lokal im Browser gespeichert (localStorage).</div>
+    </div>
+
+    <script>
+      const teamsKey = "vt_teams";
+      const matchesKey = "vt_matches";
+
+      const teamForm = document.getElementById("team-form");
+      const matchForm = document.getElementById("match-form");
+      const teamsEl = document.getElementById("teams");
+      const matchesEl = document.getElementById("matches");
+      const upcomingEl = document.getElementById("upcoming");
+      const teamA = document.getElementById("team-a");
+      const teamB = document.getElementById("team-b");
+      const clearAll = document.getElementById("clear-all");
+
+      let teams = load(teamsKey, []);
+      let matches = load(matchesKey, []);
+
+      function load(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function save() {
+        localStorage.setItem(teamsKey, JSON.stringify(teams));
+        localStorage.setItem(matchesKey, JSON.stringify(matches));
+      }
+
+      function renderTeams() {
+        teamsEl.innerHTML = "";
+        if (!teams.length) {
+          teamsEl.innerHTML = '<div class="empty">Noch keine Teams erfasst.</div>';
+        }
+
+        teams.forEach((team, idx) => {
+          const node = document.createElement("div");
+          node.className = "item";
+          node.innerHTML = `
+            <div class="item-top">
+              <strong>${team.name}</strong>
+              <span class="pill">${team.category}</span>
+            </div>
+            <div class="small">${team.contact || "Keine Kontaktperson hinterlegt"}</div>
+            <button data-del-team="${idx}" class="secondary">Entfernen</button>
+          `;
+          teamsEl.appendChild(node);
+        });
+
+        teamsEl.querySelectorAll("[data-del-team]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const idx = Number(btn.dataset.delTeam);
+            const removed = teams[idx]?.name;
+            teams = teams.filter((_, i) => i !== idx);
+            matches = matches.filter((m) => m.teamA !== removed && m.teamB !== removed);
+            save();
+            refresh();
+          });
+        });
+      }
+
+      function renderTeamSelects() {
+        const options = ['<option value="">Bitte wählen</option>']
+          .concat(teams.map((t) => `<option>${t.name}</option>`))
+          .join("");
+        teamA.innerHTML = options;
+        teamB.innerHTML = options;
+      }
+
+      function formatDate(val) {
+        const d = new Date(val);
+        if (Number.isNaN(d.getTime())) return "Ungültiges Datum";
+        return d.toLocaleString("de-CH", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function renderMatches() {
+        const sorted = [...matches].sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        matchesEl.innerHTML = "";
+        if (!sorted.length) {
+          matchesEl.innerHTML = '<div class="empty">Noch keine Spiele geplant.</div>';
+        }
+
+        sorted.forEach((m, idx) => {
+          const node = document.createElement("div");
+          node.className = "item";
+          node.innerHTML = `
+            <div class="item-top">
+              <strong>${m.teamA} vs ${m.teamB}</strong>
+              <span class="pill">${m.status}</span>
+            </div>
+            <div class="small">${formatDate(m.time)} · ${m.court}</div>
+            <button data-del-match="${idx}" class="secondary">Entfernen</button>
+          `;
+          matchesEl.appendChild(node);
+        });
+
+        matchesEl.querySelectorAll("[data-del-match]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const idx = Number(btn.dataset.delMatch);
+            const sortedIdx = [...matches].sort((a, b) => new Date(a.time) - new Date(b.time))[idx];
+            matches = matches.filter((m) => m !== sortedIdx);
+            save();
+            refresh();
+          });
+        });
+
+        const now = new Date();
+        const upcoming = sorted.filter((m) => new Date(m.time) >= now).slice(0, 5);
+        upcomingEl.innerHTML = "";
+        if (!upcoming.length) {
+          upcomingEl.innerHTML = '<div class="empty">Aktuell keine kommenden Spiele.</div>';
+          return;
+        }
+
+        upcoming.forEach((m) => {
+          const node = document.createElement("div");
+          node.className = "item upcoming";
+          node.innerHTML = `
+            <strong>${m.teamA} vs ${m.teamB}</strong>
+            <div class="small">${formatDate(m.time)} · ${m.court}</div>
+          `;
+          upcomingEl.appendChild(node);
+        });
+      }
+
+      function refresh() {
+        renderTeams();
+        renderTeamSelects();
+        renderMatches();
+      }
+
+      teamForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = document.getElementById("team-name").value.trim();
+        const category = document.getElementById("team-category").value;
+        const contact = document.getElementById("team-contact").value.trim();
+
+        if (!name) return;
+        if (teams.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
+          alert("Dieses Team existiert bereits.");
+          return;
+        }
+
+        teams.push({ name, category, contact });
+        save();
+        refresh();
+        teamForm.reset();
+      });
+
+      matchForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const a = teamA.value;
+        const b = teamB.value;
+        const time = document.getElementById("match-time").value;
+        const court = document.getElementById("match-court").value.trim();
+        const status = document.getElementById("match-status").value;
+
+        if (!a || !b || !time || !court) return;
+        if (a === b) {
+          alert("Team A und Team B müssen unterschiedlich sein.");
+          return;
+        }
+
+        matches.push({ teamA: a, teamB: b, time, court, status });
+        save();
+        refresh();
+        matchForm.reset();
+      });
+
+      clearAll.addEventListener("click", () => {
+        if (!confirm("Wirklich alle Teams und Spiele löschen?")) return;
+        teams = [];
+        matches = [];
+        save();
+        refresh();
+      });
+
+      refresh();
+    </script>
+  </body>
+</html>
