@@ -66,11 +66,12 @@
       .team-link:hover { text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.85); }
       .schedule-result { white-space: nowrap; font-weight: 700; padding: 0 0.3rem; }
       .schedule-result .result-input { width: 3rem; }
-      .schedule-table td.col-game { min-width: 520px; }
+      .schedule-table td.col-game { min-width: 320px; }
       .col-game-inner { display: flex; align-items: center; gap: 0.25rem; }
       .col-game-home { flex: 1; text-align: left; }
       .col-game-score { flex-shrink: 0; }
       .col-game-away { flex: 1; text-align: right; }
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
       .infos-card h3 { font-size: 1rem; font-weight: 700; margin: 1.25rem 0 0.6rem; }
       .infos-list { margin: 0 0 0.5rem; padding: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; }
@@ -92,6 +93,58 @@
       .auth-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem; }
       .auth-actions .secondary { background: transparent; color: var(--muted); font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.15); }
       .auth-actions .secondary:hover { color: var(--text); }
+
+      /* ── Mobile (≤ 600 px) ───────────────────────────── */
+      @media (max-width: 600px) {
+        .wrap { padding: 0.65rem; }
+
+        /* Hero: extra right-padding for the auth button */
+        .hero { padding: 0.9rem 1rem; padding-right: 6rem; }
+        h1 { font-size: 1.25rem; }
+
+        /* Auth / Admin button – smaller on mobile */
+        .auth-trigger { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
+
+        /* Nav: 2×2 grid so all 4 buttons fit without wrapping */
+        .view-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .view-btn { text-align: center; padding: 0.6rem 0.4rem; font-size: 0.92rem; }
+
+        /* Tables: horizontal scroll on overflow */
+        .table-scroll { border-radius: 0.5rem; }
+        .schedule-table { font-size: 0.82rem; }
+        .schedule-table th,
+        .schedule-table td { padding: 0.35rem 0.4rem; }
+
+        /* Game column: stack home – score – away vertically */
+        .schedule-table td.col-game { min-width: 0; }
+        .col-game-inner { flex-direction: column; align-items: stretch; gap: 0.2rem; }
+        .col-game-home { text-align: left; }
+        .col-game-away { text-align: left; }
+        .col-game-score { text-align: center; font-size: 0.78rem; }
+
+        /* Infos: single-column definition list */
+        .infos-list { grid-template-columns: 1fr; gap: 0.1rem 0; }
+        .infos-list dt { margin-top: 0.55rem; font-size: 0.78rem; }
+        .infos-list dd { font-size: 0.9rem; }
+
+        /* Teams: single-column grid, stack header */
+        .teams-grid { grid-template-columns: 1fr; }
+        .teams-header { flex-direction: column; align-items: flex-start; }
+
+        /* Dashboard: full-width selects */
+        .schedule-filter { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+        .schedule-filter select { width: 100%; }
+
+        /* Result inputs: bigger touch targets */
+        .result-input { width: 2.8rem; padding: 0.3rem 0.25rem; font-size: 0.85rem; }
+        .schedule-result .result-input { width: 2.5rem; }
+
+        /* Modals: full-width on small screens */
+        .auth-dialog { padding: 1rem 0.85rem; }
+
+        /* Schedule filter on Spielplan panel */
+        .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
+      }
     </style>
   </head>
   <body>
@@ -185,10 +238,12 @@
               <option value="youth">Jugendliche</option>
             </select>
           </div>
-          <table class="schedule-table" aria-label="Spielplan">
-            <thead><tr><th>Nr.</th><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead>
-            <tbody id="schedule-table-body"><tr><td colspan="5">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>
-          </table>
+          <div class="table-scroll">
+            <table class="schedule-table" aria-label="Spielplan">
+              <thead><tr><th>Nr.</th><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead>
+              <tbody id="schedule-table-body"><tr><td colspan="5">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -215,9 +270,13 @@
         <h3 id="dashboard-team-title">Team-Dashboard</h3>
         <p id="dashboard-team-info">Wähle ein Team aus, um Spiele und Tabelle zu sehen.</p>
         <h4>Gruppentabelle</h4>
-        <table class="schedule-table"><thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead><tbody id="dashboard-group-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody></table>
+        <div class="table-scroll">
+          <table class="schedule-table"><thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead><tbody id="dashboard-group-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody></table>
+        </div>
         <h4>Eigene Spiele inkl. Finalrunde</h4>
-        <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead><tbody id="dashboard-match-table"><tr><td colspan="4">Noch kein Team ausgewählt.</td></tr></tbody></table>
+        <div class="table-scroll">
+          <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead><tbody id="dashboard-match-table"><tr><td colspan="4">Noch kein Team ausgewählt.</td></tr></tbody></table>
+        </div>
       </section>
     </div>
 
