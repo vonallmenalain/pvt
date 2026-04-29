@@ -82,6 +82,88 @@ function slotTime(slotIndex) {
   return `${fmt(start)}–${fmt(end)}`;
 }
 
+/**
+ * Calculate full stats for a team (points, GF, GA) across all group matches.
+ * Win = 2 pts, Draw = 1 pt each, Loss = 0 pts.
+ */
+function calcTeamStats(peerTeam, teamsInCategory) {
+  const peerIndex = teamsInCategory.findIndex((t) => t.id === peerTeam.id);
+  let pts = 0, gf = 0, ga = 0, played = 0;
+  OPTIMIZED_SCHEDULE.forEach((entry, slotIdx) => {
+    const isHome = entry.h === peerIndex;
+    const isAway = entry.a === peerIndex;
+    if (!isHome && !isAway) return;
+    const matchId = `match-${peerTeam.category}-${slotIdx}-${entry.h}-${entry.a}`;
+    const score = resultMap[matchId];
+    if (!score || (score.home === "" && score.away === "")) return;
+    const homeScore = Number(score.home);
+    const awayScore = Number(score.away);
+    played++;
+    if (isHome) { gf += homeScore; ga += awayScore; }
+    else { gf += awayScore; ga += homeScore; }
+    if (homeScore === awayScore) { pts += 1; }
+    else if ((isHome && homeScore > awayScore) || (isAway && awayScore > homeScore)) { pts += 2; }
+  });
+  return { pts, gf, ga, played };
+}
+
+/** Legacy wrapper – still used where only points are needed */
+function calcTeamPoints(peerTeam, teamsInCategory) {
+  return calcTeamStats(peerTeam, teamsInCategory).pts;
+}
+
+/**
+ * Sort teams in category by: 1) pts desc, 2) gf desc, 3) gf/ga ratio desc.
+ * Returns array of { team, pts, gf, ga, played } sorted by rank.
+ */
+function getSortedStandings(teamsInCategory) {
+  return teamsInCategory
+    .map((team) => ({ team, ...calcTeamStats(team, teamsInCategory) }))
+    .sort((a, b) => {
+      if (b.pts !== a.pts) return b.pts - a.pts;
+      if (b.gf !== a.gf) return b.gf - a.gf;
+      const ratioA = a.ga === 0 ? (a.gf > 0 ? Infinity : 0) : a.gf / a.ga;
+      const ratioB = b.ga === 0 ? (b.gf > 0 ? Infinity : 0) : b.gf / b.ga;
+      return ratioB - ratioA;
+    });
+}
+
+/**
+ * Resolve final-round participant names from current standings.
+ * Returns an object keyed by placeholder strings → real team names (or placeholder if not determined).
+ */
+function resolveFinalNames(category) {
+  const teams = allTeams.filter((t) => t.category === category);
+  const label = CATEGORY_LABELS[category];
+  const standings = getSortedStandings(teams);
+
+  // Check if ALL group matches have been played (results entered)
+  const allGroupMatchesPlayed = OPTIMIZED_SCHEDULE.every((entry, slotIdx) => {
+    if (teams.length < Math.max(entry.h, entry.a) + 1) return false;
+    const matchId = `match-${category}-${slotIdx}-${entry.h}-${entry.a}`;
+    const score = resultMap[matchId];
+    return score && score.home !== "" && score.away !== "";
+  });
+
+  const resolved = {};
+  if (allGroupMatchesPlayed && standings.length >= 6) {
+    resolved[`${label} Rang 1`] = standings[0].team.name;
+    resolved[`${label} Rang 2`] = standings[1].team.name;
+    resolved[`${label} Rang 3`] = standings[2].team.name;
+    resolved[`${label} Rang 4`] = standings[3].team.name;
+    resolved[`${label} Rang 5`] = standings[4].team.name;
+    resolved[`${label} Rang 6`] = standings[5].team.name;
+  }
+  return resolved;
+}
+
+/**
+ * Resolve a participant name – use resolved map if available, else original placeholder.
+ */
+function resolveName(name, resolvedMap) {
+  return resolvedMap[name] || name;
+}
+
 function getTeamSchedule(team, teamsInCategory) {
   const teamIndex = teamsInCategory.findIndex((entry) => entry.id === team.id);
   const field = team.category === "adult_ambitious" ? "1" : team.category === "adult_fun" ? "2" : "3";
@@ -107,10 +189,29 @@ function getTeamSchedule(team, teamsInCategory) {
     })
     .filter(Boolean);
 
-  const finals = [
-    { id: `final-vfa-${team.category}`,  stage: "Viertelfinal A", time: slotTime(15), field, home: `${label} Rang 3`, away: `${label} Rang 6`, editable: false },
-    { id: `final-vfb-${team.category}`,  stage: "Viertelfinal B", time: slotTime(16), field, home: `${label} Rang 4`, away: `${label} Rang 5`, editable: false },
-    { id: `final-tq-${team.category}`,   stage: "Top-Quali",      time: slotTime(17), field, home: `${label} Rang 1`, away: `${label} Rang 2`, editable: false },
+  // Resolve final names from standings
+  const resolvedMap = resolveFinalNames(team.category);
+  const standings = getSortedStandings(teamsInCategory);
+
+  // Determine the rank of this team (1-based) if group phase is resolved
+  const teamRank = standings.findIndex((s) => s.team.id === team.id) + 1;
+
+  // Build finals list with resolved names
+  const r1 = resolveName(`${label} Rang 1`, resolvedMap);
+  const r2 = resolveName(`${label} Rang 2`, resolvedMap);
+  const r3 = resolveName(`${label} Rang 3`, resolvedMap);
+  const r4 = resolveName(`${label} Rang 4`, resolvedMap);
+  const r5 = resolveName(`${label} Rang 5`, resolvedMap);
+  const r6 = resolveName(`${label} Rang 6`, resolvedMap);
+
+  const vfaHome = r3, vfaAway = r6;
+  const vfbHome = r4, vfbAway = r5;
+  const tqHome = r1, tqAway = r2;
+
+  const allFinals = [
+    { id: `final-vfa-${team.category}`,  stage: "Viertelfinal A", time: slotTime(15), field, home: vfaHome, away: vfaAway, editable: false },
+    { id: `final-vfb-${team.category}`,  stage: "Viertelfinal B", time: slotTime(16), field, home: vfbHome, away: vfbAway, editable: false },
+    { id: `final-tq-${team.category}`,   stage: "Top-Quali",      time: slotTime(17), field, home: tqHome, away: tqAway, editable: false },
     { id: `final-koq-${team.category}`,  stage: "K.o.-Quali",     time: slotTime(18), field, home: `Sieger Viertelf. A`, away: `Sieger Viertelf. B`, editable: false },
     { id: `final-p5-${team.category}`,   stage: "Platz 5",        time: slotTime(19), field, home: `Verlierer Viertelf. A`, away: `Verlierer Viertelf. B`, editable: false },
     { id: `final-hf-${team.category}`,   stage: "Halbfinal",      time: slotTime(20), field, home: `Verlierer Top-Quali`, away: `Sieger K.o.-Quali`, editable: false },
@@ -118,9 +219,43 @@ function getTeamSchedule(team, teamsInCategory) {
     { id: `final-1-${team.category}`,    stage: "Finale",         time: slotTime(22), field, home: `Sieger Top-Quali`, away: `Sieger Halbfinal`, editable: false },
   ];
 
+  // Only show finals that are relevant for this team
+  // If rank is known, filter to the specific path through the bracket
+  let relevantFinals;
+  if (teamRank === 0 || !Object.keys(resolvedMap).length) {
+    // Rankings not resolved yet – show all finals as placeholders
+    relevantFinals = allFinals;
+  } else {
+    // Show only the one final in round 1 (VFA, VFB, or TQ) that this team participates in
+    // and the downstream finals. Since we don't track per-final results, show all.
+    // But we hide the finals the team definitely cannot be in.
+    const teamName = team.name;
+    const inVFA = vfaHome === teamName || vfaAway === teamName;
+    const inVFB = vfbHome === teamName || vfbAway === teamName;
+    const inTQ  = tqHome === teamName || tqAway === teamName;
+
+    if (inVFA) {
+      // Viertelfinal A path: VFA → K.o.-Quali/Platz 5 → Halbfinal/Platz 3/Platz 5 → Finale
+      relevantFinals = allFinals.filter(f =>
+        !["Viertelfinal B", "Top-Quali"].includes(f.stage)
+      );
+    } else if (inVFB) {
+      relevantFinals = allFinals.filter(f =>
+        !["Viertelfinal A", "Top-Quali"].includes(f.stage)
+      );
+    } else if (inTQ) {
+      // Top-Quali path: TQ → Halbfinal/Finale
+      relevantFinals = allFinals.filter(f =>
+        !["Viertelfinal A", "Viertelfinal B"].includes(f.stage)
+      );
+    } else {
+      relevantFinals = allFinals;
+    }
+  }
+
   const group = `${label}`;
   const groupPeers = teamsInCategory;
-  return { group, groupPeers, matches: [...groupGames, ...finals] };
+  return { group, groupPeers, matches: [...groupGames, ...relevantFinals] };
 }
 
 function renderTeamCard(team) {
@@ -132,35 +267,20 @@ function renderDashboardEmptyState() {
   if (!dashboardTitle || !dashboardInfo || !dashboardGroupTable || !dashboardMatchTable) return;
   dashboardTitle.textContent = "Team-Dashboard";
   dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
-  dashboardGroupTable.innerHTML = '<tr><td colspan="2">Noch kein Team ausgewählt.</td></tr>';
+  dashboardGroupTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
   dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
-}
-
-function calcTeamPoints(peerTeam, teamsInCategory) {
-  const peerIndex = teamsInCategory.findIndex((t) => t.id === peerTeam.id);
-  return OPTIMIZED_SCHEDULE.reduce((sum, entry, slotIdx) => {
-    const isHome = entry.h === peerIndex;
-    const isAway = entry.a === peerIndex;
-    if (!isHome && !isAway) return sum;
-    const matchId = `match-${peerTeam.category}-${slotIdx}-${entry.h}-${entry.a}`;
-    const score = resultMap[matchId];
-    if (!score || (score.home === "" && score.away === "")) return sum;
-    const homeScore = Number(score.home);
-    const awayScore = Number(score.away);
-    if (homeScore === awayScore) return sum + 1;
-    if (isHome) return sum + (homeScore > awayScore ? 3 : 0);
-    return sum + (awayScore > homeScore ? 3 : 0);
-  }, 0);
 }
 
 function renderGroupStandings(selectedTeam, groupPeers) {
   if (!dashboardGroupTable) return;
   const teamsInCategory = allTeams.filter((team) => team.category === selectedTeam.category);
-  const rows = groupPeers
-    .map((peer) => ({ peer, pts: calcTeamPoints(peer, teamsInCategory) }))
-    .sort((a, b) => b.pts - a.pts)
-    .map(({ peer, pts }) => `<tr><td>${escapeHtml(peer.name)}</td><td>${pts}</td></tr>`);
-  dashboardGroupTable.innerHTML = rows.join("") || `<tr><td>${escapeHtml(selectedTeam.name)}</td><td>0</td></tr>`;
+  const rows = getSortedStandings(teamsInCategory)
+    .map(({ team, pts, gf, ga, played }, idx) => {
+      const ratio = ga === 0 ? (gf > 0 ? "∞" : "0") : (gf / ga).toFixed(2);
+      const highlight = team.id === selectedTeam.id ? ' style="font-weight:700;background:rgba(40,53,147,0.25);"' : "";
+      return `<tr${highlight}><td>${idx + 1}</td><td>${escapeHtml(team.name)}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
+    });
+  dashboardGroupTable.innerHTML = rows.join("") || `<tr><td>1</td><td>${escapeHtml(selectedTeam.name)}</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>`;
 }
 
 function renderDashboardTeamOptions() {
@@ -224,11 +344,15 @@ function getScheduleMatches(teams, category) {
 
   if (teams.length < 2) return [];
 
+  const resolvedMap = resolveFinalNames(category);
+
   const preliminaryMatches = OPTIMIZED_SCHEDULE.map((entry, slotIdx) => {
     const homeTeam = teams[entry.h];
     const awayTeam = teams[entry.a];
     if (!homeTeam || !awayTeam) return null;
+    const id = `match-${category}-${slotIdx}-${entry.h}-${entry.a}`;
     return {
+      id,
       nr: slotIdx + 1,
       stage: entry.r,
       time: slotTime(slotIdx),
@@ -238,15 +362,22 @@ function getScheduleMatches(teams, category) {
     };
   }).filter(Boolean);
 
+  const r1 = resolveName(`${label} Rang 1`, resolvedMap);
+  const r2 = resolveName(`${label} Rang 2`, resolvedMap);
+  const r3 = resolveName(`${label} Rang 3`, resolvedMap);
+  const r4 = resolveName(`${label} Rang 4`, resolvedMap);
+  const r5 = resolveName(`${label} Rang 5`, resolvedMap);
+  const r6 = resolveName(`${label} Rang 6`, resolvedMap);
+
   const finalMatches = [
-    { nr: 16, stage: "Viertelfinal A", time: slotTime(15), field, home: { name: `${label} Rang 3`, id: null }, away: { name: `${label} Rang 6`, id: null } },
-    { nr: 17, stage: "Viertelfinal B", time: slotTime(16), field, home: { name: `${label} Rang 4`, id: null }, away: { name: `${label} Rang 5`, id: null } },
-    { nr: 18, stage: "Top-Quali",      time: slotTime(17), field, home: { name: `${label} Rang 1`, id: null }, away: { name: `${label} Rang 2`, id: null } },
-    { nr: 19, stage: "K.o.-Quali",     time: slotTime(18), field, home: { name: "Sieger Viertelf. A", id: null }, away: { name: "Sieger Viertelf. B", id: null } },
-    { nr: 20, stage: "Platz 5",        time: slotTime(19), field, home: { name: "Verlierer Viertelf. A", id: null }, away: { name: "Verlierer Viertelf. B", id: null } },
-    { nr: 21, stage: "Halbfinal",      time: slotTime(20), field, home: { name: "Verlierer Top-Quali", id: null }, away: { name: "Sieger K.o.-Quali", id: null } },
-    { nr: 22, stage: "Platz 3",        time: slotTime(21), field, home: { name: "Verlierer K.o.-Quali", id: null }, away: { name: "Verlierer Halbfinal", id: null } },
-    { nr: 23, stage: "Finale",         time: slotTime(22), field, home: { name: "Sieger Top-Quali", id: null }, away: { name: "Sieger Halbfinal", id: null } },
+    { id: `final-vfa-${category}`,  nr: 16, stage: "Viertelfinal A", time: slotTime(15), field, home: { name: r3, id: null }, away: { name: r6, id: null } },
+    { id: `final-vfb-${category}`,  nr: 17, stage: "Viertelfinal B", time: slotTime(16), field, home: { name: r4, id: null }, away: { name: r5, id: null } },
+    { id: `final-tq-${category}`,   nr: 18, stage: "Top-Quali",      time: slotTime(17), field, home: { name: r1, id: null }, away: { name: r2, id: null } },
+    { id: `final-koq-${category}`,  nr: 19, stage: "K.o.-Quali",     time: slotTime(18), field, home: { name: "Sieger Viertelf. A", id: null }, away: { name: "Sieger Viertelf. B", id: null } },
+    { id: `final-p5-${category}`,   nr: 20, stage: "Platz 5",        time: slotTime(19), field, home: { name: "Verlierer Viertelf. A", id: null }, away: { name: "Verlierer Viertelf. B", id: null } },
+    { id: `final-hf-${category}`,   nr: 21, stage: "Halbfinal",      time: slotTime(20), field, home: { name: "Verlierer Top-Quali", id: null }, away: { name: "Sieger K.o.-Quali", id: null } },
+    { id: `final-p3-${category}`,   nr: 22, stage: "Platz 3",        time: slotTime(21), field, home: { name: "Verlierer K.o.-Quali", id: null }, away: { name: "Verlierer Halbfinal", id: null } },
+    { id: `final-1-${category}`,    nr: 23, stage: "Finale",         time: slotTime(22), field, home: { name: "Sieger Top-Quali", id: null }, away: { name: "Sieger Halbfinal", id: null } },
   ];
 
   return [...preliminaryMatches, ...finalMatches];
@@ -262,7 +393,7 @@ function renderSchedule() {
   }
   const matches = getScheduleMatches(teams, selectedScheduleCategory);
   if (!matches.length) {
-    tableBody.innerHTML = '<tr><td colspan="4">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="6">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
     return;
   }
   tableBody.innerHTML = matches.map((match) => {
@@ -272,7 +403,19 @@ function renderSchedule() {
     const awayLink = match.away.id
       ? `<button type="button" class="team-link" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button>`
       : escapeHtml(match.away.name);
-    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td>${match.time}</td><td>${match.field}</td><td>${homeLink} – ${awayLink}</td></tr>`;
+
+    const score = resultMap[match.id] || { home: "", away: "" };
+    let resultCell;
+    if (!match.id || match.id.startsWith("final-")) {
+      // Final round games: always read-only in Spielplan
+      resultCell = `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`;
+    } else if (currentUser) {
+      resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" /></span>`;
+    } else {
+      resultCell = `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`;
+    }
+
+    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td>${match.time}</td><td>${match.field}</td><td>${homeLink} – ${awayLink}</td><td>${resultCell}</td></tr>`;
   }).join("");
 }
 
@@ -298,6 +441,8 @@ onAuthStateChanged(auth, (user) => {
   if (!user) closeModal();
   document.querySelectorAll(".team-delete").forEach((button) => { button.hidden = !user; });
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
+  // Re-render schedule when auth changes (editable inputs appear/disappear)
+  renderSchedule();
 });
 
 onSnapshot(query(collection(db, "teams"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -312,8 +457,10 @@ document.getElementById("schedule-category-filter")?.addEventListener("change", 
   renderSchedule();
 });
 
-onSnapshot(collection(db, "matchResults"), (snapshot) => {
+onSnapshot(collection(db, "resultate"), (snapshot) => {
   resultMap = snapshot.docs.reduce((acc, entry) => ({ ...acc, [entry.id]: entry.data() }), {});
+  // Re-render schedule to update results and potentially resolved final names
+  renderSchedule();
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
 });
 
@@ -340,7 +487,7 @@ document.addEventListener("change", async (event) => {
   const side = target.dataset.side;
   if (!matchId || !side) return;
   const next = { ...(resultMap[matchId] || { home: "", away: "" }), [side]: target.value };
-  await setDoc(doc(db, "matchResults", matchId), next, { merge: true });
+  await setDoc(doc(db, "resultate", matchId), next, { merge: true });
 });
 
 const teamsViewBtn = document.getElementById("show-teams");
