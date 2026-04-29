@@ -576,6 +576,30 @@ document.addEventListener("change", async (event) => {
   await setDoc(doc(db, "resultate", matchId), next, { merge: true });
 });
 
+const infosSubButtons = {
+  time_place: document.getElementById("infos-sub-time-place"),
+  mode: document.getElementById("infos-sub-mode"),
+  rules: document.getElementById("infos-sub-rules"),
+};
+const infosSubPanels = {
+  time_place: document.getElementById("infos-section-time-place"),
+  mode: document.getElementById("infos-section-mode"),
+  rules: document.getElementById("infos-section-rules"),
+};
+
+function setInfosSection(section) {
+  Object.entries(infosSubPanels).forEach(([key, panel]) => {
+    if (!panel) return;
+    panel.hidden = key !== section;
+  });
+  Object.entries(infosSubButtons).forEach(([key, button]) => {
+    if (!button) return;
+    const active = key === section;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-expanded", String(active));
+  });
+}
+
 const infosViewBtn = document.getElementById("show-infos");
 const teamsViewBtn = document.getElementById("show-teams");
 const scheduleViewBtn = document.getElementById("show-schedule");
@@ -605,4 +629,8 @@ infosViewBtn?.addEventListener("click", () => setView("infos"));
 teamsViewBtn?.addEventListener("click", () => setView("teams"));
 scheduleViewBtn?.addEventListener("click", () => setView("schedule"));
 dashboardViewBtn?.addEventListener("click", () => setView("dashboard"));
+infosSubButtons.time_place?.addEventListener("click", () => setInfosSection("time_place"));
+infosSubButtons.mode?.addEventListener("click", () => setInfosSection("mode"));
+infosSubButtons.rules?.addEventListener("click", () => setInfosSection("rules"));
+setInfosSection("time_place");
 setView("infos");

@@ -96,6 +96,10 @@
       .infos-ranking { margin: 0 0 0.5rem; padding-left: 1.4rem; }
       .infos-ranking li { font-size: 0.9375rem; margin-bottom: 0.3rem; }
       .infos-ranking-detail { font-size: 0.8125rem; color: var(--muted); }
+      .infos-subnav { margin: 0.65rem 0 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+      .infos-sub-btn { background: rgba(255, 255, 255, 0.07); color: var(--text); border: none; font-size: 0.88rem; }
+      .infos-sub-btn.is-active { background: rgba(40,53,147,0.9); }
+      .infos-section[hidden] { display: none; }
 
       .auth-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.55); }
       .auth-modal[hidden] { display: none; }
@@ -135,6 +139,8 @@
         .schedule-table td.col-game { min-width: 260px; white-space: nowrap; }
 
         /* Infos: single-column definition list */
+        .infos-subnav { display: grid; grid-template-columns: 1fr; }
+        .infos-sub-btn { text-align: left; }
         .infos-list { grid-template-columns: 1fr; gap: 0.1rem 0; }
         .infos-list dt { margin-top: 0.55rem; font-size: 0.78rem; }
         .infos-list dd { font-size: 0.9rem; }
@@ -204,33 +210,47 @@
       <section class="schedule content-panel" id="infos-panel" aria-labelledby="infos-title">
         <h2 id="infos-title">Infos</h2>
         <div class="schedule-card infos-card">
-          <h3>Zeit und Ort</h3>
-          <dl class="infos-list">
-            <dt>Datum</dt>
-            <dd>30. Mai 2026</dd>
-            <dt>Zeit</dt>
-            <dd>11:30–17:30 Uhr</dd>
-            <dt>Ort</dt>
-            <dd>Burgdorf, Sporthalle Lindenfeld</dd>
-            <dt>Format</dt>
-            <dd>Mixed (mind. 2 Frauen auf dem Feld)</dd>
-          </dl>
-          <h3>Spielmodus</h3>
-          <dl class="infos-list">
-            <dt>Gruppenphase</dt>
-            <dd>11:30–14:58 Uhr · 12 Min. Spielzeit pro Partie</dd>
-            <dt>Finalrunde</dt>
-            <dd>ab 15:00 Uhr</dd>
-            <dt>Teams pro Kategorie</dt>
-            <dd>Je 6 Teams bei Jugendlichen, Erwachsene Plausch und Erwachsene Ambitioniert</dd>
-          </dl>
-          <h3>Regeln</h3>
-          <h4>Rangliste Gruppenphase</h4>
-          <ol class="infos-ranking">
-            <li>Anzahl Punkte <span class="infos-ranking-detail">(Sieg = 2 Pkt., Unentschieden = 1 Pkt., Niederlage = 0 Pkt.)</span></li>
-            <li>Erspielte Punkte</li>
-            <li>Verhältnis erspielte / verlorene Punkte</li>
-          </ol>
+          <div class="infos-subnav" aria-label="Infos Unterkategorien">
+            <button type="button" id="infos-sub-time-place" class="infos-sub-btn is-active" aria-controls="infos-section-time-place" aria-expanded="true">Zeit und Ort</button>
+            <button type="button" id="infos-sub-mode" class="infos-sub-btn" aria-controls="infos-section-mode" aria-expanded="false">Spielmodus</button>
+            <button type="button" id="infos-sub-rules" class="infos-sub-btn" aria-controls="infos-section-rules" aria-expanded="false">Regeln</button>
+          </div>
+
+          <section id="infos-section-time-place" class="infos-section" aria-labelledby="infos-sub-time-place">
+            <h3>Zeit und Ort</h3>
+            <dl class="infos-list">
+              <dt>Datum</dt>
+              <dd>30. Mai 2026</dd>
+              <dt>Zeit</dt>
+              <dd>11:30–17:30 Uhr</dd>
+              <dt>Ort</dt>
+              <dd>Burgdorf, Sporthalle Lindenfeld</dd>
+              <dt>Format</dt>
+              <dd>Mixed (mind. 2 Frauen auf dem Feld)</dd>
+            </dl>
+          </section>
+
+          <section id="infos-section-mode" class="infos-section" aria-labelledby="infos-sub-mode" hidden>
+            <h3>Spielmodus</h3>
+            <dl class="infos-list">
+              <dt>Gruppenphase</dt>
+              <dd>11:30–14:58 Uhr · 12 Min. Spielzeit pro Partie</dd>
+              <dt>Finalrunde</dt>
+              <dd>ab 15:00 Uhr</dd>
+              <dt>Teams pro Kategorie</dt>
+              <dd>Je 6 Teams bei Jugendlichen, Erwachsene Plausch und Erwachsene Ambitioniert</dd>
+            </dl>
+          </section>
+
+          <section id="infos-section-rules" class="infos-section" aria-labelledby="infos-sub-rules" hidden>
+            <h3>Regeln</h3>
+            <h4>Rangliste Gruppenphase</h4>
+            <ol class="infos-ranking">
+              <li>Anzahl Punkte <span class="infos-ranking-detail">(Sieg = 2 Pkt., Unentschieden = 1 Pkt., Niederlage = 0 Pkt.)</span></li>
+              <li>Erspielte Punkte</li>
+              <li>Verhältnis erspielte / verlorene Punkte</li>
+            </ol>
+          </section>
         </div>
       </section>
 
