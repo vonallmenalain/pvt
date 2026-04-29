@@ -198,68 +198,52 @@ function getTeamSchedule(team, teamsInCategory) {
     })
     .filter(Boolean);
 
-  // Resolve final names from standings
+  const fp = resolveFinalParticipants(team.category);
   const resolvedMap = resolveFinalNames(team.category);
   const standings = getSortedStandings(teamsInCategory);
 
-  // Determine the rank of this team (1-based) if group phase is resolved
   const teamRank = standings.findIndex((s) => s.team.id === team.id) + 1;
-
-  // Build finals list with resolved names
-  const r1 = resolveName(`${label} Rang 1`, resolvedMap);
-  const r2 = resolveName(`${label} Rang 2`, resolvedMap);
-  const r3 = resolveName(`${label} Rang 3`, resolvedMap);
-  const r4 = resolveName(`${label} Rang 4`, resolvedMap);
-  const r5 = resolveName(`${label} Rang 5`, resolvedMap);
-  const r6 = resolveName(`${label} Rang 6`, resolvedMap);
-
-  const vfaHome = r3, vfaAway = r6;
-  const vfbHome = r4, vfbAway = r5;
-  const tqHome = r1, tqAway = r2;
 
   /** Look up a team's ID by name within the category, returning null if not found. */
   const teamIdByName = (name) => teamsInCategory.find((t) => t.name === name)?.id ?? null;
 
   const allFinals = [
-    { id: `final-vfa-${team.category}`,  stage: "Viertelfinal A", time: slotTime(15), field, home: vfaHome, homeId: teamIdByName(vfaHome), away: vfaAway, awayId: teamIdByName(vfaAway), editable: false },
-    { id: `final-vfb-${team.category}`,  stage: "Viertelfinal B", time: slotTime(16), field, home: vfbHome, homeId: teamIdByName(vfbHome), away: vfbAway, awayId: teamIdByName(vfbAway), editable: false },
-    { id: `final-tq-${team.category}`,   stage: "Top-Quali",      time: slotTime(17), field, home: tqHome,  homeId: teamIdByName(tqHome),  away: tqAway,  awayId: teamIdByName(tqAway),  editable: false },
-    { id: `final-koq-${team.category}`,  stage: "K.o.-Quali",     time: slotTime(18), field, home: `Sieger Viertelf. A`,    homeId: null, away: `Sieger Viertelf. B`,    awayId: null, editable: false },
-    { id: `final-p5-${team.category}`,   stage: "Platz 5",        time: slotTime(19), field, home: `Verlierer Viertelf. A`, homeId: null, away: `Verlierer Viertelf. B`, awayId: null, editable: false },
-    { id: `final-hf-${team.category}`,   stage: "Halbfinal",      time: slotTime(20), field, home: `Verlierer Top-Quali`,   homeId: null, away: `Sieger K.o.-Quali`,     awayId: null, editable: false },
-    { id: `final-p3-${team.category}`,   stage: "Platz 3",        time: slotTime(21), field, home: `Verlierer K.o.-Quali`,  homeId: null, away: `Verlierer Halbfinal`,    awayId: null, editable: false },
-    { id: `final-1-${team.category}`,    stage: "Finale",         time: slotTime(22), field, home: `Sieger Top-Quali`,      homeId: null, away: `Sieger Halbfinal`,       awayId: null, editable: false },
-  ];
+    { id: `final-vfa-${team.category}`, stage: "Viertelfinal A", time: slotTime(15) },
+    { id: `final-vfb-${team.category}`, stage: "Viertelfinal B", time: slotTime(16) },
+    { id: `final-tq-${team.category}`,  stage: "Top-Quali",      time: slotTime(17) },
+    { id: `final-koq-${team.category}`, stage: "K.o.-Quali",     time: slotTime(18) },
+    { id: `final-p5-${team.category}`,  stage: "Platz 5",        time: slotTime(19) },
+    { id: `final-hf-${team.category}`,  stage: "Halbfinal",      time: slotTime(20) },
+    { id: `final-p3-${team.category}`,  stage: "Platz 3",        time: slotTime(21) },
+    { id: `final-1-${team.category}`,   stage: "Finale",         time: slotTime(22) },
+  ].map(({ id, stage, time }) => {
+    const p = fp[id];
+    return { id, stage, time, field, home: p.home, homeId: teamIdByName(p.home), away: p.away, awayId: teamIdByName(p.away), editable: p.editable };
+  });
 
   // Only show finals that are relevant for this team
-  // If rank is known, filter to the specific path through the bracket
+  const vfaHome = fp[`final-vfa-${team.category}`].home;
+  const vfaAway = fp[`final-vfa-${team.category}`].away;
+  const vfbHome = fp[`final-vfb-${team.category}`].home;
+  const vfbAway = fp[`final-vfb-${team.category}`].away;
+  const tqHome  = fp[`final-tq-${team.category}`].home;
+  const tqAway  = fp[`final-tq-${team.category}`].away;
+
   let relevantFinals;
   if (teamRank === 0 || !Object.keys(resolvedMap).length) {
-    // Rankings not resolved yet – show all finals as placeholders
     relevantFinals = allFinals;
   } else {
-    // Show only the one final in round 1 (VFA, VFB, or TQ) that this team participates in
-    // and the downstream finals. Since we don't track per-final results, show all.
-    // But we hide the finals the team definitely cannot be in.
     const teamName = team.name;
     const inVFA = vfaHome === teamName || vfaAway === teamName;
     const inVFB = vfbHome === teamName || vfbAway === teamName;
-    const inTQ  = tqHome === teamName || tqAway === teamName;
+    const inTQ  = tqHome  === teamName || tqAway  === teamName;
 
     if (inVFA) {
-      // Viertelfinal A path: VFA → K.o.-Quali/Platz 5 → Halbfinal/Platz 3/Platz 5 → Finale
-      relevantFinals = allFinals.filter(f =>
-        !["Viertelfinal B", "Top-Quali"].includes(f.stage)
-      );
+      relevantFinals = allFinals.filter(f => !["Viertelfinal B", "Top-Quali"].includes(f.stage));
     } else if (inVFB) {
-      relevantFinals = allFinals.filter(f =>
-        !["Viertelfinal A", "Top-Quali"].includes(f.stage)
-      );
+      relevantFinals = allFinals.filter(f => !["Viertelfinal A", "Top-Quali"].includes(f.stage));
     } else if (inTQ) {
-      // Top-Quali path: TQ → Halbfinal/Finale
-      relevantFinals = allFinals.filter(f =>
-        !["Viertelfinal A", "Viertelfinal B"].includes(f.stage)
-      );
+      relevantFinals = allFinals.filter(f => !["Viertelfinal A", "Viertelfinal B"].includes(f.stage));
     } else {
       relevantFinals = allFinals;
     }
@@ -326,6 +310,7 @@ function renderTeamDashboard(teamId) {
 
   renderGroupStandings(selectedTeam, groupPeers);
 
+  const savedFocus = saveFocusedResultInput();
   dashboardMatchTable.innerHTML = matches
     .map((match) => {
       const score = resultMap[match.id] || { home: "", away: "" };
@@ -344,6 +329,7 @@ function renderTeamDashboard(teamId) {
       return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeCell}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${awayCell}</span></div></td></tr>`;
     })
     .join("");
+  restoreFocusedResultInput(savedFocus);
 }
 
 function renderTeams(teams) {
@@ -359,13 +345,71 @@ function renderTeams(teams) {
   renderSchedule();
 }
 
+/**
+ * Resolve all final-round participants and determine editability for each match.
+ * A match becomes editable once both participants are real team names (not placeholders).
+ * Later rounds are resolved from the results of earlier finals.
+ */
+function resolveFinalParticipants(category) {
+  const label = CATEGORY_LABELS[category];
+  const resolvedMap = resolveFinalNames(category);
+
+  const byRank = (placeholder) => resolvedMap[placeholder] ?? null;
+  const r1 = byRank(`${label} Rang 1`);
+  const r2 = byRank(`${label} Rang 2`);
+  const r3 = byRank(`${label} Rang 3`);
+  const r4 = byRank(`${label} Rang 4`);
+  const r5 = byRank(`${label} Rang 5`);
+  const r6 = byRank(`${label} Rang 6`);
+
+  /** Determine clear winner and loser of a final match from resultMap. Draw = null. */
+  const getWinnerLoser = (matchId, homeName, awayName) => {
+    if (!homeName || !awayName) return { winner: null, loser: null };
+    const score = resultMap[matchId];
+    if (!score || score.home === "" || score.away === "") return { winner: null, loser: null };
+    const h = Number(score.home), a = Number(score.away);
+    if (!Number.isFinite(h) || !Number.isFinite(a) || h < 0 || a < 0) return { winner: null, loser: null };
+    if (h > a) return { winner: homeName, loser: awayName };
+    if (a > h) return { winner: awayName, loser: homeName };
+    return { winner: null, loser: null }; // draw – progression unresolved
+  };
+
+  const vfaHome = r3, vfaAway = r6;
+  const vfbHome = r4, vfbAway = r5;
+  const tqHome = r1, tqAway = r2;
+
+  const { winner: vfaWinner, loser: vfaLoser } = getWinnerLoser(`final-vfa-${category}`, vfaHome, vfaAway);
+  const { winner: vfbWinner, loser: vfbLoser } = getWinnerLoser(`final-vfb-${category}`, vfbHome, vfbAway);
+  const { winner: tqWinner, loser: tqLoser } = getWinnerLoser(`final-tq-${category}`, tqHome, tqAway);
+
+  const koqHome = vfaWinner, koqAway = vfbWinner;
+  const p5Home = vfaLoser, p5Away = vfbLoser;
+
+  const { winner: koqWinner, loser: koqLoser } = getWinnerLoser(`final-koq-${category}`, koqHome, koqAway);
+
+  const hfHome = tqLoser, hfAway = koqWinner;
+
+  const { winner: hfWinner, loser: hfLoser } = getWinnerLoser(`final-hf-${category}`, hfHome, hfAway);
+
+  const p3Home = koqLoser, p3Away = hfLoser;
+  const finHome = tqWinner, finAway = hfWinner;
+
+  return {
+    [`final-vfa-${category}`]: { home: vfaHome ?? `${label} Rang 3`, away: vfaAway ?? `${label} Rang 6`, editable: !!(vfaHome && vfaAway) },
+    [`final-vfb-${category}`]: { home: vfbHome ?? `${label} Rang 4`, away: vfbAway ?? `${label} Rang 5`, editable: !!(vfbHome && vfbAway) },
+    [`final-tq-${category}`]:  { home: tqHome  ?? `${label} Rang 1`, away: tqAway  ?? `${label} Rang 2`, editable: !!(tqHome  && tqAway) },
+    [`final-koq-${category}`]: { home: koqHome ?? "Sieger Viertelf. A",    away: koqAway ?? "Sieger Viertelf. B",    editable: !!(koqHome && koqAway) },
+    [`final-p5-${category}`]:  { home: p5Home  ?? "Verlierer Viertelf. A", away: p5Away  ?? "Verlierer Viertelf. B", editable: !!(p5Home  && p5Away) },
+    [`final-hf-${category}`]:  { home: hfHome  ?? "Verlierer Top-Quali",   away: hfAway  ?? "Sieger K.o.-Quali",     editable: !!(hfHome  && hfAway) },
+    [`final-p3-${category}`]:  { home: p3Home  ?? "Verlierer K.o.-Quali",  away: p3Away  ?? "Verlierer Halbfinal",   editable: !!(p3Home  && p3Away) },
+    [`final-1-${category}`]:   { home: finHome ?? "Sieger Top-Quali",      away: finAway ?? "Sieger Halbfinal",      editable: !!(finHome && finAway) },
+  };
+}
+
 function getScheduleMatches(teams, category) {
   const field = category === "adult_ambitious" ? "1" : category === "adult_fun" ? "2" : "3";
-  const label = CATEGORY_LABELS[category];
 
   if (teams.length < 2) return [];
-
-  const resolvedMap = resolveFinalNames(category);
 
   const preliminaryMatches = OPTIMIZED_SCHEDULE.map((entry, slotIdx) => {
     const homeTeam = teams[entry.h];
@@ -380,33 +424,61 @@ function getScheduleMatches(teams, category) {
       field,
       home: homeTeam,
       away: awayTeam,
+      editable: true,
     };
   }).filter(Boolean);
 
-  const r1 = resolveName(`${label} Rang 1`, resolvedMap);
-  const r2 = resolveName(`${label} Rang 2`, resolvedMap);
-  const r3 = resolveName(`${label} Rang 3`, resolvedMap);
-  const r4 = resolveName(`${label} Rang 4`, resolvedMap);
-  const r5 = resolveName(`${label} Rang 5`, resolvedMap);
-  const r6 = resolveName(`${label} Rang 6`, resolvedMap);
+  const fp = resolveFinalParticipants(category);
 
-  const finalMatches = [
-    { id: `final-vfa-${category}`,  nr: 16, stage: "Viertelfinal A", time: slotTime(15), field, home: { name: r3, id: null }, away: { name: r6, id: null } },
-    { id: `final-vfb-${category}`,  nr: 17, stage: "Viertelfinal B", time: slotTime(16), field, home: { name: r4, id: null }, away: { name: r5, id: null } },
-    { id: `final-tq-${category}`,   nr: 18, stage: "Top-Quali",      time: slotTime(17), field, home: { name: r1, id: null }, away: { name: r2, id: null } },
-    { id: `final-koq-${category}`,  nr: 19, stage: "K.o.-Quali",     time: slotTime(18), field, home: { name: "Sieger Viertelf. A", id: null }, away: { name: "Sieger Viertelf. B", id: null } },
-    { id: `final-p5-${category}`,   nr: 20, stage: "Platz 5",        time: slotTime(19), field, home: { name: "Verlierer Viertelf. A", id: null }, away: { name: "Verlierer Viertelf. B", id: null } },
-    { id: `final-hf-${category}`,   nr: 21, stage: "Halbfinal",      time: slotTime(20), field, home: { name: "Verlierer Top-Quali", id: null }, away: { name: "Sieger K.o.-Quali", id: null } },
-    { id: `final-p3-${category}`,   nr: 22, stage: "Platz 3",        time: slotTime(21), field, home: { name: "Verlierer K.o.-Quali", id: null }, away: { name: "Verlierer Halbfinal", id: null } },
-    { id: `final-1-${category}`,    nr: 23, stage: "Finale",         time: slotTime(22), field, home: { name: "Sieger Top-Quali", id: null }, away: { name: "Sieger Halbfinal", id: null } },
+  const finalMatchDefs = [
+    { id: `final-vfa-${category}`, nr: 16, stage: "Viertelfinal A", time: slotTime(15) },
+    { id: `final-vfb-${category}`, nr: 17, stage: "Viertelfinal B", time: slotTime(16) },
+    { id: `final-tq-${category}`,  nr: 18, stage: "Top-Quali",      time: slotTime(17) },
+    { id: `final-koq-${category}`, nr: 19, stage: "K.o.-Quali",     time: slotTime(18) },
+    { id: `final-p5-${category}`,  nr: 20, stage: "Platz 5",        time: slotTime(19) },
+    { id: `final-hf-${category}`,  nr: 21, stage: "Halbfinal",      time: slotTime(20) },
+    { id: `final-p3-${category}`,  nr: 22, stage: "Platz 3",        time: slotTime(21) },
+    { id: `final-1-${category}`,   nr: 23, stage: "Finale",         time: slotTime(22) },
   ];
 
+  const finalMatches = finalMatchDefs.map(({ id, nr, stage, time }) => {
+    const p = fp[id];
+    return { id, nr, stage, time, field, home: { name: p.home, id: null }, away: { name: p.away, id: null }, editable: p.editable };
+  });
+
   return [...preliminaryMatches, ...finalMatches];
+}
+
+/**
+ * Returns the focused result-input's identity { matchId, side } so it can be
+ * restored after a full DOM re-render, or null if no result-input is focused.
+ */
+function saveFocusedResultInput() {
+  const el = document.activeElement;
+  if (el instanceof HTMLInputElement && el.matches(".result-input")) {
+    return { matchId: el.dataset.resultMatch, side: el.dataset.side };
+  }
+  return null;
+}
+
+/** Re-focuses the result-input that was active before a re-render, if still present. */
+function restoreFocusedResultInput(saved) {
+  if (!saved) return;
+  const el = document.querySelector(
+    `.result-input[data-result-match="${CSS.escape(saved.matchId)}"][data-side="${saved.side}"]`
+  );
+  if (el instanceof HTMLInputElement) {
+    el.focus();
+    // Move cursor to end of value
+    const len = el.value.length;
+    el.setSelectionRange(len, len);
+  }
 }
 
 function renderSchedule() {
   const tableBody = document.getElementById("schedule-table-body");
   if (!tableBody) return;
+  const savedFocus = saveFocusedResultInput();
   const teams = allTeams.filter((team) => team.category === selectedScheduleCategory);
   const matches = getScheduleMatches(teams, selectedScheduleCategory);
   if (!matches.length) {
@@ -425,16 +497,16 @@ function renderSchedule() {
     const hasScore = score.home !== "" && score.away !== "";
     const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
     let resultCell;
-    if (match.id.startsWith("final-")) {
+    const isFinal = match.id.startsWith("final-");
+    if (!currentUser || (isFinal && !match.editable)) {
       resultCell = `<span class="schedule-result">${scoreText}</span>`;
-    } else if (currentUser) {
-      resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
     } else {
-      resultCell = `<span class="schedule-result">${scoreText}</span>`;
+      resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
     }
 
     return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeLink}</span><span class="col-game-score">${resultCell}</span><span class="col-game-away">${awayLink}</span></div></td></tr>`;
   }).join("");
+  restoreFocusedResultInput(savedFocus);
 }
 
 createButton?.addEventListener("click", () => openModal());
