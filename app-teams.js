@@ -183,7 +183,9 @@ function getTeamSchedule(team, teamsInCategory) {
         time: slotTime(slotIdx),
         field,
         home: homeTeam.name,
+        homeId: homeTeam.id,
         away: awayTeam.name,
+        awayId: awayTeam.id,
         editable: true,
       };
     })
@@ -208,15 +210,18 @@ function getTeamSchedule(team, teamsInCategory) {
   const vfbHome = r4, vfbAway = r5;
   const tqHome = r1, tqAway = r2;
 
+  /** Look up a team's ID by name within the category, returning null if not found. */
+  const teamIdByName = (name) => teamsInCategory.find((t) => t.name === name)?.id ?? null;
+
   const allFinals = [
-    { id: `final-vfa-${team.category}`,  stage: "Viertelfinal A", time: slotTime(15), field, home: vfaHome, away: vfaAway, editable: false },
-    { id: `final-vfb-${team.category}`,  stage: "Viertelfinal B", time: slotTime(16), field, home: vfbHome, away: vfbAway, editable: false },
-    { id: `final-tq-${team.category}`,   stage: "Top-Quali",      time: slotTime(17), field, home: tqHome, away: tqAway, editable: false },
-    { id: `final-koq-${team.category}`,  stage: "K.o.-Quali",     time: slotTime(18), field, home: `Sieger Viertelf. A`, away: `Sieger Viertelf. B`, editable: false },
-    { id: `final-p5-${team.category}`,   stage: "Platz 5",        time: slotTime(19), field, home: `Verlierer Viertelf. A`, away: `Verlierer Viertelf. B`, editable: false },
-    { id: `final-hf-${team.category}`,   stage: "Halbfinal",      time: slotTime(20), field, home: `Verlierer Top-Quali`, away: `Sieger K.o.-Quali`, editable: false },
-    { id: `final-p3-${team.category}`,   stage: "Platz 3",        time: slotTime(21), field, home: `Verlierer K.o.-Quali`, away: `Verlierer Halbfinal`, editable: false },
-    { id: `final-1-${team.category}`,    stage: "Finale",         time: slotTime(22), field, home: `Sieger Top-Quali`, away: `Sieger Halbfinal`, editable: false },
+    { id: `final-vfa-${team.category}`,  stage: "Viertelfinal A", time: slotTime(15), field, home: vfaHome, homeId: teamIdByName(vfaHome), away: vfaAway, awayId: teamIdByName(vfaAway), editable: false },
+    { id: `final-vfb-${team.category}`,  stage: "Viertelfinal B", time: slotTime(16), field, home: vfbHome, homeId: teamIdByName(vfbHome), away: vfbAway, awayId: teamIdByName(vfbAway), editable: false },
+    { id: `final-tq-${team.category}`,   stage: "Top-Quali",      time: slotTime(17), field, home: tqHome,  homeId: teamIdByName(tqHome),  away: tqAway,  awayId: teamIdByName(tqAway),  editable: false },
+    { id: `final-koq-${team.category}`,  stage: "K.o.-Quali",     time: slotTime(18), field, home: `Sieger Viertelf. A`,    homeId: null, away: `Sieger Viertelf. B`,    awayId: null, editable: false },
+    { id: `final-p5-${team.category}`,   stage: "Platz 5",        time: slotTime(19), field, home: `Verlierer Viertelf. A`, homeId: null, away: `Verlierer Viertelf. B`, awayId: null, editable: false },
+    { id: `final-hf-${team.category}`,   stage: "Halbfinal",      time: slotTime(20), field, home: `Verlierer Top-Quali`,   homeId: null, away: `Sieger K.o.-Quali`,     awayId: null, editable: false },
+    { id: `final-p3-${team.category}`,   stage: "Platz 3",        time: slotTime(21), field, home: `Verlierer K.o.-Quali`,  homeId: null, away: `Verlierer Halbfinal`,    awayId: null, editable: false },
+    { id: `final-1-${team.category}`,    stage: "Finale",         time: slotTime(22), field, home: `Sieger Top-Quali`,      homeId: null, away: `Sieger Halbfinal`,       awayId: null, editable: false },
   ];
 
   // Only show finals that are relevant for this team
@@ -278,7 +283,8 @@ function renderGroupStandings(selectedTeam, groupPeers) {
     .map(({ team, pts, gf, ga, played }, idx) => {
       const ratio = ga === 0 ? (gf > 0 ? "∞" : "0") : (gf / ga).toFixed(2);
       const highlight = team.id === selectedTeam.id ? ' style="font-weight:700;background:rgba(40,53,147,0.25);"' : "";
-      return `<tr${highlight}><td>${idx + 1}</td><td>${escapeHtml(team.name)}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
+      const nameCell = `<button type="button" class="team-link" data-team-select="${team.id}">${escapeHtml(team.name)}</button>`;
+      return `<tr${highlight}><td>${idx + 1}</td><td>${nameCell}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
     });
   dashboardGroupTable.innerHTML = rows.join("") || `<tr><td>1</td><td>${escapeHtml(selectedTeam.name)}</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>`;
 }
@@ -320,7 +326,13 @@ function renderTeamDashboard(teamId) {
       const scoreCell = readOnly
         ? `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`
         : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" /></span>`;
-      return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${escapeHtml(match.home)}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${escapeHtml(match.away)}</span></div></td></tr>`;
+      const homeCell = match.homeId
+        ? `<button type="button" class="team-link" data-team-select="${match.homeId}">${escapeHtml(match.home)}</button>`
+        : escapeHtml(match.home);
+      const awayCell = match.awayId
+        ? `<button type="button" class="team-link" data-team-select="${match.awayId}">${escapeHtml(match.away)}</button>`
+        : escapeHtml(match.away);
+      return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeCell}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${awayCell}</span></div></td></tr>`;
     })
     .join("");
 }
