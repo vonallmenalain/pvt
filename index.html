@@ -131,12 +131,8 @@
         .schedule-table th,
         .schedule-table td { padding: 0.35rem 0.4rem; }
 
-        /* Game column: stack home – score – away vertically */
-        .schedule-table td.col-game { min-width: 0; }
-        .col-game-inner { flex-direction: column; align-items: stretch; gap: 0.2rem; }
-        .col-game-home { text-align: left; }
-        .col-game-away { text-align: left; }
-        .col-game-score { text-align: center; font-size: 0.78rem; }
+        /* Game column: keep horizontal layout, let table scroll sideways */
+        .schedule-table td.col-game { min-width: 260px; white-space: nowrap; }
 
         /* Infos: single-column definition list */
         .infos-list { grid-template-columns: 1fr; gap: 0.1rem 0; }
