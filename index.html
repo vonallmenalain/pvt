@@ -19,7 +19,7 @@
       .auth-trigger-wrap { position: absolute; top: 0.75rem; right: 0.75rem; }
       .auth-trigger { background: transparent; color: var(--muted); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 0.45rem; padding: 0.35rem 0.65rem; font-size: 0.8125rem; font-weight: 500; cursor: pointer; letter-spacing: 0.02em; }
       .auth-trigger:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
-      .wrap { max-width: 860px; margin: 0 auto; padding: 1rem; }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 1rem; }
       .hero { background: linear-gradient(120deg, rgba(40,53,147,0.92), rgba(20,20,40,0.95)); border-radius: 1rem; padding: 1.2rem; padding-right: 7rem; }
       h1, h2, h3 { margin: 0 0 .6rem; }
       p { margin: 0 0 .5rem; color: var(--muted); }
@@ -61,10 +61,15 @@
       .schedule-table td.col-time { white-space: nowrap; }
       .schedule-table th { background: rgba(255, 255, 255, 0.08); font-weight: 700; }
       .schedule-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
-      .team-link { background: transparent; color: var(--text); border: none; padding: 0; font-weight: 600; font-size: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.35); }
-      .team-link:hover { text-decoration-color: rgba(255,255,255,0.85); }
+      .team-link { background: transparent; color: var(--text); border: none; padding: 0; font-weight: 600; font-size: inherit; cursor: pointer; text-decoration: none; }
+      .team-link:hover { text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.85); }
       .schedule-result { white-space: nowrap; font-weight: 700; padding: 0 0.3rem; }
       .schedule-result .result-input { width: 3rem; }
+      .schedule-table td.col-game { min-width: 520px; }
+      .col-game-inner { display: flex; align-items: center; gap: 0.25rem; }
+      .col-game-home { flex: 1; text-align: left; }
+      .col-game-score { flex-shrink: 0; }
+      .col-game-away { flex: 1; text-align: right; }
 
       .auth-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.55); }
       .auth-modal[hidden] { display: none; }

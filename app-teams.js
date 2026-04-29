@@ -320,7 +320,7 @@ function renderTeamDashboard(teamId) {
       const scoreCell = readOnly
         ? `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`
         : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" /></span>`;
-      return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td>${escapeHtml(match.home)} &nbsp;${scoreCell}&nbsp; ${escapeHtml(match.away)}</td></tr>`;
+      return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${escapeHtml(match.home)}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${escapeHtml(match.away)}</span></div></td></tr>`;
     })
     .join("");
 }
@@ -415,7 +415,7 @@ function renderSchedule() {
       resultCell = `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`;
     }
 
-    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td>${homeLink} &nbsp;${resultCell}&nbsp; ${awayLink}</td></tr>`;
+    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeLink}</span><span class="col-game-score">${resultCell}</span><span class="col-game-away">${awayLink}</span></div></td></tr>`;
   }).join("");
 }
 
