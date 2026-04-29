@@ -11,12 +11,6 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const CATEGORY_LABELS = {
-  youth: "Jugendliche",
-  adult_fun: "Erwachsene Plausch",
-  adult_ambitious: "Erwachsene Ambitioniert",
-};
-
 const teamLists = {
   youth: document.getElementById("teams-list-youth"),
   adult_fun: document.getElementById("teams-list-adult-fun"),
@@ -57,9 +51,9 @@ function renderTeamCard(team) {
   return `
     <li class="team-card">
       <div class="team-card-content">
-        <p><strong>Teamname:</strong> ${escapeHtml(team.name)}</p>
-        <p><strong>Gemeinde:</strong> ${escapeHtml(team.community)}</p>
-        <p><strong>Mannschaftsverantwortlicher:</strong> ${escapeHtml(team.manager)}</p>
+        <p class="team-name">${escapeHtml(team.name)}</p>
+        <p class="team-meta">Gemeinde: ${escapeHtml(team.community)}</p>
+        <p class="team-meta">Mannschaftsverantwortlich: ${escapeHtml(team.manager)}</p>
       </div>
       ${canDelete ? `<button type="button" class="team-delete" data-team-id="${team.id}">Löschen</button>` : ""}
     </li>
@@ -145,3 +139,28 @@ document.addEventListener("click", async (event) => {
 
   await deleteDoc(doc(db, "teams", teamId));
 });
+
+
+const teamsViewBtn = document.getElementById("show-teams");
+const scheduleViewBtn = document.getElementById("show-schedule");
+const teamsPanel = document.getElementById("teams-panel");
+const schedulePanel = document.getElementById("schedule-panel");
+
+function setView(view) {
+  const showTeams = view === "teams";
+  const showSchedule = view === "schedule";
+
+  if (teamsPanel) teamsPanel.hidden = !showTeams;
+  if (schedulePanel) schedulePanel.hidden = !showSchedule;
+
+  teamsViewBtn?.classList.toggle("is-active", showTeams);
+  scheduleViewBtn?.classList.toggle("is-active", showSchedule);
+
+  teamsViewBtn?.setAttribute("aria-expanded", String(showTeams));
+  scheduleViewBtn?.setAttribute("aria-expanded", String(showSchedule));
+}
+
+teamsViewBtn?.addEventListener("click", () => setView("teams"));
+scheduleViewBtn?.addEventListener("click", () => setView("schedule"));
+
+setView("none");
