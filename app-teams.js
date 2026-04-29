@@ -199,11 +199,6 @@ function getTeamSchedule(team, teamsInCategory) {
     .filter(Boolean);
 
   const fp = resolveFinalParticipants(team.category);
-  const resolvedMap = resolveFinalNames(team.category);
-  const standings = getSortedStandings(teamsInCategory);
-
-  const teamRank = standings.findIndex((s) => s.team.id === team.id) + 1;
-
   /** Look up a team's ID by name within the category, returning null if not found. */
   const teamIdByName = (name) => teamsInCategory.find((t) => t.name === name)?.id ?? null;
 
@@ -222,30 +217,31 @@ function getTeamSchedule(team, teamsInCategory) {
   });
 
   // Only show finals that are relevant for this team
-  const vfaHome = fp[`final-vfa-${team.category}`].home;
-  const vfaAway = fp[`final-vfa-${team.category}`].away;
-  const vfbHome = fp[`final-vfb-${team.category}`].home;
-  const vfbAway = fp[`final-vfb-${team.category}`].away;
-  const tqHome  = fp[`final-tq-${team.category}`].home;
-  const tqAway  = fp[`final-tq-${team.category}`].away;
+  const teamName = team.name;
+  const teamPathFinals = allFinals.filter((finalMatch) => finalMatch.home === teamName || finalMatch.away === teamName);
+  const hasCompleteScore = (matchId) => {
+    const score = resultMap[matchId];
+    if (!score) return false;
+    const home = Number(score.home);
+    const away = Number(score.away);
+    return score.home !== "" && score.away !== "" && Number.isFinite(home) && Number.isFinite(away) && home >= 0 && away >= 0;
+  };
 
-  let relevantFinals;
-  if (teamRank === 0 || !Object.keys(resolvedMap).length) {
-    relevantFinals = allFinals;
-  } else {
-    const teamName = team.name;
-    const inVFA = vfaHome === teamName || vfaAway === teamName;
-    const inVFB = vfbHome === teamName || vfbAway === teamName;
-    const inTQ  = tqHome  === teamName || tqAway  === teamName;
-
-    if (inVFA) {
-      relevantFinals = allFinals.filter(f => !["Viertelfinal B", "Top-Quali"].includes(f.stage));
-    } else if (inVFB) {
-      relevantFinals = allFinals.filter(f => !["Viertelfinal A", "Top-Quali"].includes(f.stage));
-    } else if (inTQ) {
-      relevantFinals = allFinals.filter(f => !["Viertelfinal A", "Viertelfinal B"].includes(f.stage));
+  const relevantFinals = [];
+  for (const finalMatch of teamPathFinals) {
+    // Zeige nur fix zugewiesene Spiele des Teams an
+    if (!(finalMatch.home === teamName || finalMatch.away === teamName)) continue;
+    const previousVisibleMatch = relevantFinals[relevantFinals.length - 1];
+    // Erstes Finalspiel erscheint direkt nach abgeschlossener Gruppenphase (fixe Paarung)
+    if (!previousVisibleMatch) {
+      relevantFinals.push(finalMatch);
+      continue;
+    }
+    // Nächstes Spiel erst anzeigen, wenn das vorherige Spiel des Teams gespielt wurde
+    if (hasCompleteScore(previousVisibleMatch.id)) {
+      relevantFinals.push(finalMatch);
     } else {
-      relevantFinals = allFinals;
+      break;
     }
   }
 
