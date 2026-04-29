@@ -76,6 +76,9 @@
       .infos-list { margin: 0 0 0.5rem; padding: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; }
       .infos-list dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; align-self: baseline; }
       .infos-list dd { margin: 0; font-size: 0.9375rem; align-self: baseline; }
+      .infos-ranking { margin: 0 0 0.5rem; padding-left: 1.4rem; }
+      .infos-ranking li { font-size: 0.9375rem; margin-bottom: 0.3rem; }
+      .infos-ranking-detail { font-size: 0.8125rem; color: var(--muted); }
 
       .auth-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.55); }
       .auth-modal[hidden] { display: none; }
@@ -153,6 +156,21 @@
             <dt>Finalrunde</dt>
             <dd>ab 15:00 Uhr</dd>
           </dl>
+          <h3>Teams pro Kategorie</h3>
+          <dl class="infos-list">
+            <dt>Jugendliche</dt>
+            <dd>6 Teams</dd>
+            <dt>Erwachsene Plausch</dt>
+            <dd>6 Teams</dd>
+            <dt>Erwachsene Ambitioniert</dt>
+            <dd>6 Teams</dd>
+          </dl>
+          <h3>Rangliste Gruppenphase</h3>
+          <ol class="infos-ranking">
+            <li>Anzahl Punkte <span class="infos-ranking-detail">(Sieg = 2 Pkt., Unentschieden = 1 Pkt., Niederlage = 0 Pkt.)</span></li>
+            <li>Erspielte Punkte</li>
+            <li>Verhältnis erspielte / verlorene Punkte</li>
+          </ol>
         </div>
       </section>
 
