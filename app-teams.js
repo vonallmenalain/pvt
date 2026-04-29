@@ -12,6 +12,17 @@ import {
   setDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const ranglistePublishBtn = document.getElementById("rangliste-publish-btn");
+const ranglisteUnpublishBtn = document.getElementById("rangliste-unpublish-btn");
+const ranglistePublishedNote = document.getElementById("rangliste-published-note");
+const ranglisteViewBtn = document.getElementById("show-rangliste");
+const ranglistePanel = document.getElementById("rangliste-panel");
+const ranglisteTableBody = document.getElementById("rangliste-table-body");
+const ranglisteCategoryFilter = document.getElementById("rangliste-category-filter");
+
+let ranglistePublished = false;
+let selectedRanglisteCategory = "adult_ambitious";
+
 const CATEGORY_LABELS = {
   youth: "Jugendliche",
   adult_fun: "Erwachsene Plausch",
@@ -54,21 +65,21 @@ function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").repla
  * Slots 0–14: group phase · Slots 15–22: finals (rank-based, determined at run-time)
  */
 const OPTIMIZED_SCHEDULE = [
-  { r: "Gruppenphase", h: 0, a: 1 },
-  { r: "Gruppenphase", h: 2, a: 3 },
-  { r: "Gruppenphase", h: 4, a: 5 },
-  { r: "Gruppenphase", h: 0, a: 2 },
-  { r: "Gruppenphase", h: 1, a: 4 },
-  { r: "Gruppenphase", h: 3, a: 5 },
-  { r: "Gruppenphase", h: 2, a: 4 },
-  { r: "Gruppenphase", h: 0, a: 3 },
-  { r: "Gruppenphase", h: 1, a: 5 },
-  { r: "Gruppenphase", h: 3, a: 4 },
-  { r: "Gruppenphase", h: 1, a: 2 },
-  { r: "Gruppenphase", h: 0, a: 5 },
-  { r: "Gruppenphase", h: 1, a: 3 },
-  { r: "Gruppenphase", h: 0, a: 4 },
-  { r: "Gruppenphase", h: 2, a: 5 },
+  { r: "Gruppenspiel", h: 0, a: 1 },
+  { r: "Gruppenspiel", h: 2, a: 3 },
+  { r: "Gruppenspiel", h: 4, a: 5 },
+  { r: "Gruppenspiel", h: 0, a: 2 },
+  { r: "Gruppenspiel", h: 1, a: 4 },
+  { r: "Gruppenspiel", h: 3, a: 5 },
+  { r: "Gruppenspiel", h: 2, a: 4 },
+  { r: "Gruppenspiel", h: 0, a: 3 },
+  { r: "Gruppenspiel", h: 1, a: 5 },
+  { r: "Gruppenspiel", h: 3, a: 4 },
+  { r: "Gruppenspiel", h: 1, a: 2 },
+  { r: "Gruppenspiel", h: 0, a: 5 },
+  { r: "Gruppenspiel", h: 1, a: 3 },
+  { r: "Gruppenspiel", h: 0, a: 4 },
+  { r: "Gruppenspiel", h: 2, a: 5 },
 ];
 
 const SLOT_START_MINUTES = 11 * 60 + 30; // 11:30 in minutes from midnight
@@ -340,6 +351,7 @@ function renderTeams(teams) {
   if (selectedTeamId) renderTeamDashboard(selectedTeamId); else renderDashboardEmptyState();
   renderSchedule();
   renderOrganizationPanel();
+  renderRangliste();
 }
 
 /**
@@ -479,7 +491,7 @@ function renderSchedule() {
   const teams = allTeams.filter((team) => team.category === selectedScheduleCategory);
   const matches = getScheduleMatches(teams, selectedScheduleCategory);
   if (!matches.length) {
-    tableBody.innerHTML = '<tr><td colspan="5">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="4">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
     return;
   }
   tableBody.innerHTML = matches.map((match) => {
@@ -501,7 +513,7 @@ function renderSchedule() {
       resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
     }
 
-    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeLink}</span><span class="col-game-score">${resultCell}</span><span class="col-game-away">${awayLink}</span></div></td></tr>`;
+    return `<tr><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeLink}</span><span class="col-game-score">${resultCell}</span><span class="col-game-away">${awayLink}</span></div></td></tr>`;
   }).join("");
   restoreFocusedResultInput(savedFocus);
 }
@@ -564,9 +576,9 @@ onAuthStateChanged(auth, (user) => {
   if (!user) closeModal();
   document.querySelectorAll(".team-delete").forEach((button) => { button.hidden = !user; });
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
-  // Re-render schedule when auth changes (editable inputs appear/disappear)
   renderSchedule();
   renderOrganizationPanel();
+  updateRanglisteVisibility();
 });
 
 onSnapshot(query(collection(db, "teams"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -655,30 +667,85 @@ function setView(view) {
   const showTeams = view === "teams";
   const showSchedule = view === "schedule";
   const showDashboard = view === "dashboard";
+  const showRangliste = view === "rangliste";
   const showOrg = view === "org";
   if (infosPanel) infosPanel.hidden = !showInfos;
   if (teamsPanel) teamsPanel.hidden = !showTeams;
   if (schedulePanel) schedulePanel.hidden = !showSchedule;
   if (dashboardPanel) dashboardPanel.hidden = !showDashboard;
+  if (ranglistePanel) ranglistePanel.hidden = !showRangliste;
   if (orgPanel) orgPanel.hidden = !showOrg;
   infosViewBtn?.classList.toggle("is-active", showInfos);
   teamsViewBtn?.classList.toggle("is-active", showTeams);
   scheduleViewBtn?.classList.toggle("is-active", showSchedule);
   dashboardViewBtn?.classList.toggle("is-active", showDashboard);
+  ranglisteViewBtn?.classList.toggle("is-active", showRangliste);
   orgViewBtn?.classList.toggle("is-active", showOrg);
   infosViewBtn?.setAttribute("aria-expanded", String(showInfos));
   teamsViewBtn?.setAttribute("aria-expanded", String(showTeams));
   scheduleViewBtn?.setAttribute("aria-expanded", String(showSchedule));
   dashboardViewBtn?.setAttribute("aria-expanded", String(showDashboard));
+  ranglisteViewBtn?.setAttribute("aria-expanded", String(showRangliste));
   orgViewBtn?.setAttribute("aria-expanded", String(showOrg));
+  if (showRangliste) renderRangliste();
 }
 infosViewBtn?.addEventListener("click", () => setView("infos"));
 teamsViewBtn?.addEventListener("click", () => setView("teams"));
 scheduleViewBtn?.addEventListener("click", () => setView("schedule"));
 dashboardViewBtn?.addEventListener("click", () => setView("dashboard"));
+ranglisteViewBtn?.addEventListener("click", () => setView("rangliste"));
 orgViewBtn?.addEventListener("click", () => setView("org"));
 infosSubButtons.time_place?.addEventListener("click", () => setInfosSection("time_place"));
 infosSubButtons.mode?.addEventListener("click", () => setInfosSection("mode"));
 infosSubButtons.rules?.addEventListener("click", () => setInfosSection("rules"));
 setInfosSection("time_place");
 setView("infos");
+
+// ── Schlussrangliste ───────────────────────────────────────────────────────
+
+function renderRangliste() {
+  if (!ranglisteTableBody) return;
+  const teams = allTeams.filter((t) => t.category === selectedRanglisteCategory);
+  if (!teams.length) {
+    ranglisteTableBody.innerHTML = '<tr><td colspan="7">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+    return;
+  }
+  const rows = getSortedStandings(teams).map(({ team, pts, gf, ga, played }, idx) => {
+    const ratio = ga === 0 ? (gf > 0 ? "∞" : "0") : (gf / ga).toFixed(2);
+    return `<tr><td>${idx + 1}</td><td>${escapeHtml(team.name)}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
+  });
+  ranglisteTableBody.innerHTML = rows.join("");
+}
+
+function updateRanglisteVisibility() {
+  const isAuth = Boolean(currentUser);
+  // Nav button: always visible to logged-in users; logged-out only if published
+  if (ranglisteViewBtn) ranglisteViewBtn.hidden = !(isAuth || ranglistePublished);
+  // If we're on the rangliste panel as logged-out and it got un-published, go to infos
+  if (!isAuth && !ranglistePublished && ranglistePanel && !ranglistePanel.hidden) setView("infos");
+  // Publish/unpublish buttons
+  if (ranglistePublishBtn) ranglistePublishBtn.hidden = !(isAuth && !ranglistePublished);
+  if (ranglisteUnpublishBtn) ranglisteUnpublishBtn.hidden = !(isAuth && ranglistePublished);
+  // Public note
+  if (ranglistePublishedNote) ranglistePublishedNote.hidden = !ranglistePublished;
+}
+
+ranglisteCategoryFilter?.addEventListener("change", (e) => {
+  selectedRanglisteCategory = e.target.value;
+  renderRangliste();
+});
+
+ranglistePublishBtn?.addEventListener("click", async () => {
+  if (!currentUser) return;
+  await setDoc(doc(db, "rangliste", "status"), { published: true });
+});
+
+ranglisteUnpublishBtn?.addEventListener("click", async () => {
+  if (!currentUser) return;
+  await setDoc(doc(db, "rangliste", "status"), { published: false });
+});
+
+onSnapshot(doc(db, "rangliste", "status"), (snap) => {
+  ranglistePublished = snap.exists() ? Boolean(snap.data()?.published) : false;
+  updateRanglisteVisibility();
+});
