@@ -70,6 +70,7 @@
       .team-delete { background: #a83c3c; padding: 0.45rem 0.6rem; font-size: 0.82rem; }
       .team-empty { color: var(--muted); font-size: 0.92rem; }
 
+      .tile-panel { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
       .team-dashboard { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
       .result-input { width: 3.5rem; padding: 0.2rem 0.3rem; border-radius: 0.3rem; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.2); color: var(--text); -moz-appearance: textfield; appearance: textfield; }
       .result-input::-webkit-outer-spin-button,
@@ -225,7 +226,7 @@
         <button type="button" id="show-org" class="view-btn" aria-controls="org-panel" aria-expanded="false" hidden>Turnierorganisation</button>
       </nav>
 
-      <section class="content-panel infos-card" id="infos-panel" aria-label="Infos">
+      <section class="content-panel tile-panel infos-card" id="infos-panel" aria-label="Infos">
           <div class="infos-subnav" aria-label="Infos Unterkategorien">
             <button type="button" id="infos-sub-time-place" class="infos-sub-btn is-active" aria-controls="infos-section-time-place" aria-expanded="true">Allgemeine Infos</button>
             <button type="button" id="infos-sub-mode" class="infos-sub-btn" aria-controls="infos-section-mode" aria-expanded="false">Spielmodus</button>
@@ -292,7 +293,7 @@
           </section>
       </section>
 
-      <section class="content-panel" id="schedule-panel" aria-label="Spielplan" hidden>
+      <section class="content-panel tile-panel" id="schedule-panel" aria-label="Spielplan" hidden>
           <div class="schedule-filter">
             <label for="schedule-category-filter">Kategorie</label>
             <select id="schedule-category-filter">
@@ -341,7 +342,7 @@
         </div>
       </section>
 
-      <section class="content-panel" id="rangliste-panel" aria-label="Schlussrangliste" hidden>
+      <section class="content-panel tile-panel" id="rangliste-panel" aria-label="Schlussrangliste" hidden>
         <div class="schedule-filter">
           <label for="rangliste-category-filter">Kategorie</label>
           <select id="rangliste-category-filter">
@@ -363,12 +364,9 @@
         </div>
       </section>
 
-      <section class="schedule content-panel" id="org-panel" aria-labelledby="org-title" hidden>
-        <h2 id="org-title">Turnierorganisation</h2>
-        <div class="schedule-card">
-          <p class="org-time">Resultate können nur im angemeldeten Zustand erfasst werden.</p>
-          <div class="org-rows" id="org-rows"></div>
-        </div>
+      <section class="content-panel tile-panel" id="org-panel" aria-label="Turnierorganisation" hidden>
+        <p class="org-time">Resultate können nur im angemeldeten Zustand erfasst werden.</p>
+        <div class="org-rows" id="org-rows"></div>
       </section>
     </div>
 
