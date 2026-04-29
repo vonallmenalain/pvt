@@ -35,6 +35,8 @@
 
       .schedule { margin-top: 0.25rem; background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.06); }
       .schedule-card { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.75rem; padding: 1rem; }
+      .schedule-filter { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.85rem; }
+      .schedule-filter select { padding: 0.45rem 0.55rem; border-radius: 0.45rem; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(0,0,0,0.25); color: var(--text); }
 
       .teams { margin-top: 0.25rem; background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.06); }
       .teams-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; gap: 0.75rem; }
@@ -118,40 +120,18 @@
       <section class="schedule content-panel" id="schedule-panel" aria-labelledby="schedule-title" hidden>
         <h2 id="schedule-title">Spielplan</h2>
         <div class="schedule-card">
-          <p>Vorschau Spielplan-Layout (Teams als Platzhalter benannt).</p>
-          <table class="schedule-table" aria-label="Spielplan Vorrunde">
-            <thead>
-              <tr><th>Zeit</th><th>Feld 1 (Ambitioniert)</th><th>Feld 2 (Plausch)</th><th>Feld 3 (Jugendliche)</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>13:00</td><td>Ambitioniert 1 vs Ambitioniert 2</td><td>Plausch 1 vs Plausch 2</td><td>Jugendliche 1 vs Jugendliche 2</td></tr>
-              <tr><td>13:12</td><td>Ambitioniert 3 vs Ambitioniert 4</td><td>Plausch 3 vs Plausch 4</td><td>Jugendliche 3 vs Jugendliche 4</td></tr>
-              <tr><td>13:24</td><td>Ambitioniert 5 vs Ambitioniert 6</td><td>Plausch 5 vs Plausch 6</td><td>Jugendliche 5 vs Jugendliche 6</td></tr>
-              <tr><td>13:36</td><td>Ambitioniert 1 vs Ambitioniert 3</td><td>Plausch 1 vs Plausch 3</td><td>Jugendliche 1 vs Jugendliche 3</td></tr>
-              <tr><td>13:48</td><td>Ambitioniert 2 vs Ambitioniert 4</td><td>Plausch 2 vs Plausch 4</td><td>Jugendliche 2 vs Jugendliche 4</td></tr>
-              <tr><td>14:00</td><td>Ambitioniert 5 vs Ambitioniert 1</td><td>Plausch 5 vs Plausch 1</td><td>Jugendliche 5 vs Jugendliche 1</td></tr>
-              <tr><td>14:12</td><td>Ambitioniert 6 vs Ambitioniert 2</td><td>Plausch 6 vs Plausch 2</td><td>Jugendliche 6 vs Jugendliche 2</td></tr>
-              <tr><td>14:24</td><td>Ambitioniert 3 vs Ambitioniert 5</td><td>Plausch 3 vs Plausch 5</td><td>Jugendliche 3 vs Jugendliche 5</td></tr>
-              <tr><td>14:36</td><td>Ambitioniert 4 vs Ambitioniert 6</td><td>Plausch 4 vs Plausch 6</td><td>Jugendliche 4 vs Jugendliche 6</td></tr>
-              <tr><td>14:48</td><td>Ambitioniert 1 vs Ambitioniert 4</td><td>Plausch 1 vs Plausch 4</td><td>Jugendliche 1 vs Jugendliche 4</td></tr>
-              <tr><td>15:00</td><td>Ambitioniert 2 vs Ambitioniert 5</td><td>Plausch 2 vs Plausch 5</td><td>Jugendliche 2 vs Jugendliche 5</td></tr>
-              <tr><td>15:12</td><td>Ambitioniert 3 vs Ambitioniert 6</td><td>Plausch 3 vs Plausch 6</td><td>Jugendliche 3 vs Jugendliche 6</td></tr>
-              <tr><td>15:24</td><td>Ambitioniert 1 vs Ambitioniert 6</td><td>Plausch 1 vs Plausch 6</td><td>Jugendliche 1 vs Jugendliche 6</td></tr>
-              <tr><td>15:36</td><td>Ambitioniert 2 vs Ambitioniert 3</td><td>Plausch 2 vs Plausch 3</td><td>Jugendliche 2 vs Jugendliche 3</td></tr>
-              <tr><td>15:48</td><td>Ambitioniert 4 vs Ambitioniert 5</td><td>Plausch 4 vs Plausch 5</td><td>Jugendliche 4 vs Jugendliche 5</td></tr>
-            </tbody>
-          </table>
-          <h3>Finalrunde (Platzhalter)</h3>
-          <table class="schedule-table" aria-label="Spielplan Finalrunde">
+          <div class="schedule-filter">
+            <label for="schedule-category-filter">Kategorie</label>
+            <select id="schedule-category-filter">
+              <option value="adult_ambitious">Erwachsene Ambitioniert</option>
+              <option value="adult_fun">Erwachsene Plausch</option>
+              <option value="youth">Jugendliche</option>
+            </select>
+          </div>
+          <p id="schedule-description">Der Spielplan wird aus den Teams der gewählten Kategorie erstellt.</p>
+          <table class="schedule-table" aria-label="Spielplan">
             <thead><tr><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead>
-            <tbody>
-              <tr><td>16:12</td><td>1</td><td>Ambitioniert Rang 5 vs Plausch Rang 6</td></tr>
-              <tr><td>16:12</td><td>2</td><td>Ambitioniert Rang 6 vs Plausch Rang 5</td></tr>
-              <tr><td>16:24</td><td>1</td><td>Ambitioniert Rang 3 vs Plausch Rang 4</td></tr>
-              <tr><td>16:24</td><td>2</td><td>Ambitioniert Rang 4 vs Plausch Rang 3</td></tr>
-              <tr><td>16:36</td><td>1</td><td>Ambitioniert Rang 1 vs Plausch Rang 2</td></tr>
-              <tr><td>16:36</td><td>2</td><td>Ambitioniert Rang 2 vs Plausch Rang 1</td></tr>
-            </tbody>
+            <tbody id="schedule-table-body"><tr><td colspan="3">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>
           </table>
         </div>
       </section>
