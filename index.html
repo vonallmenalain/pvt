@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Pfahlvolleyballturnier</title>
+    <title>Pfahlvolleyballturnier 2026</title>
 
     <!-- PWA manifest & theme -->
     <link rel="manifest" href="/manifest.json" />
@@ -43,8 +43,8 @@
       button:disabled, button[disabled] { opacity: 0.45; cursor: not-allowed; }
 
       .view-toggle { margin: 1rem 0; display: flex; gap: 0.65rem; }
-      .view-btn { background: rgba(255, 255, 255, 0.07); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.15); }
-      .view-btn.is-active { background: var(--accent); border-color: rgba(255, 255, 255, 0.35); }
+      .view-btn { background: rgba(255, 255, 255, 0.07); color: var(--text); border: none; }
+      .view-btn.is-active { background: linear-gradient(120deg, rgba(40,53,147,0.92), rgba(20,20,40,0.95)); border: none; }
       .content-panel[hidden] { display: none; }
 
       .content-panel { margin-top: 0.25rem; }
@@ -189,7 +189,7 @@
     <div class="wrap">
       <div class="hero-row">
         <header class="hero">
-          <h1>Pfahlvolleyballturnier</h1>
+          <h1>Pfahlvolleyballturnier 2026</h1>
         </header>
         <div class="auth-trigger-wrap"><button type="button" class="auth-trigger" id="auth-trigger" aria-label="Anmelden">Anmelden</button></div>
       </div>
@@ -285,7 +285,7 @@
         <div class="table-scroll">
           <table class="schedule-table"><thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead><tbody id="dashboard-group-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody></table>
         </div>
-        <h4>Eigene Spiele inkl. Finalrunde</h4>
+        <h4>Eigene Spiele</h4>
         <div class="table-scroll">
           <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead><tbody id="dashboard-match-table"><tr><td colspan="4">Noch kein Team ausgewählt.</td></tr></tbody></table>
         </div>

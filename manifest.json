@@ -1,7 +1,7 @@
 {
-  "name": "Pfahlvolleyballturnier",
+  "name": "Pfahlvolleyballturnier 2026",
   "short_name": "Pfahlvolleys",
-  "description": "Turnierverwaltung für das Pfahlvolleyballturnier: Teams, Spielplan und Resultate.",
+  "description": "Turnierverwaltung für das Pfahlvolleyballturnier 2026: Teams, Spielplan und Resultate.",
   "start_url": "/",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone", "minimal-ui"],
