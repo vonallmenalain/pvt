@@ -49,62 +49,37 @@ function closeModal() { modal.hidden = true; if (errorEl) errorEl.textContent = 
 function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
 
 /**
- * Optimized 6-team schedule (10 min games, 2 min breaks, 12 min slots).
- * Start: 11:30 · End: 16:52 · 27 slots total.
- *
- * Each entry is [homeIndex, awayIndex] (0-based into teamsInCategory).
- * Ordering within each 3-game round is chosen so that no team appears in
- * the last slot of round N AND the first slot of round N+1 (ensures every
- * team has at least 1 free slot between consecutive appearances).
- *
- * Round labels (for display):
- * R1–R5: first full round-robin (all 15 unique pairings)
- * R6–R8: rematch rounds (repeat R1–R3 in transition-safe order)
- * Slots 25–27: finals (rank-based, determined at run-time)
+ * 6-team single round-robin group phase (15 unique pairings).
+ * 12 min games, 2 min breaks → 14 min slots. Start: 11:30.
+ * Slots 0–14: group phase · Slots 15–22: finals (rank-based, determined at run-time)
  */
 const OPTIMIZED_SCHEDULE = [
-  // R1 – top seeds clash first
-  { r: "Vorrunde R1",  h: 0, a: 1 },
-  { r: "Vorrunde R1",  h: 2, a: 3 },
-  { r: "Vorrunde R1",  h: 4, a: 5 },
-  // R2
-  { r: "Vorrunde R2",  h: 0, a: 2 },
-  { r: "Vorrunde R2",  h: 1, a: 4 },
-  { r: "Vorrunde R2",  h: 3, a: 5 },
-  // R3 – reordered so T3/T5 start (avoids T4 back-to-back at R2/R3 boundary)
-  { r: "Vorrunde R3",  h: 2, a: 4 },
-  { r: "Vorrunde R3",  h: 0, a: 3 },
-  { r: "Vorrunde R3",  h: 1, a: 5 },
-  // R4
-  { r: "Vorrunde R4",  h: 0, a: 4 },
-  { r: "Vorrunde R4",  h: 1, a: 3 },
-  { r: "Vorrunde R4",  h: 2, a: 5 },
-  // R5 – T4/T5 start (avoids T3/T6 back-to-back at R4/R5 boundary)
-  { r: "Vorrunde R5",  h: 3, a: 4 },
-  { r: "Vorrunde R5",  h: 0, a: 5 },
-  { r: "Vorrunde R5",  h: 1, a: 2 },
-  // R6 – rematches R1, T5/T6 start (avoids T2/T3 back-to-back at R5/R6 boundary)
-  { r: "Vorrunde R6",  h: 4, a: 5 },
-  { r: "Vorrunde R6",  h: 0, a: 1 },
-  { r: "Vorrunde R6",  h: 2, a: 3 },
-  // R7 – rematches R2, T2/T5 start (avoids T3/T4 back-to-back at R6/R7 boundary)
-  { r: "Vorrunde R7",  h: 1, a: 4 },
-  { r: "Vorrunde R7",  h: 0, a: 2 },
-  { r: "Vorrunde R7",  h: 3, a: 5 },
-  // R8 – rematches R3, T3/T5 start (avoids T4/T6 back-to-back at R7/R8 boundary)
-  { r: "Vorrunde R8",  h: 2, a: 4 },
-  { r: "Vorrunde R8",  h: 0, a: 3 },
-  { r: "Vorrunde R8",  h: 1, a: 5 },
+  { r: "Gruppenphase", h: 0, a: 1 },
+  { r: "Gruppenphase", h: 2, a: 3 },
+  { r: "Gruppenphase", h: 4, a: 5 },
+  { r: "Gruppenphase", h: 0, a: 2 },
+  { r: "Gruppenphase", h: 1, a: 4 },
+  { r: "Gruppenphase", h: 3, a: 5 },
+  { r: "Gruppenphase", h: 2, a: 4 },
+  { r: "Gruppenphase", h: 0, a: 3 },
+  { r: "Gruppenphase", h: 1, a: 5 },
+  { r: "Gruppenphase", h: 3, a: 4 },
+  { r: "Gruppenphase", h: 1, a: 2 },
+  { r: "Gruppenphase", h: 0, a: 5 },
+  { r: "Gruppenphase", h: 1, a: 3 },
+  { r: "Gruppenphase", h: 0, a: 4 },
+  { r: "Gruppenphase", h: 2, a: 5 },
 ];
 
 const SLOT_START_MINUTES = 11 * 60 + 30; // 11:30 in minutes from midnight
-const SLOT_DURATION_MIN = 12;             // 10 min play + 2 min break
+const SLOT_DURATION_MIN = 14;             // 12 min play + 2 min break
+const GAME_DURATION_MIN = 12;
 
 function slotTime(slotIndex) {
-  const total = SLOT_START_MINUTES + slotIndex * SLOT_DURATION_MIN;
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const start = SLOT_START_MINUTES + slotIndex * SLOT_DURATION_MIN;
+  const end = start + GAME_DURATION_MIN;
+  const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+  return `${fmt(start)}–${fmt(end)}`;
 }
 
 function getTeamSchedule(team, teamsInCategory) {
@@ -133,9 +108,14 @@ function getTeamSchedule(team, teamsInCategory) {
     .filter(Boolean);
 
   const finals = [
-    { id: `final-5-${team.category}`, stage: "Platz 5", time: slotTime(24), field, home: `${label} Rang 5`, away: `${label} Rang 6`, editable: false },
-    { id: `final-3-${team.category}`, stage: "Platz 3", time: slotTime(25), field, home: `${label} Rang 3`, away: `${label} Rang 4`, editable: false },
-    { id: `final-1-${team.category}`, stage: "Finale",  time: slotTime(26), field, home: `${label} Rang 1`, away: `${label} Rang 2`, editable: false },
+    { id: `final-vfa-${team.category}`,  stage: "Viertelfinal A", time: slotTime(15), field, home: `${label} Rang 3`, away: `${label} Rang 6`, editable: false },
+    { id: `final-vfb-${team.category}`,  stage: "Viertelfinal B", time: slotTime(16), field, home: `${label} Rang 4`, away: `${label} Rang 5`, editable: false },
+    { id: `final-tq-${team.category}`,   stage: "Top-Quali",      time: slotTime(17), field, home: `${label} Rang 1`, away: `${label} Rang 2`, editable: false },
+    { id: `final-koq-${team.category}`,  stage: "K.o.-Quali",     time: slotTime(18), field, home: `Sieger Viertelf. A`, away: `Sieger Viertelf. B`, editable: false },
+    { id: `final-p5-${team.category}`,   stage: "Platz 5",        time: slotTime(19), field, home: `Verlierer Viertelf. A`, away: `Verlierer Viertelf. B`, editable: false },
+    { id: `final-hf-${team.category}`,   stage: "Halbfinal",      time: slotTime(20), field, home: `Verlierer Top-Quali`, away: `Sieger K.o.-Quali`, editable: false },
+    { id: `final-p3-${team.category}`,   stage: "Platz 3",        time: slotTime(21), field, home: `Verlierer K.o.-Quali`, away: `Verlierer Halbfinal`, editable: false },
+    { id: `final-1-${team.category}`,    stage: "Finale",         time: slotTime(22), field, home: `Sieger Top-Quali`, away: `Sieger Halbfinal`, editable: false },
   ];
 
   const group = `${label}`;
@@ -220,7 +200,7 @@ function renderTeamDashboard(teamId) {
       const resultFields = readOnly
         ? `${score.home || "-"} : ${score.away || "-"}`
         : `<input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" />`;
-      return `<tr><td>${match.stage}</td><td>${match.time}</td><td>${match.field}</td><td>${escapeHtml(match.home)} vs ${escapeHtml(match.away)}</td><td>${resultFields}</td></tr>`;
+      return `<tr><td>${match.stage}</td><td>${match.time}</td><td>${match.field}</td><td>${escapeHtml(match.home)} – ${escapeHtml(match.away)}</td><td>${resultFields}</td></tr>`;
     })
     .join("");
 }
@@ -249,6 +229,7 @@ function getScheduleMatches(teams, category) {
     const awayTeam = teams[entry.a];
     if (!homeTeam || !awayTeam) return null;
     return {
+      nr: slotIdx + 1,
       stage: entry.r,
       time: slotTime(slotIdx),
       field,
@@ -258,9 +239,14 @@ function getScheduleMatches(teams, category) {
   }).filter(Boolean);
 
   const finalMatches = [
-    { stage: "Platz 5", time: slotTime(24), field, home: { name: `${label} Rang 5`, id: null }, away: { name: `${label} Rang 6`, id: null } },
-    { stage: "Platz 3", time: slotTime(25), field, home: { name: `${label} Rang 3`, id: null }, away: { name: `${label} Rang 4`, id: null } },
-    { stage: "Finale",  time: slotTime(26), field, home: { name: `${label} Rang 1`, id: null }, away: { name: `${label} Rang 2`, id: null } },
+    { nr: 16, stage: "Viertelfinal A", time: slotTime(15), field, home: { name: `${label} Rang 3`, id: null }, away: { name: `${label} Rang 6`, id: null } },
+    { nr: 17, stage: "Viertelfinal B", time: slotTime(16), field, home: { name: `${label} Rang 4`, id: null }, away: { name: `${label} Rang 5`, id: null } },
+    { nr: 18, stage: "Top-Quali",      time: slotTime(17), field, home: { name: `${label} Rang 1`, id: null }, away: { name: `${label} Rang 2`, id: null } },
+    { nr: 19, stage: "K.o.-Quali",     time: slotTime(18), field, home: { name: "Sieger Viertelf. A", id: null }, away: { name: "Sieger Viertelf. B", id: null } },
+    { nr: 20, stage: "Platz 5",        time: slotTime(19), field, home: { name: "Verlierer Viertelf. A", id: null }, away: { name: "Verlierer Viertelf. B", id: null } },
+    { nr: 21, stage: "Halbfinal",      time: slotTime(20), field, home: { name: "Verlierer Top-Quali", id: null }, away: { name: "Sieger K.o.-Quali", id: null } },
+    { nr: 22, stage: "Platz 3",        time: slotTime(21), field, home: { name: "Verlierer K.o.-Quali", id: null }, away: { name: "Verlierer Halbfinal", id: null } },
+    { nr: 23, stage: "Finale",         time: slotTime(22), field, home: { name: "Sieger Top-Quali", id: null }, away: { name: "Sieger Halbfinal", id: null } },
   ];
 
   return [...preliminaryMatches, ...finalMatches];
@@ -272,7 +258,7 @@ function renderSchedule() {
   if (!tableBody) return;
   const teams = allTeams.filter((team) => team.category === selectedScheduleCategory);
   if (description) {
-    description.textContent = `${CATEGORY_LABELS[selectedScheduleCategory]} · ${teams.length} Team(s) · 10 Min. Spielzeit · Start 11:30 · Finals ab 16:18`;
+    description.textContent = `${CATEGORY_LABELS[selectedScheduleCategory]} · ${teams.length} Team(s) · 12 Min. Spielzeit · Gruppenphase 11:30–14:58 · Finalrunde ab 15:00`;
   }
   const matches = getScheduleMatches(teams, selectedScheduleCategory);
   if (!matches.length) {
@@ -286,7 +272,7 @@ function renderSchedule() {
     const awayLink = match.away.id
       ? `<button type="button" class="team-link" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button>`
       : escapeHtml(match.away.name);
-    return `<tr><td>${escapeHtml(match.stage)}</td><td>${match.time}</td><td>${match.field}</td><td>${homeLink} vs ${awayLink}</td></tr>`;
+    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td>${match.time}</td><td>${match.field}</td><td>${homeLink} – ${awayLink}</td></tr>`;
   }).join("");
 }
 
