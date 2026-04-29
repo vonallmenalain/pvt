@@ -24,6 +24,16 @@ function setEditMode(active) {
   });
 }
 
+function syncAuthUi(user) {
+  const isSignedIn = Boolean(user);
+  trigger?.setAttribute(
+    "aria-label",
+    isSignedIn ? "Bearbeitungsmodus aktiv. Abmelden" : "Ansichtsmodus gesperrt. Anmelden",
+  );
+  triggerIconPath?.setAttribute("d", isSignedIn ? UNLOCKED_ICON_PATH : LOCKED_ICON_PATH);
+  setEditMode(isSignedIn);
+}
+
 function authErrorMessage(code) {
   const map = {
     "auth/invalid-email": "Ungültige E-Mail-Adresse.",
@@ -49,21 +59,16 @@ function closeModal() {
 }
 
 onAuthStateChanged(auth, (user) => {
-  if (user) {
-    trigger.setAttribute("aria-label", "Bearbeitungsmodus aktiv. Abmelden");
-    triggerIconPath?.setAttribute("d", UNLOCKED_ICON_PATH);
-    setEditMode(true);
-    closeModal();
-  } else {
-    trigger.setAttribute("aria-label", "Ansichtsmodus gesperrt. Anmelden");
-    triggerIconPath?.setAttribute("d", LOCKED_ICON_PATH);
-    setEditMode(false);
-  }
+  syncAuthUi(user);
+  if (user) closeModal();
 });
 
 trigger.addEventListener("click", async () => {
   if (auth.currentUser) {
+    const shouldSignOut = window.confirm("Willst du dich wirklich abmelden?");
+    if (!shouldSignOut) return;
     await signOut(auth);
+    syncAuthUi(null);
     return;
   }
   openModal();
@@ -79,6 +84,7 @@ form?.addEventListener("submit", async (e) => {
   closeModal();
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    syncAuthUi(auth.currentUser);
     passwordInput.value = "";
   } catch (err) {
     openModal();
