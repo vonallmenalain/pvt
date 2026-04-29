@@ -40,6 +40,7 @@ let currentUser = null;
 let allTeams = [];
 let selectedTeamId = null;
 let resultMap = {};
+let selectedScheduleCategory = "adult_ambitious";
 
 function openModal() { if (errorEl) errorEl.textContent = ""; modal.hidden = false; form?.teamName?.focus(); }
 function closeModal() { modal.hidden = true; if (errorEl) errorEl.textContent = ""; form?.reset(); }
@@ -122,6 +123,44 @@ function renderTeams(teams) {
     listEl.innerHTML = entries.length ? entries.map((team) => renderTeamCard(team)).join("") : '<li class="team-empty">Noch keine Teams erfasst.</li>';
   });
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
+  renderSchedule();
+}
+
+function getRoundRobinMatches(teams, category) {
+  const baseHour = 13;
+  const baseMinute = 0;
+  let gameIndex = 0;
+  const field = category === "adult_ambitious" ? "1" : category === "adult_fun" ? "2" : "3";
+  const matches = [];
+  for (let i = 0; i < teams.length; i += 1) {
+    for (let j = i + 1; j < teams.length; j += 1) {
+      const totalMinutes = baseMinute + gameIndex * 12;
+      const hour = baseHour + Math.floor(totalMinutes / 60);
+      const minute = totalMinutes % 60;
+      matches.push({
+        time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+        field,
+        home: teams[i].name,
+        away: teams[j].name,
+      });
+      gameIndex += 1;
+    }
+  }
+  return matches;
+}
+
+function renderSchedule() {
+  const tableBody = document.getElementById("schedule-table-body");
+  const description = document.getElementById("schedule-description");
+  if (!tableBody) return;
+  const teams = allTeams.filter((team) => team.category === selectedScheduleCategory);
+  if (description) {
+    description.textContent = `${CATEGORY_LABELS[selectedScheduleCategory]} · ${teams.length} Team(s) aus der Datenbank.`;
+  }
+  const matches = getRoundRobinMatches(teams, selectedScheduleCategory);
+  tableBody.innerHTML = matches.length
+    ? matches.map((match) => `<tr><td>${match.time}</td><td>${match.field}</td><td>${escapeHtml(match.home)} vs ${escapeHtml(match.away)}</td></tr>`).join("")
+    : '<tr><td colspan="3">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
 }
 
 createButton?.addEventListener("click", () => openModal());
@@ -145,6 +184,13 @@ onAuthStateChanged(auth, (user) => {
 onSnapshot(query(collection(db, "teams"), orderBy("createdAt", "desc")), (snapshot) => {
   allTeams = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
   renderTeams(allTeams);
+});
+
+document.getElementById("schedule-category-filter")?.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) return;
+  selectedScheduleCategory = target.value;
+  renderSchedule();
 });
 
 onSnapshot(collection(db, "matchResults"), (snapshot) => {
