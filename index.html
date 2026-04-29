@@ -45,7 +45,8 @@
       .team-category { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 0.85rem; padding: 1rem; }
       .team-category h3 { font-size: 1.05rem; border-bottom: 1px solid rgba(255, 255, 255, 0.14); padding-bottom: 0.45rem; margin-bottom: 0.8rem; }
       .team-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.7rem; }
-      .team-card { background: rgba(0, 0, 0, 0.22); cursor: pointer; border: 1px solid rgba(255,255,255,0.09); border-radius: 0.35rem; padding: 0.8rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; }
+      .team-card { background: rgba(0, 0, 0, 0.22); cursor: pointer; border: 1px solid rgba(255,255,255,0.09); border-radius: 0.35rem; padding: 0.8rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; transition: background 0.15s, border-color 0.15s, transform 0.1s; }
+      .team-card:hover { background: rgba(40, 53, 147, 0.25); border-color: rgba(40, 53, 147, 0.65); transform: translateY(-1px); }
       .team-name { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.2; }
       .team-meta { margin: 0 0 0.25rem; font-size: 0.86rem; color: var(--muted); }
       .team-meta:last-child { margin-bottom: 0; }
@@ -70,6 +71,11 @@
       .col-game-home { flex: 1; text-align: left; }
       .col-game-score { flex-shrink: 0; }
       .col-game-away { flex: 1; text-align: right; }
+
+      .infos-card h3 { font-size: 1rem; font-weight: 700; margin: 1.25rem 0 0.6rem; }
+      .infos-list { margin: 0 0 0.5rem; padding: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; }
+      .infos-list dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; align-self: baseline; }
+      .infos-list dd { margin: 0; font-size: 0.9375rem; align-self: baseline; }
 
       .auth-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.55); }
       .auth-modal[hidden] { display: none; }
@@ -116,17 +122,39 @@
       <div class="hero-row">
         <header class="hero">
           <h1>Pfahlvolleyballturnier</h1>
-          <p>30. Mai 2026 · 11:30–17:30 Uhr · Burgdorf, Sporthalle Lindenfeld</p>
-          <div class="meta"><h2>Format</h2><p>Mixed (mind. 2 Frauen auf dem Feld)</p></div>
         </header>
         <div class="auth-trigger-wrap"><button type="button" class="auth-trigger" id="auth-trigger" aria-label="Anmelden">Anmelden</button></div>
       </div>
 
       <nav class="view-toggle" aria-label="Ansicht wechseln">
+        <button type="button" id="show-infos" class="view-btn" aria-controls="infos-panel" aria-expanded="false">Infos</button>
         <button type="button" id="show-teams" class="view-btn" aria-controls="teams-panel" aria-expanded="false">Teams</button>
         <button type="button" id="show-schedule" class="view-btn" aria-controls="schedule-panel" aria-expanded="false">Spielplan</button>
         <button type="button" id="show-dashboard" class="view-btn" aria-controls="dashboard-panel" aria-expanded="false">Dashboard</button>
       </nav>
+
+      <section class="schedule content-panel" id="infos-panel" aria-labelledby="infos-title" hidden>
+        <h2 id="infos-title">Infos</h2>
+        <div class="schedule-card infos-card">
+          <dl class="infos-list">
+            <dt>Datum</dt>
+            <dd>30. Mai 2026</dd>
+            <dt>Zeit</dt>
+            <dd>11:30–17:30 Uhr</dd>
+            <dt>Ort</dt>
+            <dd>Burgdorf, Sporthalle Lindenfeld</dd>
+            <dt>Format</dt>
+            <dd>Mixed (mind. 2 Frauen auf dem Feld)</dd>
+          </dl>
+          <h3>Spielmodus</h3>
+          <dl class="infos-list">
+            <dt>Gruppenphase</dt>
+            <dd>11:30–14:58 Uhr · 12 Min. Spielzeit pro Partie</dd>
+            <dt>Finalrunde</dt>
+            <dd>ab 15:00 Uhr</dd>
+          </dl>
+        </div>
+      </section>
 
       <section class="schedule content-panel" id="schedule-panel" aria-labelledby="schedule-title" hidden>
         <h2 id="schedule-title">Spielplan</h2>
@@ -139,7 +167,6 @@
               <option value="youth">Jugendliche</option>
             </select>
           </div>
-          <p id="schedule-description">Der Spielplan wird aus den Teams der gewählten Kategorie erstellt.</p>
           <table class="schedule-table" aria-label="Spielplan">
             <thead><tr><th>Nr.</th><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead>
             <tbody id="schedule-table-body"><tr><td colspan="5">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>

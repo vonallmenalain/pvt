@@ -385,12 +385,8 @@ function getScheduleMatches(teams, category) {
 
 function renderSchedule() {
   const tableBody = document.getElementById("schedule-table-body");
-  const description = document.getElementById("schedule-description");
   if (!tableBody) return;
   const teams = allTeams.filter((team) => team.category === selectedScheduleCategory);
-  if (description) {
-    description.textContent = `${CATEGORY_LABELS[selectedScheduleCategory]} · ${teams.length} Team(s) · 12 Min. Spielzeit · Gruppenphase 11:30–14:58 · Finalrunde ab 15:00`;
-  }
   const matches = getScheduleMatches(teams, selectedScheduleCategory);
   if (!matches.length) {
     tableBody.innerHTML = '<tr><td colspan="5">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
@@ -490,26 +486,33 @@ document.addEventListener("change", async (event) => {
   await setDoc(doc(db, "resultate", matchId), next, { merge: true });
 });
 
+const infosViewBtn = document.getElementById("show-infos");
 const teamsViewBtn = document.getElementById("show-teams");
 const scheduleViewBtn = document.getElementById("show-schedule");
 const dashboardViewBtn = document.getElementById("show-dashboard");
+const infosPanel = document.getElementById("infos-panel");
 const teamsPanel = document.getElementById("teams-panel");
 const schedulePanel = document.getElementById("schedule-panel");
 function setView(view) {
+  const showInfos = view === "infos";
   const showTeams = view === "teams";
   const showSchedule = view === "schedule";
   const showDashboard = view === "dashboard";
+  if (infosPanel) infosPanel.hidden = !showInfos;
   if (teamsPanel) teamsPanel.hidden = !showTeams;
   if (schedulePanel) schedulePanel.hidden = !showSchedule;
   if (dashboardPanel) dashboardPanel.hidden = !showDashboard;
+  infosViewBtn?.classList.toggle("is-active", showInfos);
   teamsViewBtn?.classList.toggle("is-active", showTeams);
   scheduleViewBtn?.classList.toggle("is-active", showSchedule);
   dashboardViewBtn?.classList.toggle("is-active", showDashboard);
+  infosViewBtn?.setAttribute("aria-expanded", String(showInfos));
   teamsViewBtn?.setAttribute("aria-expanded", String(showTeams));
   scheduleViewBtn?.setAttribute("aria-expanded", String(showSchedule));
   dashboardViewBtn?.setAttribute("aria-expanded", String(showDashboard));
 }
+infosViewBtn?.addEventListener("click", () => setView("infos"));
 teamsViewBtn?.addEventListener("click", () => setView("teams"));
 scheduleViewBtn?.addEventListener("click", () => setView("schedule"));
 dashboardViewBtn?.addEventListener("click", () => setView("dashboard"));
-setView("none");
+setView("infos");
