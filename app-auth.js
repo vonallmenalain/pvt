@@ -7,8 +7,8 @@ import {
 
 const trigger = document.getElementById("auth-trigger");
 const triggerIconPath = document.getElementById("auth-trigger-icon-path");
-const LOCKED_ICON_PATH = "M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V6Z";
-const UNLOCKED_ICON_PATH = "M17 8h-6V6a2 2 0 1 1 3.46 1.38 1 1 0 1 0 1.54 1.24A4 4 0 1 0 9 6v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Z";
+const LOCKED_ICON_PATH = "M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2Zm-9-2a3 3 0 0 1 6 0v2H9V6Z";
+const UNLOCKED_ICON_PATH = "M18 8h-6V6a3 3 0 1 0-6 0 1 1 0 1 0 2 0 1 1 0 1 1 2 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2Z";
 const modal = document.getElementById("auth-modal");
 const form = document.getElementById("auth-form");
 const emailInput = document.getElementById("auth-email");
