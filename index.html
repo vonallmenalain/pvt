@@ -31,11 +31,13 @@
       body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--text); background: linear-gradient(180deg, #140e0e 0%, var(--bg) 100%); min-height: 100vh; }
       .hero-row { position: relative; margin-bottom: 1rem; }
       .auth-trigger-wrap { position: absolute; top: 0.75rem; right: 0.75rem; }
-      .auth-trigger { display: inline-flex; align-items: center; justify-content: center; width: 2.15rem; height: 2.15rem; background: rgba(0, 0, 0, 0.24); color: var(--muted); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 999px; padding: 0; cursor: pointer; }
-      .auth-trigger:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.34); background: rgba(0, 0, 0, 0.34); }
+      .auth-trigger { display: inline-flex; align-items: center; justify-content: center; width: 2.15rem; height: 2.15rem; background: rgba(0, 0, 0, 0.24); color: var(--muted); border: none; border-radius: 999px; padding: 0; cursor: pointer; }
+      .auth-trigger:hover { color: var(--text); background: rgba(0, 0, 0, 0.34); }
       .auth-trigger-icon { width: 1.1rem; height: 1.1rem; display: block; }
       .wrap { max-width: 1100px; margin: 0 auto; padding: 1rem; }
       .hero { background: linear-gradient(120deg, rgba(40,53,147,0.92), rgba(20,20,40,0.95)); border-radius: 1rem; padding: 1.2rem; padding-right: 7rem; }
+      .hero h1 { white-space: nowrap; }
+      .hero-subtitle { font-size: 0.85rem; color: rgba(255,255,255,0.65); font-weight: 500; margin: 0.15rem 0 0; }
       h1, h2, h3 { margin: 0 0 .6rem; }
       p { margin: 0 0 .5rem; color: var(--muted); }
       .meta { margin-top: .8rem; }
@@ -49,33 +51,33 @@
       .content-panel[hidden] { display: none; }
 
       .content-panel { margin-top: 0.25rem; }
-      .schedule { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.06); }
-      .schedule-card { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.75rem; padding: 1rem; }
+      .schedule { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
+      .schedule-card { background: rgba(255, 255, 255, 0.04); border-radius: 0.75rem; padding: 1rem; }
       .schedule-filter { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.85rem; }
       .schedule-filter select { padding: 0.45rem 0.55rem; border-radius: 0.45rem; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(0,0,0,0.25); color: var(--text); }
 
-      .teams { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.06); }
+      .teams { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
       .teams-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; gap: 0.75rem; }
       .teams-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-      .team-category { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 0.85rem; padding: 1rem; }
-      .team-category h3 { font-size: 1.05rem; border-bottom: 1px solid rgba(255, 255, 255, 0.14); padding-bottom: 0.45rem; margin-bottom: 0.8rem; }
+      .team-category { background: rgba(255, 255, 255, 0.06); border-radius: 0.85rem; padding: 1rem; }
+      .team-category h3 { font-size: 1.05rem; padding-bottom: 0.45rem; margin-bottom: 0.8rem; }
       .team-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.7rem; }
-      .team-card { background: rgba(0, 0, 0, 0.22); cursor: pointer; border: 1px solid rgba(255,255,255,0.09); border-radius: 0.35rem; padding: 0.8rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; transition: background 0.15s, border-color 0.15s, transform 0.1s; }
-      .team-card:hover { background: rgba(40, 53, 147, 0.25); border-color: rgba(40, 53, 147, 0.65); transform: translateY(-1px); }
+      .team-card { background: rgba(0, 0, 0, 0.22); cursor: pointer; border-radius: 0.35rem; padding: 0.8rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; transition: background 0.15s, transform 0.1s; }
+      .team-card:hover { background: rgba(40, 53, 147, 0.25); transform: translateY(-1px); }
       .team-name { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.2; }
       .team-meta { margin: 0 0 0.25rem; font-size: 0.86rem; color: var(--muted); }
       .team-meta:last-child { margin-bottom: 0; }
       .team-delete { background: #a83c3c; padding: 0.45rem 0.6rem; font-size: 0.82rem; }
       .team-empty { color: var(--muted); font-size: 0.92rem; }
 
-      .team-dashboard { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem; padding: 1rem; }
+      .team-dashboard { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
       .result-input { width: 3.5rem; padding: 0.2rem 0.3rem; border-radius: 0.3rem; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.2); color: var(--text); -moz-appearance: textfield; appearance: textfield; }
       .result-input::-webkit-outer-spin-button,
       .result-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 
       .schedule-table { width: 100%; border-collapse: collapse; margin-top: 0.85rem; font-size: 0.92rem; }
-      .schedule-table th, .schedule-table td { border: 1px solid rgba(255, 255, 255, 0.14); padding: 0.45rem 0.55rem; text-align: left; vertical-align: top; }
+      .schedule-table th, .schedule-table td { padding: 0.45rem 0.55rem; text-align: left; vertical-align: top; }
       .schedule-table td.col-time { white-space: nowrap; }
       .schedule-table th { background: rgba(255, 255, 255, 0.08); font-weight: 700; }
       .schedule-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
@@ -91,7 +93,7 @@
       .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
       .org-rows { display: grid; gap: 0.65rem; margin-top: 0.85rem; }
-      .org-row { border: 1px solid rgba(255,255,255,0.14); border-radius: 0.65rem; background: rgba(255,255,255,0.03); }
+      .org-row { border-radius: 0.65rem; background: rgba(255,255,255,0.03); }
       .org-toggle { width: 100%; background: transparent; border: 0; color: var(--text); padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
       .org-body { padding: 0.35rem 0.6rem 0.7rem; }
       .org-body[hidden] { display:none; }
@@ -115,15 +117,15 @@
 
       .auth-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.55); }
       .auth-modal[hidden] { display: none; }
-      .auth-dialog { width: 100%; max-width: 360px; background: var(--card); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.75rem; padding: 1.25rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
+      .auth-dialog { width: 100%; max-width: 360px; background: var(--card); border-radius: 0.75rem; padding: 1.25rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
       .auth-dialog h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
       .auth-field { margin-bottom: 0.85rem; }
       .auth-field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.35rem; }
-      .auth-field input, .auth-field select { width: 100%; padding: 0.55rem 0.65rem; border-radius: 0.45rem; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(0, 0, 0, 0.25); color: var(--text); font-size: 0.9375rem; }
-      .auth-field input:focus, .auth-field select:focus { outline: none; border-color: rgba(40, 53, 147, 0.85); }
+      .auth-field input, .auth-field select { width: 100%; padding: 0.55rem 0.65rem; border-radius: 0.45rem; border: none; background: rgba(0, 0, 0, 0.25); color: var(--text); font-size: 0.9375rem; }
+      .auth-field input:focus, .auth-field select:focus { outline: 2px solid rgba(40, 53, 147, 0.85); }
       .auth-error { min-height: 1.25rem; font-size: 0.8125rem; color: #e57373; margin-bottom: 0.65rem; }
       .auth-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem; }
-      .auth-actions .secondary { background: transparent; color: var(--muted); font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.15); }
+      .auth-actions .secondary { background: transparent; color: var(--muted); font-weight: 600; border: none; }
       .auth-actions .secondary:hover { color: var(--text); }
 
       /* ── Mobile (≤ 600 px) ───────────────────────────── */
@@ -132,7 +134,8 @@
 
         /* Hero: extra right-padding for the auth button */
         .hero { padding: 0.9rem 1rem; padding-right: 6rem; }
-        h1 { font-size: 1.25rem; }
+        h1 { font-size: 1.05rem; }
+        .hero h1 { white-space: nowrap; }
 
         /* Auth / Admin button – smaller on mobile */
         .auth-trigger { width: 2rem; height: 2rem; }
@@ -208,6 +211,7 @@
       <div class="hero-row">
         <header class="hero">
           <h1>Pfahlvolleyballturnier 2026</h1>
+          <p class="hero-subtitle">Pfahl Bern</p>
         </header>
         <div class="auth-trigger-wrap"><button type="button" class="auth-trigger" id="auth-trigger" aria-label="Ansichtsmodus gesperrt. Anmelden"><svg viewBox="0 0 24 24" aria-hidden="true" class="auth-trigger-icon"><path id="auth-trigger-icon-path" fill="currentColor" d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V6Z"/></svg></button></div>
       </div>
@@ -217,20 +221,19 @@
         <button type="button" id="show-teams" class="view-btn" aria-controls="teams-panel" aria-expanded="false">Teams</button>
         <button type="button" id="show-schedule" class="view-btn" aria-controls="schedule-panel" aria-expanded="false">Spielplan</button>
         <button type="button" id="show-dashboard" class="view-btn" aria-controls="dashboard-panel" aria-expanded="false">Dashboard</button>
+        <button type="button" id="show-rangliste" class="view-btn" aria-controls="rangliste-panel" aria-expanded="false" hidden>Schlussrangliste</button>
         <button type="button" id="show-org" class="view-btn" aria-controls="org-panel" aria-expanded="false" hidden>Turnierorganisation</button>
       </nav>
 
-      <section class="schedule content-panel" id="infos-panel" aria-labelledby="infos-title">
-        <h2 id="infos-title">Infos</h2>
-        <div class="schedule-card infos-card">
+      <section class="content-panel infos-card" id="infos-panel" aria-label="Infos">
           <div class="infos-subnav" aria-label="Infos Unterkategorien">
-            <button type="button" id="infos-sub-time-place" class="infos-sub-btn is-active" aria-controls="infos-section-time-place" aria-expanded="true">Zeit, Ort &amp; Infrastruktur</button>
-            <button type="button" id="infos-sub-mode" class="infos-sub-btn" aria-controls="infos-section-mode" aria-expanded="false">Ablauf &amp; Spielmodus</button>
-            <button type="button" id="infos-sub-rules" class="infos-sub-btn" aria-controls="infos-section-rules" aria-expanded="false">Regeln &amp; Fairplay</button>
+            <button type="button" id="infos-sub-time-place" class="infos-sub-btn is-active" aria-controls="infos-section-time-place" aria-expanded="true">Allgemeine Infos</button>
+            <button type="button" id="infos-sub-mode" class="infos-sub-btn" aria-controls="infos-section-mode" aria-expanded="false">Spielmodus</button>
+            <button type="button" id="infos-sub-rules" class="infos-sub-btn" aria-controls="infos-section-rules" aria-expanded="false">Fairplay</button>
           </div>
 
           <section id="infos-section-time-place" class="infos-section" aria-labelledby="infos-sub-time-place">
-            <h3>Zeit, Ort &amp; Infrastruktur</h3>
+            <h3>Allgemeine Infos</h3>
             <dl class="infos-list">
               <dt>Datum</dt>
               <dd>Samstag, 30. Mai 2026</dd>
@@ -250,7 +253,7 @@
           </section>
 
           <section id="infos-section-mode" class="infos-section" aria-labelledby="infos-sub-mode" hidden>
-            <h3>Ablauf &amp; Spielmodus</h3>
+            <h3>Spielmodus</h3>
             <dl class="infos-list">
               <dt>Bis 11:00 Uhr</dt>
               <dd>Teamverantwortliche melden sich bei Annina von Allmen</dd>
@@ -268,7 +271,7 @@
           </section>
 
           <section id="infos-section-rules" class="infos-section" aria-labelledby="infos-sub-rules" hidden>
-            <h3>Regeln &amp; Fairplay</h3>
+            <h3>Fairplay</h3>
             <dl class="infos-list">
               <dt>Gültige Regeln</dt>
               <dd>Es gelten die regionalen Volleyballregeln der Saison 2025/2026.</dd>
@@ -287,12 +290,9 @@
               <li>Bei Gleichstand zählen nacheinander: Anzahl Siege, Anzahl erspielte Punkte, Punkteverhältnis, Los.</li>
             </ol>
           </section>
-        </div>
       </section>
 
-      <section class="schedule content-panel" id="schedule-panel" aria-labelledby="schedule-title" hidden>
-        <h2 id="schedule-title">Spielplan</h2>
-        <div class="schedule-card">
+      <section class="content-panel" id="schedule-panel" aria-label="Spielplan" hidden>
           <div class="schedule-filter">
             <label for="schedule-category-filter">Kategorie</label>
             <select id="schedule-category-filter">
@@ -303,11 +303,10 @@
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
-              <thead><tr><th>Nr.</th><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead>
-              <tbody id="schedule-table-body"><tr><td colspan="5">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>
+              <thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead>
+              <tbody id="schedule-table-body"><tr><td colspan="4">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>
             </table>
           </div>
-        </div>
       </section>
 
       <section class="teams content-panel" id="teams-panel" aria-labelledby="teams-title" hidden>
@@ -339,6 +338,28 @@
         <h4>Eigene Spiele</h4>
         <div class="table-scroll">
           <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead><tbody id="dashboard-match-table"><tr><td colspan="4">Noch kein Team ausgewählt.</td></tr></tbody></table>
+        </div>
+      </section>
+
+      <section class="content-panel" id="rangliste-panel" aria-label="Schlussrangliste" hidden>
+        <div class="schedule-filter">
+          <label for="rangliste-category-filter">Kategorie</label>
+          <select id="rangliste-category-filter">
+            <option value="adult_ambitious">Erwachsene Ambitioniert</option>
+            <option value="adult_fun">Erwachsene Plausch</option>
+            <option value="youth">Jugendliche</option>
+          </select>
+        </div>
+        <div class="table-scroll">
+          <table class="schedule-table" aria-label="Schlussrangliste">
+            <thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead>
+            <tbody id="rangliste-table-body"><tr><td colspan="7">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>
+          </table>
+        </div>
+        <div style="margin-top: 1rem;">
+          <button type="button" id="rangliste-publish-btn" hidden>Rangliste veröffentlichen</button>
+          <button type="button" id="rangliste-unpublish-btn" hidden style="background: #555;">Veröffentlichung zurückziehen</button>
+          <p id="rangliste-published-note" style="color: var(--muted); font-size: 0.88rem; margin-top: 0.5rem;" hidden>Diese Rangliste ist öffentlich sichtbar.</p>
         </div>
       </section>
 

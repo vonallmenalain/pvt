@@ -1,4 +1,4 @@
-const CACHE_NAME = "pfahlvolleys-v2";
+const CACHE_NAME = "pfahlvolleys-v3";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -31,7 +31,6 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Only handle GET requests for same-origin or Firebase CDN resources
   const { request } = event;
   const url = new URL(request.url);
 
@@ -59,18 +58,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first with network fallback for app shell
+  // Network-first for all app shell resources so new deployments are picked up immediately.
+  // Falls back to cache only when offline.
   event.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-    )
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });
