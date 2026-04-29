@@ -6,6 +6,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 const trigger = document.getElementById("auth-trigger");
+const triggerIconPath = document.getElementById("auth-trigger-icon-path");
+const LOCKED_ICON_PATH = "M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V6Z";
+const UNLOCKED_ICON_PATH = "M17 8h-6V6a2 2 0 1 1 3.46 1.38 1 1 0 1 0 1.54 1.24A4 4 0 1 0 9 6v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Z";
 const modal = document.getElementById("auth-modal");
 const form = document.getElementById("auth-form");
 const emailInput = document.getElementById("auth-email");
@@ -47,13 +50,13 @@ function closeModal() {
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    trigger.textContent = "Abmelden";
-    trigger.setAttribute("aria-label", "Abmelden");
+    trigger.setAttribute("aria-label", "Bearbeitungsmodus aktiv. Abmelden");
+    triggerIconPath?.setAttribute("d", UNLOCKED_ICON_PATH);
     setEditMode(true);
     closeModal();
   } else {
-    trigger.textContent = "Anmelden";
-    trigger.setAttribute("aria-label", "Anmelden");
+    trigger.setAttribute("aria-label", "Ansichtsmodus gesperrt. Anmelden");
+    triggerIconPath?.setAttribute("d", LOCKED_ICON_PATH);
     setEditMode(false);
   }
 });
