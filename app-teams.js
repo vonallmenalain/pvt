@@ -312,7 +312,7 @@ function renderTeamDashboard(teamId) {
       const score = resultMap[match.id] || { home: "", away: "" };
       const hasScore = score.home !== "" && score.away !== "";
       const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
-      const readOnly = !currentUser || !match.editable;
+      const readOnly = true;
       const scoreCell = readOnly
         ? `<span class="schedule-result">${scoreText}</span>`
         : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
@@ -339,6 +339,7 @@ function renderTeams(teams) {
   renderDashboardTeamOptions();
   if (selectedTeamId) renderTeamDashboard(selectedTeamId); else renderDashboardEmptyState();
   renderSchedule();
+  renderOrganizationPanel();
 }
 
 /**
@@ -494,7 +495,7 @@ function renderSchedule() {
     const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
     let resultCell;
     const isFinal = match.id.startsWith("final-");
-    if (!currentUser || (isFinal && !match.editable)) {
+    if (true) {
       resultCell = `<span class="schedule-result">${scoreText}</span>`;
     } else {
       resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
@@ -504,6 +505,40 @@ function renderSchedule() {
   }).join("");
   restoreFocusedResultInput(savedFocus);
 }
+
+
+function getCategoryByField(field) {
+  if (field === "1") return "adult_ambitious";
+  if (field === "2") return "adult_fun";
+  return "youth";
+}
+
+function renderOrganizationPanel() {
+  if (!orgRows) return;
+  const slots = [];
+  for (let i=0;i<23;i++) {
+    const matches = ["1","2","3"].flatMap((field) => {
+      const category = getCategoryByField(field);
+      const teams = allTeams.filter((team) => team.category === category);
+      const list = getScheduleMatches(teams, category);
+      const m = list.find((x) => x.nr === i+1);
+      return m ? [{...m, field}] : [];
+    });
+    slots.push({idx:i, time:slotTime(i), matches});
+  }
+  orgRows.innerHTML = slots.map((slot)=>`<div class="org-row"><button type="button" class="org-toggle" data-org-toggle="${slot.idx}"><span>${slot.time}</span><span>▾</span></button><div class="org-body" id="org-body-${slot.idx}" hidden><div class="org-grid">${slot.matches.length?slot.matches.map((match)=>{const score=resultMap[match.id]||{home:"",away:""};return `<div class="org-match"><span class="org-field">Feld ${match.field}</span><span class="org-team">${escapeHtml(match.home.name)}</span><span><input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}"> : <input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}"></span><span class="org-team" style="text-align:right;">${escapeHtml(match.away.name)}</span></div>`;}).join(""):'<div>Keine Paarung</div>'}</div></div></div>`).join("");
+}
+
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  const toggle = target.closest("[data-org-toggle]");
+  if (!toggle) return;
+  const idx = toggle.getAttribute("data-org-toggle");
+  const body = document.getElementById(`org-body-${idx}`);
+  if (!body) return;
+  body.hidden = !body.hidden;
+});
 
 createButton?.addEventListener("click", () => openModal());
 cancelBtn?.addEventListener("click", () => closeModal());
@@ -524,11 +559,14 @@ form?.addEventListener("submit", async (event) => {
 onAuthStateChanged(auth, (user) => {
   currentUser = user;
   if (createButton) createButton.hidden = !user;
+  if (orgViewBtn) orgViewBtn.hidden = !user;
+  if (!user && !orgPanel?.hidden) setView("infos");
   if (!user) closeModal();
   document.querySelectorAll(".team-delete").forEach((button) => { button.hidden = !user; });
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
   // Re-render schedule when auth changes (editable inputs appear/disappear)
   renderSchedule();
+  renderOrganizationPanel();
 });
 
 onSnapshot(query(collection(db, "teams"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -541,12 +579,14 @@ document.getElementById("schedule-category-filter")?.addEventListener("change", 
   if (!(target instanceof HTMLSelectElement)) return;
   selectedScheduleCategory = target.value;
   renderSchedule();
+  renderOrganizationPanel();
 });
 
 onSnapshot(collection(db, "resultate"), (snapshot) => {
   resultMap = snapshot.docs.reduce((acc, entry) => ({ ...acc, [entry.id]: entry.data() }), {});
   // Re-render schedule to update results and potentially resolved final names
   renderSchedule();
+  renderOrganizationPanel();
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
 });
 
@@ -568,7 +608,7 @@ document.addEventListener("click", async (event) => {
 document.addEventListener("change", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
-  if (!target.matches(".result-input") || !currentUser) return;
+  if (!target.matches(".result-input.org-input") || !currentUser) return;
   const matchId = target.dataset.resultMatch;
   const side = target.dataset.side;
   if (!matchId || !side) return;
@@ -607,28 +647,36 @@ const dashboardViewBtn = document.getElementById("show-dashboard");
 const infosPanel = document.getElementById("infos-panel");
 const teamsPanel = document.getElementById("teams-panel");
 const schedulePanel = document.getElementById("schedule-panel");
+const orgViewBtn = document.getElementById("show-org");
+const orgPanel = document.getElementById("org-panel");
+const orgRows = document.getElementById("org-rows");
 function setView(view) {
   const showInfos = view === "infos";
   const showTeams = view === "teams";
   const showSchedule = view === "schedule";
   const showDashboard = view === "dashboard";
+  const showOrg = view === "org";
   if (infosPanel) infosPanel.hidden = !showInfos;
   if (teamsPanel) teamsPanel.hidden = !showTeams;
   if (schedulePanel) schedulePanel.hidden = !showSchedule;
   if (dashboardPanel) dashboardPanel.hidden = !showDashboard;
+  if (orgPanel) orgPanel.hidden = !showOrg;
   infosViewBtn?.classList.toggle("is-active", showInfos);
   teamsViewBtn?.classList.toggle("is-active", showTeams);
   scheduleViewBtn?.classList.toggle("is-active", showSchedule);
   dashboardViewBtn?.classList.toggle("is-active", showDashboard);
+  orgViewBtn?.classList.toggle("is-active", showOrg);
   infosViewBtn?.setAttribute("aria-expanded", String(showInfos));
   teamsViewBtn?.setAttribute("aria-expanded", String(showTeams));
   scheduleViewBtn?.setAttribute("aria-expanded", String(showSchedule));
   dashboardViewBtn?.setAttribute("aria-expanded", String(showDashboard));
+  orgViewBtn?.setAttribute("aria-expanded", String(showOrg));
 }
 infosViewBtn?.addEventListener("click", () => setView("infos"));
 teamsViewBtn?.addEventListener("click", () => setView("teams"));
 scheduleViewBtn?.addEventListener("click", () => setView("schedule"));
 dashboardViewBtn?.addEventListener("click", () => setView("dashboard"));
+orgViewBtn?.addEventListener("click", () => setView("org"));
 infosSubButtons.time_place?.addEventListener("click", () => setInfosSection("time_place"));
 infosSubButtons.mode?.addEventListener("click", () => setInfosSection("mode"));
 infosSubButtons.rules?.addEventListener("click", () => setInfosSection("rules"));

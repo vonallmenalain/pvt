@@ -90,6 +90,17 @@
       .col-game-away { flex: 1; text-align: right; }
       .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
+      .org-rows { display: grid; gap: 0.65rem; margin-top: 0.85rem; }
+      .org-row { border: 1px solid rgba(255,255,255,0.14); border-radius: 0.65rem; background: rgba(255,255,255,0.03); }
+      .org-toggle { width: 100%; background: transparent; border: 0; color: var(--text); padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+      .org-body { padding: 0.35rem 0.6rem 0.7rem; }
+      .org-body[hidden] { display:none; }
+      .org-time { color: var(--muted); font-size: 0.86rem; }
+      .org-grid { display: grid; gap: 0.45rem; }
+      .org-match { display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; }
+      .org-field { min-width: 3.8rem; color: var(--muted); }
+      .org-team { flex:1; }
+
       .infos-card h3 { font-size: 1rem; font-weight: 700; margin: 1.25rem 0 0.6rem; }
       .infos-list { margin: 0 0 0.5rem; padding: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; }
       .infos-list dt { color: var(--muted); font-size: 0.875rem; font-weight: 600; align-self: baseline; }
@@ -206,6 +217,7 @@
         <button type="button" id="show-teams" class="view-btn" aria-controls="teams-panel" aria-expanded="false">Teams</button>
         <button type="button" id="show-schedule" class="view-btn" aria-controls="schedule-panel" aria-expanded="false">Spielplan</button>
         <button type="button" id="show-dashboard" class="view-btn" aria-controls="dashboard-panel" aria-expanded="false">Dashboard</button>
+        <button type="button" id="show-org" class="view-btn" aria-controls="org-panel" aria-expanded="false" hidden>Turnierorganisation</button>
       </nav>
 
       <section class="schedule content-panel" id="infos-panel" aria-labelledby="infos-title">
