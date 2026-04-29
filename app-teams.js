@@ -268,7 +268,7 @@ function renderDashboardEmptyState() {
   dashboardTitle.textContent = "Team-Dashboard";
   dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
   dashboardGroupTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
-  dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
+  dashboardMatchTable.innerHTML = '<tr><td colspan="4">Noch kein Team ausgewählt.</td></tr>';
 }
 
 function renderGroupStandings(selectedTeam, groupPeers) {
@@ -317,10 +317,10 @@ function renderTeamDashboard(teamId) {
     .map((match) => {
       const score = resultMap[match.id] || { home: "", away: "" };
       const readOnly = !currentUser || !match.editable;
-      const resultFields = readOnly
-        ? `${score.home || "-"} : ${score.away || "-"}`
-        : `<input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" />`;
-      return `<tr><td>${match.stage}</td><td>${match.time}</td><td>${match.field}</td><td>${escapeHtml(match.home)} – ${escapeHtml(match.away)}</td><td>${resultFields}</td></tr>`;
+      const scoreCell = readOnly
+        ? `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`
+        : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" /></span>`;
+      return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td>${escapeHtml(match.home)} &nbsp;${scoreCell}&nbsp; ${escapeHtml(match.away)}</td></tr>`;
     })
     .join("");
 }
@@ -393,7 +393,7 @@ function renderSchedule() {
   }
   const matches = getScheduleMatches(teams, selectedScheduleCategory);
   if (!matches.length) {
-    tableBody.innerHTML = '<tr><td colspan="6">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="5">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
     return;
   }
   tableBody.innerHTML = matches.map((match) => {
@@ -415,7 +415,7 @@ function renderSchedule() {
       resultCell = `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`;
     }
 
-    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td>${match.time}</td><td>${match.field}</td><td>${homeLink} – ${awayLink}</td><td>${resultCell}</td></tr>`;
+    return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td>${homeLink} &nbsp;${resultCell}&nbsp; ${awayLink}</td></tr>`;
   }).join("");
 }
 
