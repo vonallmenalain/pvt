@@ -42,12 +42,16 @@
       .team-category { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 0.85rem; padding: 1rem; }
       .team-category h3 { font-size: 1.05rem; border-bottom: 1px solid rgba(255, 255, 255, 0.14); padding-bottom: 0.45rem; margin-bottom: 0.8rem; }
       .team-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.7rem; }
-      .team-card { background: rgba(0, 0, 0, 0.22); border: 1px solid rgba(255,255,255,0.09); border-radius: 0.35rem; padding: 0.8rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; }
+      .team-card { background: rgba(0, 0, 0, 0.22); cursor: pointer; border: 1px solid rgba(255,255,255,0.09); border-radius: 0.35rem; padding: 0.8rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; }
       .team-name { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.2; }
       .team-meta { margin: 0 0 0.25rem; font-size: 0.86rem; color: var(--muted); }
       .team-meta:last-child { margin-bottom: 0; }
       .team-delete { background: #a83c3c; padding: 0.45rem 0.6rem; font-size: 0.82rem; }
       .team-empty { color: var(--muted); font-size: 0.92rem; }
+
+      .team-dashboard { margin-top: 1rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); border-radius: 0.85rem; padding: 1rem; }
+      .team-dashboard[hidden] { display: none; }
+      .result-input { width: 3.5rem; padding: 0.2rem 0.3rem; border-radius: 0.3rem; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.2); color: var(--text); }
 
 
       .schedule-table { width: 100%; border-collapse: collapse; margin-top: 0.85rem; font-size: 0.92rem; }
@@ -162,6 +166,14 @@
           <article class="team-category"><h3>Erwachsene Plausch</h3><ul class="team-list" id="teams-list-adult-fun"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
           <article class="team-category"><h3>Erwachsene Ambitioniert</h3><ul class="team-list" id="teams-list-adult-ambitious"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
         </div>
+        <section id="team-dashboard" class="team-dashboard" hidden>
+          <h3 id="dashboard-team-title">Team-Dashboard</h3>
+          <p id="dashboard-team-info">Wähle ein Team aus, um Spiele und Tabelle zu sehen.</p>
+          <h4>Gruppentabelle</h4>
+          <table class="schedule-table"><thead><tr><th>Team</th><th>Punkte</th></tr></thead><tbody id="dashboard-group-table"></tbody></table>
+          <h4>Eigene Spiele inkl. Finalrunde</h4>
+          <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th><th>Resultat</th></tr></thead><tbody id="dashboard-match-table"></tbody></table>
+        </section>
       </section>
     </div>
 
