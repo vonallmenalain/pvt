@@ -115,6 +115,7 @@
       <nav class="view-toggle" aria-label="Ansicht wechseln">
         <button type="button" id="show-teams" class="view-btn" aria-controls="teams-panel" aria-expanded="false">Teams</button>
         <button type="button" id="show-schedule" class="view-btn" aria-controls="schedule-panel" aria-expanded="false">Spielplan</button>
+        <button type="button" id="show-dashboard" class="view-btn" aria-controls="dashboard-panel" aria-expanded="false">Dashboard</button>
       </nav>
 
       <section class="schedule content-panel" id="schedule-panel" aria-labelledby="schedule-title" hidden>
@@ -146,14 +147,22 @@
           <article class="team-category"><h3>Erwachsene Plausch</h3><ul class="team-list" id="teams-list-adult-fun"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
           <article class="team-category"><h3>Erwachsene Ambitioniert</h3><ul class="team-list" id="teams-list-adult-ambitious"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
         </div>
-        <section id="team-dashboard" class="team-dashboard" hidden>
-          <h3 id="dashboard-team-title">Team-Dashboard</h3>
-          <p id="dashboard-team-info">Wähle ein Team aus, um Spiele und Tabelle zu sehen.</p>
-          <h4>Gruppentabelle</h4>
-          <table class="schedule-table"><thead><tr><th>Team</th><th>Punkte</th></tr></thead><tbody id="dashboard-group-table"></tbody></table>
-          <h4>Eigene Spiele inkl. Finalrunde</h4>
-          <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th><th>Resultat</th></tr></thead><tbody id="dashboard-match-table"></tbody></table>
-        </section>
+      </section>
+
+      <section class="team-dashboard content-panel" id="dashboard-panel" aria-labelledby="dashboard-section-title" hidden>
+        <h2 id="dashboard-section-title">Dashboard</h2>
+        <div class="schedule-filter">
+          <label for="dashboard-team-select">Team</label>
+          <select id="dashboard-team-select">
+            <option value="">Bitte Team auswählen</option>
+          </select>
+        </div>
+        <h3 id="dashboard-team-title">Team-Dashboard</h3>
+        <p id="dashboard-team-info">Wähle ein Team aus, um Spiele und Tabelle zu sehen.</p>
+        <h4>Gruppentabelle</h4>
+        <table class="schedule-table"><thead><tr><th>Team</th><th>Punkte</th></tr></thead><tbody id="dashboard-group-table"><tr><td colspan="2">Noch kein Team ausgewählt.</td></tr></tbody></table>
+        <h4>Eigene Spiele inkl. Finalrunde</h4>
+        <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th><th>Resultat</th></tr></thead><tbody id="dashboard-match-table"><tr><td colspan="5">Noch kein Team ausgewählt.</td></tr></tbody></table>
       </section>
     </div>
 

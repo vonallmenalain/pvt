@@ -30,7 +30,8 @@ const form = document.getElementById("team-form");
 const cancelBtn = document.getElementById("team-cancel");
 const errorEl = document.getElementById("team-error");
 
-const dashboardPanel = document.getElementById("team-dashboard");
+const dashboardPanel = document.getElementById("dashboard-panel");
+const dashboardTeamSelect = document.getElementById("dashboard-team-select");
 const dashboardTitle = document.getElementById("dashboard-team-title");
 const dashboardInfo = document.getElementById("dashboard-team-info");
 const dashboardGroupTable = document.getElementById("dashboard-group-table");
@@ -79,6 +80,14 @@ function renderTeamCard(team) {
   return `<li class="team-card" data-team-select="${team.id}"><div class="team-card-content"><p class="team-name">${escapeHtml(team.name)}</p><p class="team-meta">Gemeinde: ${escapeHtml(team.community)}</p><p class="team-meta">Mannschaftsverantwortlich: ${escapeHtml(team.manager)}</p></div>${canDelete ? `<button type="button" class="team-delete" data-team-id="${team.id}">Löschen</button>` : ""}</li>`;
 }
 
+function renderDashboardEmptyState() {
+  if (!dashboardTitle || !dashboardInfo || !dashboardGroupTable || !dashboardMatchTable) return;
+  dashboardTitle.textContent = "Team-Dashboard";
+  dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
+  dashboardGroupTable.innerHTML = '<tr><td colspan="2">Noch kein Team ausgewählt.</td></tr>';
+  dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
+}
+
 function renderGroupStandings(selectedTeam, groupPeers) {
   if (!dashboardGroupTable) return;
   const rows = groupPeers.map((peer) => {
@@ -88,15 +97,31 @@ function renderGroupStandings(selectedTeam, groupPeers) {
   dashboardGroupTable.innerHTML = rows.join("") || `<tr><td>${escapeHtml(selectedTeam.name)}</td><td>0</td></tr>`;
 }
 
+function renderDashboardTeamOptions() {
+  if (!dashboardTeamSelect) return;
+  const options = allTeams
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "de"))
+    .map((team) => `<option value="${team.id}">${escapeHtml(team.name)} (${CATEGORY_LABELS[team.category]})</option>`)
+    .join("");
+  dashboardTeamSelect.innerHTML = `<option value="">Bitte Team auswählen</option>${options}`;
+  dashboardTeamSelect.value = selectedTeamId || "";
+}
+
 function renderTeamDashboard(teamId) {
   const selectedTeam = allTeams.find((team) => team.id === teamId);
-  if (!selectedTeam || !dashboardPanel) return;
+  if (!selectedTeam) {
+    selectedTeamId = null;
+    if (dashboardTeamSelect) dashboardTeamSelect.value = "";
+    renderDashboardEmptyState();
+    return;
+  }
   selectedTeamId = teamId;
+  if (dashboardTeamSelect) dashboardTeamSelect.value = selectedTeamId;
 
   const teamsInCategory = allTeams.filter((team) => team.category === selectedTeam.category);
   const { group, groupPeers, matches } = getTeamSchedule(selectedTeam, teamsInCategory);
 
-  dashboardPanel.hidden = false;
   dashboardTitle.textContent = selectedTeam.name;
   dashboardInfo.textContent = `${CATEGORY_LABELS[selectedTeam.category]} · ${group}`;
 
@@ -122,7 +147,8 @@ function renderTeams(teams) {
     const entries = byCategory[category];
     listEl.innerHTML = entries.length ? entries.map((team) => renderTeamCard(team)).join("") : '<li class="team-empty">Noch keine Teams erfasst.</li>';
   });
-  if (selectedTeamId) renderTeamDashboard(selectedTeamId);
+  renderDashboardTeamOptions();
+  if (selectedTeamId) renderTeamDashboard(selectedTeamId); else renderDashboardEmptyState();
   renderSchedule();
 }
 
@@ -140,8 +166,8 @@ function getRoundRobinMatches(teams, category) {
       matches.push({
         time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
         field,
-        home: teams[i].name,
-        away: teams[j].name,
+        home: teams[i],
+        away: teams[j],
       });
       gameIndex += 1;
     }
@@ -159,12 +185,18 @@ function renderSchedule() {
   }
   const matches = getRoundRobinMatches(teams, selectedScheduleCategory);
   tableBody.innerHTML = matches.length
-    ? matches.map((match) => `<tr><td>${match.time}</td><td>${match.field}</td><td>${escapeHtml(match.home)} vs ${escapeHtml(match.away)}</td></tr>`).join("")
+    ? matches.map((match) => `<tr><td>${match.time}</td><td>${match.field}</td><td><button type="button" class="team-link" data-team-select="${match.home.id}">${escapeHtml(match.home.name)}</button> vs <button type="button" class="team-link" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button></td></tr>`).join("")
     : '<tr><td colspan="3">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
 }
 
 createButton?.addEventListener("click", () => openModal());
 cancelBtn?.addEventListener("click", () => closeModal());
+
+dashboardTeamSelect?.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) return;
+  renderTeamDashboard(target.value);
+});
 
 form?.addEventListener("submit", async (event) => {
   event.preventDefault(); if (!currentUser) return;
@@ -202,7 +234,10 @@ document.addEventListener("click", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
   const teamCard = target.closest("[data-team-select]");
-  if (teamCard && !(target.matches(".team-delete"))) renderTeamDashboard(teamCard.getAttribute("data-team-select"));
+  if (teamCard && !(target.matches(".team-delete"))) {
+    renderTeamDashboard(teamCard.getAttribute("data-team-select"));
+    setView("dashboard");
+  }
   if (!target.matches(".team-delete")) return;
   if (!currentUser) return;
   const teamId = target.dataset.teamId;
@@ -223,18 +258,24 @@ document.addEventListener("change", async (event) => {
 
 const teamsViewBtn = document.getElementById("show-teams");
 const scheduleViewBtn = document.getElementById("show-schedule");
+const dashboardViewBtn = document.getElementById("show-dashboard");
 const teamsPanel = document.getElementById("teams-panel");
 const schedulePanel = document.getElementById("schedule-panel");
 function setView(view) {
   const showTeams = view === "teams";
   const showSchedule = view === "schedule";
+  const showDashboard = view === "dashboard";
   if (teamsPanel) teamsPanel.hidden = !showTeams;
   if (schedulePanel) schedulePanel.hidden = !showSchedule;
+  if (dashboardPanel) dashboardPanel.hidden = !showDashboard;
   teamsViewBtn?.classList.toggle("is-active", showTeams);
   scheduleViewBtn?.classList.toggle("is-active", showSchedule);
+  dashboardViewBtn?.classList.toggle("is-active", showDashboard);
   teamsViewBtn?.setAttribute("aria-expanded", String(showTeams));
   scheduleViewBtn?.setAttribute("aria-expanded", String(showSchedule));
+  dashboardViewBtn?.setAttribute("aria-expanded", String(showDashboard));
 }
 teamsViewBtn?.addEventListener("click", () => setView("teams"));
 scheduleViewBtn?.addEventListener("click", () => setView("schedule"));
+dashboardViewBtn?.addEventListener("click", () => setView("dashboard"));
 setView("none");
