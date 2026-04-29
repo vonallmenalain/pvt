@@ -12,7 +12,6 @@ const emailInput = document.getElementById("auth-email");
 const passwordInput = document.getElementById("auth-password");
 const errorEl = document.getElementById("auth-error");
 const cancelBtn = document.getElementById("auth-cancel");
-const editHint = document.getElementById("edit-hint");
 const editButtons = () => document.querySelectorAll("[data-requires-auth]");
 
 function setEditMode(active) {
@@ -20,9 +19,6 @@ function setEditMode(active) {
     btn.disabled = !active;
     btn.setAttribute("aria-disabled", String(!active));
   });
-  if (editHint) {
-    editHint.hidden = active;
-  }
 }
 
 function authErrorMessage(code) {
