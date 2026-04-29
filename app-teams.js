@@ -48,30 +48,98 @@ function closeModal() { modal.hidden = true; if (errorEl) errorEl.textContent = 
 
 function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
 
-function toGroupName(category, teamIndex) { return `${CATEGORY_LABELS[category]} Gruppe ${teamIndex % 2 === 0 ? "A" : "B"}`; }
+/**
+ * Optimized 6-team schedule (10 min games, 2 min breaks, 12 min slots).
+ * Start: 11:30 · End: 16:52 · 27 slots total.
+ *
+ * Each entry is [homeIndex, awayIndex] (0-based into teamsInCategory).
+ * Ordering within each 3-game round is chosen so that no team appears in
+ * the last slot of round N AND the first slot of round N+1 (ensures every
+ * team has at least 1 free slot between consecutive appearances).
+ *
+ * Round labels (for display):
+ * R1–R5: first full round-robin (all 15 unique pairings)
+ * R6–R8: rematch rounds (repeat R1–R3 in transition-safe order)
+ * Slots 25–27: finals (rank-based, determined at run-time)
+ */
+const OPTIMIZED_SCHEDULE = [
+  // R1 – top seeds clash first
+  { r: "Vorrunde R1",  h: 0, a: 1 },
+  { r: "Vorrunde R1",  h: 2, a: 3 },
+  { r: "Vorrunde R1",  h: 4, a: 5 },
+  // R2
+  { r: "Vorrunde R2",  h: 0, a: 2 },
+  { r: "Vorrunde R2",  h: 1, a: 4 },
+  { r: "Vorrunde R2",  h: 3, a: 5 },
+  // R3 – reordered so T3/T5 start (avoids T4 back-to-back at R2/R3 boundary)
+  { r: "Vorrunde R3",  h: 2, a: 4 },
+  { r: "Vorrunde R3",  h: 0, a: 3 },
+  { r: "Vorrunde R3",  h: 1, a: 5 },
+  // R4
+  { r: "Vorrunde R4",  h: 0, a: 4 },
+  { r: "Vorrunde R4",  h: 1, a: 3 },
+  { r: "Vorrunde R4",  h: 2, a: 5 },
+  // R5 – T4/T5 start (avoids T3/T6 back-to-back at R4/R5 boundary)
+  { r: "Vorrunde R5",  h: 3, a: 4 },
+  { r: "Vorrunde R5",  h: 0, a: 5 },
+  { r: "Vorrunde R5",  h: 1, a: 2 },
+  // R6 – rematches R1, T5/T6 start (avoids T2/T3 back-to-back at R5/R6 boundary)
+  { r: "Vorrunde R6",  h: 4, a: 5 },
+  { r: "Vorrunde R6",  h: 0, a: 1 },
+  { r: "Vorrunde R6",  h: 2, a: 3 },
+  // R7 – rematches R2, T2/T5 start (avoids T3/T4 back-to-back at R6/R7 boundary)
+  { r: "Vorrunde R7",  h: 1, a: 4 },
+  { r: "Vorrunde R7",  h: 0, a: 2 },
+  { r: "Vorrunde R7",  h: 3, a: 5 },
+  // R8 – rematches R3, T3/T5 start (avoids T4/T6 back-to-back at R7/R8 boundary)
+  { r: "Vorrunde R8",  h: 2, a: 4 },
+  { r: "Vorrunde R8",  h: 0, a: 3 },
+  { r: "Vorrunde R8",  h: 1, a: 5 },
+];
+
+const SLOT_START_MINUTES = 11 * 60 + 30; // 11:30 in minutes from midnight
+const SLOT_DURATION_MIN = 12;             // 10 min play + 2 min break
+
+function slotTime(slotIndex) {
+  const total = SLOT_START_MINUTES + slotIndex * SLOT_DURATION_MIN;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
 
 function getTeamSchedule(team, teamsInCategory) {
   const teamIndex = teamsInCategory.findIndex((entry) => entry.id === team.id);
-  const group = toGroupName(team.category, teamIndex);
-  const groupPeers = teamsInCategory.filter((_, idx) => toGroupName(team.category, idx) === group);
+  const field = team.category === "adult_ambitious" ? "1" : team.category === "adult_fun" ? "2" : "3";
+  const label = CATEGORY_LABELS[team.category];
 
-  const groupGames = groupPeers
-    .filter((peer) => peer.id !== team.id)
-    .map((peer, idx) => ({
-      id: `group-${team.id}-${peer.id}`,
-      stage: "Vorrunde",
-      time: `13:${String(idx * 12).padStart(2, "0")}`,
-      field: `${team.category === "adult_ambitious" ? 1 : team.category === "adult_fun" ? 2 : 3}`,
-      home: team.name,
-      away: peer.name,
-      editable: true,
-    }));
+  const groupGames = OPTIMIZED_SCHEDULE
+    .map((entry, slotIdx) => ({ entry, slotIdx }))
+    .filter(({ entry }) => entry.h === teamIndex || entry.a === teamIndex)
+    .map(({ entry, slotIdx }) => {
+      const homeTeam = teamsInCategory[entry.h];
+      const awayTeam = teamsInCategory[entry.a];
+      if (!homeTeam || !awayTeam) return null;
+      const id = `match-${team.category}-${slotIdx}-${entry.h}-${entry.a}`;
+      return {
+        id,
+        stage: entry.r,
+        time: slotTime(slotIdx),
+        field,
+        home: homeTeam.name,
+        away: awayTeam.name,
+        editable: true,
+      };
+    })
+    .filter(Boolean);
 
   const finals = [
-    { id: `final-1-${team.id}`, stage: "Finalrunde", time: "16:12", field: "1", home: `${CATEGORY_LABELS[team.category]} Rang 1`, away: `${CATEGORY_LABELS[team.category]} Rang 2`, editable: false },
-    { id: `final-2-${team.id}`, stage: "Finalrunde", time: "16:24", field: "2", home: `${CATEGORY_LABELS[team.category]} Rang 3`, away: `${CATEGORY_LABELS[team.category]} Rang 4`, editable: false },
+    { id: `final-5-${team.category}`, stage: "Platz 5", time: slotTime(24), field, home: `${label} Rang 5`, away: `${label} Rang 6`, editable: false },
+    { id: `final-3-${team.category}`, stage: "Platz 3", time: slotTime(25), field, home: `${label} Rang 3`, away: `${label} Rang 4`, editable: false },
+    { id: `final-1-${team.category}`, stage: "Finale",  time: slotTime(26), field, home: `${label} Rang 1`, away: `${label} Rang 2`, editable: false },
   ];
 
+  const group = `${label}`;
+  const groupPeers = teamsInCategory;
   return { group, groupPeers, matches: [...groupGames, ...finals] };
 }
 
@@ -88,12 +156,30 @@ function renderDashboardEmptyState() {
   dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
 }
 
+function calcTeamPoints(peerTeam, teamsInCategory) {
+  const peerIndex = teamsInCategory.findIndex((t) => t.id === peerTeam.id);
+  return OPTIMIZED_SCHEDULE.reduce((sum, entry, slotIdx) => {
+    const isHome = entry.h === peerIndex;
+    const isAway = entry.a === peerIndex;
+    if (!isHome && !isAway) return sum;
+    const matchId = `match-${peerTeam.category}-${slotIdx}-${entry.h}-${entry.a}`;
+    const score = resultMap[matchId];
+    if (!score || (score.home === "" && score.away === "")) return sum;
+    const homeScore = Number(score.home);
+    const awayScore = Number(score.away);
+    if (homeScore === awayScore) return sum + 1;
+    if (isHome) return sum + (homeScore > awayScore ? 3 : 0);
+    return sum + (awayScore > homeScore ? 3 : 0);
+  }, 0);
+}
+
 function renderGroupStandings(selectedTeam, groupPeers) {
   if (!dashboardGroupTable) return;
-  const rows = groupPeers.map((peer) => {
-    const points = Object.entries(resultMap).reduce((sum, [key, score]) => key.includes(peer.id) ? sum + (Number(score.home) > Number(score.away) ? 2 : 1) : sum, 0);
-    return `<tr><td>${escapeHtml(peer.name)}</td><td>${points}</td></tr>`;
-  });
+  const teamsInCategory = allTeams.filter((team) => team.category === selectedTeam.category);
+  const rows = groupPeers
+    .map((peer) => ({ peer, pts: calcTeamPoints(peer, teamsInCategory) }))
+    .sort((a, b) => b.pts - a.pts)
+    .map(({ peer, pts }) => `<tr><td>${escapeHtml(peer.name)}</td><td>${pts}</td></tr>`);
   dashboardGroupTable.innerHTML = rows.join("") || `<tr><td>${escapeHtml(selectedTeam.name)}</td><td>0</td></tr>`;
 }
 
@@ -123,7 +209,7 @@ function renderTeamDashboard(teamId) {
   const { group, groupPeers, matches } = getTeamSchedule(selectedTeam, teamsInCategory);
 
   dashboardTitle.textContent = selectedTeam.name;
-  dashboardInfo.textContent = `${CATEGORY_LABELS[selectedTeam.category]} · ${group}`;
+  dashboardInfo.textContent = CATEGORY_LABELS[selectedTeam.category];
 
   renderGroupStandings(selectedTeam, groupPeers);
 
@@ -152,27 +238,32 @@ function renderTeams(teams) {
   renderSchedule();
 }
 
-function getRoundRobinMatches(teams, category) {
-  const baseHour = 13;
-  const baseMinute = 0;
-  let gameIndex = 0;
+function getScheduleMatches(teams, category) {
   const field = category === "adult_ambitious" ? "1" : category === "adult_fun" ? "2" : "3";
-  const matches = [];
-  for (let i = 0; i < teams.length; i += 1) {
-    for (let j = i + 1; j < teams.length; j += 1) {
-      const totalMinutes = baseMinute + gameIndex * 12;
-      const hour = baseHour + Math.floor(totalMinutes / 60);
-      const minute = totalMinutes % 60;
-      matches.push({
-        time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
-        field,
-        home: teams[i],
-        away: teams[j],
-      });
-      gameIndex += 1;
-    }
-  }
-  return matches;
+  const label = CATEGORY_LABELS[category];
+
+  if (teams.length < 2) return [];
+
+  const preliminaryMatches = OPTIMIZED_SCHEDULE.map((entry, slotIdx) => {
+    const homeTeam = teams[entry.h];
+    const awayTeam = teams[entry.a];
+    if (!homeTeam || !awayTeam) return null;
+    return {
+      stage: entry.r,
+      time: slotTime(slotIdx),
+      field,
+      home: homeTeam,
+      away: awayTeam,
+    };
+  }).filter(Boolean);
+
+  const finalMatches = [
+    { stage: "Platz 5", time: slotTime(24), field, home: { name: `${label} Rang 5`, id: null }, away: { name: `${label} Rang 6`, id: null } },
+    { stage: "Platz 3", time: slotTime(25), field, home: { name: `${label} Rang 3`, id: null }, away: { name: `${label} Rang 4`, id: null } },
+    { stage: "Finale",  time: slotTime(26), field, home: { name: `${label} Rang 1`, id: null }, away: { name: `${label} Rang 2`, id: null } },
+  ];
+
+  return [...preliminaryMatches, ...finalMatches];
 }
 
 function renderSchedule() {
@@ -181,12 +272,22 @@ function renderSchedule() {
   if (!tableBody) return;
   const teams = allTeams.filter((team) => team.category === selectedScheduleCategory);
   if (description) {
-    description.textContent = `${CATEGORY_LABELS[selectedScheduleCategory]} · ${teams.length} Team(s) aus der Datenbank.`;
+    description.textContent = `${CATEGORY_LABELS[selectedScheduleCategory]} · ${teams.length} Team(s) · 10 Min. Spielzeit · Start 11:30 · Finals ab 16:18`;
   }
-  const matches = getRoundRobinMatches(teams, selectedScheduleCategory);
-  tableBody.innerHTML = matches.length
-    ? matches.map((match) => `<tr><td>${match.time}</td><td>${match.field}</td><td><button type="button" class="team-link" data-team-select="${match.home.id}">${escapeHtml(match.home.name)}</button> vs <button type="button" class="team-link" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button></td></tr>`).join("")
-    : '<tr><td colspan="3">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+  const matches = getScheduleMatches(teams, selectedScheduleCategory);
+  if (!matches.length) {
+    tableBody.innerHTML = '<tr><td colspan="4">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+    return;
+  }
+  tableBody.innerHTML = matches.map((match) => {
+    const homeLink = match.home.id
+      ? `<button type="button" class="team-link" data-team-select="${match.home.id}">${escapeHtml(match.home.name)}</button>`
+      : escapeHtml(match.home.name);
+    const awayLink = match.away.id
+      ? `<button type="button" class="team-link" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button>`
+      : escapeHtml(match.away.name);
+    return `<tr><td>${escapeHtml(match.stage)}</td><td>${match.time}</td><td>${match.field}</td><td>${homeLink} vs ${awayLink}</td></tr>`;
+  }).join("");
 }
 
 createButton?.addEventListener("click", () => openModal());
