@@ -95,9 +95,11 @@ function calcTeamStats(peerTeam, teamsInCategory) {
     if (!isHome && !isAway) return;
     const matchId = `match-${peerTeam.category}-${slotIdx}-${entry.h}-${entry.a}`;
     const score = resultMap[matchId];
-    if (!score || (score.home === "" && score.away === "")) return;
+    if (!score || score.home === "" || score.away === "") return;
     const homeScore = Number(score.home);
     const awayScore = Number(score.away);
+    if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) return;
+    if (homeScore < 0 || awayScore < 0) return;
     played++;
     if (isHome) { gf += homeScore; ga += awayScore; }
     else { gf += awayScore; ga += homeScore; }
@@ -124,6 +126,9 @@ function getSortedStandings(teamsInCategory) {
       if (b.gf !== a.gf) return b.gf - a.gf;
       const ratioA = a.ga === 0 ? (a.gf > 0 ? Infinity : 0) : a.gf / a.ga;
       const ratioB = b.ga === 0 ? (b.gf > 0 ? Infinity : 0) : b.gf / b.ga;
+      if (ratioB === ratioA) return 0;
+      if (ratioB === Infinity) return 1;
+      if (ratioA === Infinity) return -1;
       return ratioB - ratioA;
     });
 }
@@ -142,7 +147,9 @@ function resolveFinalNames(category) {
     if (teams.length < Math.max(entry.h, entry.a) + 1) return false;
     const matchId = `match-${category}-${slotIdx}-${entry.h}-${entry.a}`;
     const score = resultMap[matchId];
-    return score && score.home !== "" && score.away !== "";
+    return score && score.home !== "" && score.away !== "" &&
+      Number.isFinite(Number(score.home)) && Number.isFinite(Number(score.away)) &&
+      Number(score.home) >= 0 && Number(score.away) >= 0;
   });
 
   const resolved = {};
@@ -322,10 +329,12 @@ function renderTeamDashboard(teamId) {
   dashboardMatchTable.innerHTML = matches
     .map((match) => {
       const score = resultMap[match.id] || { home: "", away: "" };
+      const hasScore = score.home !== "" && score.away !== "";
+      const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
       const readOnly = !currentUser || !match.editable;
       const scoreCell = readOnly
-        ? `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`
-        : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" /></span>`;
+        ? `<span class="schedule-result">${scoreText}</span>`
+        : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
       const homeCell = match.homeId
         ? `<button type="button" class="team-link" data-team-select="${match.homeId}">${escapeHtml(match.home)}</button>`
         : escapeHtml(match.home);
@@ -413,14 +422,15 @@ function renderSchedule() {
       : escapeHtml(match.away.name);
 
     const score = resultMap[match.id] || { home: "", away: "" };
+    const hasScore = score.home !== "" && score.away !== "";
+    const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
     let resultCell;
-    if (!match.id || match.id.startsWith("final-")) {
-      // Final round games: always read-only in Spielplan
-      resultCell = `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`;
+    if (match.id.startsWith("final-")) {
+      resultCell = `<span class="schedule-result">${scoreText}</span>`;
     } else if (currentUser) {
-      resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${score.home}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${score.away}" /></span>`;
+      resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
     } else {
-      resultCell = `<span class="schedule-result">${score.home !== "" && score.away !== "" ? `${score.home} : ${score.away}` : "–"}</span>`;
+      resultCell = `<span class="schedule-result">${scoreText}</span>`;
     }
 
     return `<tr><td>${match.nr}</td><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeLink}</span><span class="col-game-score">${resultCell}</span><span class="col-game-away">${awayLink}</span></div></td></tr>`;
