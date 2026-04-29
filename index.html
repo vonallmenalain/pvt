@@ -20,12 +20,39 @@
         font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
         color: var(--text);
         background: linear-gradient(180deg, #140e0e 0%, var(--bg) 100%);
+        min-height: 100vh;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0.75rem 1rem 0;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+
+      .auth-trigger {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 0.45rem;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        letter-spacing: 0.02em;
+      }
+
+      .auth-trigger:hover {
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.28);
       }
 
       .wrap {
         max-width: 760px;
         margin: 0 auto;
-        padding: 1rem;
+        padding: 0 1rem 1rem;
       }
 
       .hero {
@@ -44,8 +71,17 @@
 
       .actions {
         display: flex;
+        flex-wrap: wrap;
         gap: .75rem;
         margin-top: 1rem;
+      }
+
+      .edit-hint {
+        width: 100%;
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--muted);
+        opacity: 0.85;
       }
 
       button {
@@ -57,9 +93,137 @@
         font-weight: 700;
         cursor: pointer;
       }
+
+      button:disabled,
+      button[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .auth-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.55);
+      }
+
+      .auth-modal[hidden] {
+        display: none;
+      }
+
+      .auth-dialog {
+        width: 100%;
+        max-width: 360px;
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      .auth-dialog h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      .auth-field {
+        margin-bottom: 0.85rem;
+      }
+
+      .auth-field label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+
+      .auth-field input {
+        width: 100%;
+        padding: 0.55rem 0.65rem;
+        border-radius: 0.45rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        font-size: 0.9375rem;
+      }
+
+      .auth-field input:focus {
+        outline: none;
+        border-color: rgba(40, 53, 147, 0.85);
+      }
+
+      .auth-error {
+        min-height: 1.25rem;
+        font-size: 0.8125rem;
+        color: #e57373;
+        margin-bottom: 0.65rem;
+      }
+
+      .auth-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: 0.25rem;
+      }
+
+      .auth-actions .secondary {
+        background: transparent;
+        color: var(--muted);
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .auth-actions .secondary:hover {
+        color: var(--text);
+      }
     </style>
   </head>
   <body>
+    <div class="topbar">
+      <button type="button" class="auth-trigger" id="auth-trigger" aria-label="Anmelden">
+        Anmelden
+      </button>
+    </div>
+
+    <div
+      class="auth-modal"
+      id="auth-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-title"
+      hidden
+    >
+      <div class="auth-dialog">
+        <h2 id="auth-title">Anmelden</h2>
+        <form id="auth-form">
+          <div class="auth-field">
+            <label for="auth-email">E-Mail</label>
+            <input id="auth-email" name="email" type="email" autocomplete="username" required />
+          </div>
+          <div class="auth-field">
+            <label for="auth-password">Passwort</label>
+            <input
+              id="auth-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <p class="auth-error" id="auth-error" role="alert"></p>
+          <div class="auth-actions">
+            <button type="button" class="secondary" id="auth-cancel">Abbrechen</button>
+            <button type="submit">Einloggen</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="wrap">
       <header class="hero">
         <h1>Pfahlvolleyballturnier</h1>
@@ -71,9 +235,14 @@
       </header>
 
       <div class="actions">
-        <button type="button">Teams</button>
-        <button type="button">Spielplan</button>
+        <p class="edit-hint" id="edit-hint">
+          Zum Bearbeiten bitte oben rechts anmelden.
+        </p>
+        <button type="button" data-requires-auth disabled aria-disabled="true">Teams</button>
+        <button type="button" data-requires-auth disabled aria-disabled="true">Spielplan</button>
       </div>
     </div>
+
+    <script type="module" src="./app-auth.js"></script>
   </body>
 </html>
