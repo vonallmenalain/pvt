@@ -68,23 +68,17 @@ trigger.addEventListener("click", async () => {
 
 cancelBtn?.addEventListener("click", () => closeModal());
 
-modal?.addEventListener("click", (e) => {
-  if (e.target === modal) closeModal();
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && modal && !modal.hidden) closeModal();
-});
-
 form?.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (errorEl) errorEl.textContent = "";
   const email = emailInput?.value?.trim() ?? "";
   const password = passwordInput?.value ?? "";
+  closeModal();
   try {
     await signInWithEmailAndPassword(auth, email, password);
     passwordInput.value = "";
   } catch (err) {
+    openModal();
     if (errorEl) errorEl.textContent = authErrorMessage(err.code);
   }
 });
