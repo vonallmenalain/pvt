@@ -58,6 +58,18 @@ function openModal() { if (errorEl) errorEl.textContent = ""; modal.hidden = fal
 function closeModal() { modal.hidden = true; if (errorEl) errorEl.textContent = ""; form?.reset(); }
 
 function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
+function getMatchOutcomeClass(matchId, homeScoreRaw, awayScoreRaw, side) {
+  const homeScore = Number(homeScoreRaw);
+  const awayScore = Number(awayScoreRaw);
+  if (homeScoreRaw === "" || awayScoreRaw === "") return "";
+  if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) return "";
+  if (homeScore < 0 || awayScore < 0) return "";
+  if (homeScore === awayScore) return "is-draw";
+  const homeWon = homeScore > awayScore;
+  return side === "home"
+    ? (homeWon ? "is-winner" : "is-loser")
+    : (homeWon ? "is-loser" : "is-winner");
+}
 
 /**
  * 6-team single round-robin group phase (15 unique pairings).
@@ -327,11 +339,15 @@ function renderTeamDashboard(teamId) {
       const scoreCell = readOnly
         ? `<span class="schedule-result">${scoreText}</span>`
         : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
+      const homeOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "home");
+      const awayOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "away");
+      const homeSelected = match.homeId === selectedTeam.id ? "is-selected-team" : "";
+      const awaySelected = match.awayId === selectedTeam.id ? "is-selected-team" : "";
       const homeCell = match.homeId
-        ? `<button type="button" class="team-link" data-team-select="${match.homeId}">${escapeHtml(match.home)}</button>`
+        ? `<button type="button" class="team-link ${homeOutcome} ${homeSelected}" data-team-select="${match.homeId}">${escapeHtml(match.home)}</button>`
         : escapeHtml(match.home);
       const awayCell = match.awayId
-        ? `<button type="button" class="team-link" data-team-select="${match.awayId}">${escapeHtml(match.away)}</button>`
+        ? `<button type="button" class="team-link ${awayOutcome} ${awaySelected}" data-team-select="${match.awayId}">${escapeHtml(match.away)}</button>`
         : escapeHtml(match.away);
       return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeCell}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${awayCell}</span></div></td></tr>`;
     })
@@ -495,14 +511,15 @@ function renderSchedule() {
     return;
   }
   tableBody.innerHTML = matches.map((match) => {
+    const score = resultMap[match.id] || { home: "", away: "" };
+    const homeOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "home");
+    const awayOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "away");
     const homeLink = match.home.id
-      ? `<button type="button" class="team-link" data-team-select="${match.home.id}">${escapeHtml(match.home.name)}</button>`
+      ? `<button type="button" class="team-link ${homeOutcome}" data-team-select="${match.home.id}">${escapeHtml(match.home.name)}</button>`
       : escapeHtml(match.home.name);
     const awayLink = match.away.id
-      ? `<button type="button" class="team-link" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button>`
+      ? `<button type="button" class="team-link ${awayOutcome}" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button>`
       : escapeHtml(match.away.name);
-
-    const score = resultMap[match.id] || { home: "", away: "" };
     const hasScore = score.home !== "" && score.away !== "";
     const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
     let resultCell;
