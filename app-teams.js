@@ -61,7 +61,7 @@ function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").repla
 
 /**
  * 6-team single round-robin group phase (15 unique pairings).
- * 12 min games, 2 min breaks → 14 min slots. Start: 11:30.
+ * 13 min games, 2 min breaks → 15 min slots. Start: 11:30.
  * Slots 0–14: group phase · Slots 15–22: finals (rank-based, determined at run-time)
  */
 const OPTIMIZED_SCHEDULE = [
@@ -83,8 +83,8 @@ const OPTIMIZED_SCHEDULE = [
 ];
 
 const SLOT_START_MINUTES = 11 * 60 + 30; // 11:30 in minutes from midnight
-const SLOT_DURATION_MIN = 14;             // 12 min play + 2 min break
-const GAME_DURATION_MIN = 12;
+const SLOT_DURATION_MIN = 15;             // 13 min play + 2 min break
+const GAME_DURATION_MIN = 13;
 
 function slotTime(slotIndex) {
   const start = SLOT_START_MINUTES + slotIndex * SLOT_DURATION_MIN;
