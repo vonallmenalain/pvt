@@ -84,6 +84,10 @@
       .schedule-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
       .team-link { background: transparent; color: var(--text); border: none; padding: 0; font-weight: 600; font-size: inherit; cursor: pointer; text-decoration: none; }
       .team-link:hover { text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.85); }
+      .team-link.is-winner { color: #66bb6a; font-weight: 800; }
+      .team-link.is-loser { color: #ef5350; font-weight: 700; }
+      .team-link.is-draw { color: #e0e0e0; }
+      .team-link.is-selected-team { background: rgba(255, 193, 7, 0.2); border-radius: 0.35rem; padding: 0.1rem 0.3rem; box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.45) inset; }
       .schedule-result { white-space: nowrap; font-weight: 700; padding: 0 0.3rem; }
       .schedule-result .result-input { width: 3rem; }
       .schedule-table td.col-game { min-width: 320px; }
