@@ -6,8 +6,8 @@ const PRECACHE_URLS = [
   "/app-teams.js",
   "/firebase-config.js",
   "/manifest.json",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
+  "/volleyball_app_icons/icon-192x192.png",
+  "/volleyball_app_icons/icon-512x512.png",
 ];
 
 self.addEventListener("install", (event) => {
