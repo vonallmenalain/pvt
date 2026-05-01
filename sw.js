@@ -1,4 +1,4 @@
-const CACHE_NAME = "pfahlvolleys-v3";
+const CACHE_NAME = "pfahlvolley-v4";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
