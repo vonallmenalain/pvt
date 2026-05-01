@@ -6,9 +6,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 const trigger = document.getElementById("auth-trigger");
-const triggerIconPath = document.getElementById("auth-trigger-icon-path");
-const LOCKED_ICON_PATH = "M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2Zm-9-2a3 3 0 0 1 6 0v2H9V6Z";
-const UNLOCKED_ICON_PATH = "M18 8h-6V6a3 3 0 1 0-6 0 1 1 0 1 0 2 0 1 1 0 1 1 2 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2Z";
 const modal = document.getElementById("auth-modal");
 const form = document.getElementById("auth-form");
 const emailInput = document.getElementById("auth-email");
@@ -30,7 +27,6 @@ function syncAuthUi(user) {
     "aria-label",
     isSignedIn ? "Bearbeitungsmodus aktiv. Abmelden" : "Ansichtsmodus gesperrt. Anmelden",
   );
-  triggerIconPath?.setAttribute("d", isSignedIn ? UNLOCKED_ICON_PATH : LOCKED_ICON_PATH);
   setEditMode(isSignedIn);
 }
 
