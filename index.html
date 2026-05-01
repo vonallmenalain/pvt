@@ -30,8 +30,8 @@
       html { scrollbar-gutter: stable; }
       body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--text); background: linear-gradient(180deg, #140e0e 0%, var(--bg) 100%); min-height: 100vh; }
       .hero-row { margin-bottom: 1rem; }
-      .auth-trigger-wrap { align-self: stretch; display: flex; align-items: center; flex-shrink: 0; }
-      .auth-trigger { display: block; background: transparent; border: none; border-radius: 999px; padding: 0; cursor: default; overflow: hidden; height: calc(100% - 0.5rem); aspect-ratio: 1 / 1; width: auto; }
+      .auth-trigger-wrap { align-self: center; display: flex; align-items: center; flex-shrink: 0; }
+      .auth-trigger { display: block; background: transparent; border: none; border-radius: 999px; padding: 0; cursor: default; overflow: hidden; height: 3.5rem; aspect-ratio: 1 / 1; width: auto; }
       .auth-trigger:hover { background: transparent; }
       .auth-trigger-icon { width: 100%; height: 100%; display: block; object-fit: contain; }
       .hero-text { flex: 1; min-width: 0; }
@@ -143,6 +143,7 @@
         .hero { padding: 0.75rem 0.9rem; gap: 0.5rem; }
         h1 { font-size: 1.05rem; }
         .hero h1 { white-space: nowrap; margin-bottom: 0.15rem; }
+        .auth-trigger { height: 2.25rem; }
 
         /* Nav: 2×2 grid so all 4 buttons fit without wrapping */
         .view-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
