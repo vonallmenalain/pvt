@@ -20,15 +20,115 @@
     <link rel="apple-touch-icon" href="/volleyball_app_icons/apple-touch-icon.png" />
     <style>
       :root {
-        --bg: #0f0b0b;
-        --card: #1a1414;
+        --bg: #0a0c1c;
+        --card: #141828;
         --text: #f5f5f5;
         --muted: #c9c9c9;
         --accent: #283593;
+        /* Indigo channels for layered glow backgrounds (existing PVT accent #283593) */
+        --pvt-indigo: 40, 53, 147;
+        /* Lighter sibling of the same indigo hue, used only for glow visibility */
+        --pvt-indigo-light: 92, 107, 192;
       }
       * { box-sizing: border-box; }
-      html { scrollbar-gutter: stable; }
-      body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--text); background: linear-gradient(180deg, #140e0e 0%, var(--bg) 100%); min-height: 100vh; }
+      html { scrollbar-gutter: stable; overflow-x: hidden; max-width: 100%; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+        max-width: 100%;
+        background:
+          radial-gradient(ellipse 90% 70% at 50% 110%, rgba(var(--pvt-indigo), 0.45) 0%, transparent 65%),
+          radial-gradient(ellipse 70% 50% at 50% 80%,  rgba(var(--pvt-indigo), 0.28) 0%, transparent 55%),
+          radial-gradient(ellipse 60% 40% at 20% 0%,   rgba(var(--pvt-indigo-light), 0.10) 0%, transparent 50%),
+          radial-gradient(ellipse 60% 40% at 80% 0%,   rgba(var(--pvt-indigo), 0.20) 0%, transparent 50%),
+          linear-gradient(180deg, #050610 0%, #0a0c1c 35%, #0c1030 100%);
+        background-attachment: fixed;
+      }
+
+      /* Stadium spotlight beams (sweeping). */
+      .bg-stage-glow {
+        pointer-events: none;
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+      }
+      .bg-stage-glow::before,
+      .bg-stage-glow::after {
+        content: "";
+        position: absolute;
+        top: -10%;
+        width: 60%;
+        height: 110%;
+        background: radial-gradient(ellipse 60% 70% at 50% 0%,
+          rgba(var(--pvt-indigo-light), 0.20) 0%,
+          rgba(var(--pvt-indigo-light), 0.07) 35%,
+          transparent 75%);
+        filter: blur(20px);
+        transform-origin: top center;
+        animation: pvtBeamSweep 9s ease-in-out infinite alternate;
+        mix-blend-mode: screen;
+      }
+      .bg-stage-glow::before { left: -10%; transform: rotate(-12deg); }
+      .bg-stage-glow::after  {
+        right: -10%;
+        transform: rotate(12deg);
+        animation-delay: 4.5s;
+        background: radial-gradient(ellipse 60% 70% at 50% 0%,
+          rgba(var(--pvt-indigo), 0.22) 0%,
+          rgba(var(--pvt-indigo), 0.07) 35%,
+          transparent 75%);
+      }
+      @keyframes pvtBeamSweep {
+        0%   { transform: rotate(-14deg) translateX(-2%); opacity: 0.85; }
+        50%  { transform: rotate(-8deg)  translateX(2%);  opacity: 1; }
+        100% { transform: rotate(-14deg) translateX(-2%); opacity: 0.7; }
+      }
+
+      /* Floating ambient indigo orbs */
+      .bg-orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(40px);
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.55;
+        mix-blend-mode: screen;
+      }
+      .bg-orb.o1 {
+        width: 320px; height: 320px;
+        left: -90px; top: 18%;
+        background: radial-gradient(circle, rgba(var(--pvt-indigo-light), 0.55), transparent 65%);
+        animation: pvtOrbDrift 14s ease-in-out infinite alternate;
+      }
+      .bg-orb.o2 {
+        width: 380px; height: 380px;
+        right: -120px; top: 55%;
+        background: radial-gradient(circle, rgba(var(--pvt-indigo), 0.50), transparent 65%);
+        animation: pvtOrbDrift 18s 2s ease-in-out infinite alternate-reverse;
+      }
+      .bg-orb.o3 {
+        width: 260px; height: 260px;
+        left: 30%; bottom: -60px;
+        background: radial-gradient(circle, rgba(var(--pvt-indigo-light), 0.35), transparent 65%);
+        animation: pvtOrbDrift 22s 4s ease-in-out infinite alternate;
+      }
+      @keyframes pvtOrbDrift {
+        0%   { transform: translate(0, 0) scale(1); }
+        50%  { transform: translate(30px, -28px) scale(1.06); }
+        100% { transform: translate(-22px, 26px) scale(0.96); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bg-orb,
+        .bg-stage-glow::before,
+        .bg-stage-glow::after { animation: none !important; }
+      }
+
+      /* Keep page content above the fixed atmosphere layer */
+      .wrap { position: relative; z-index: 1; }
       .hero-row { margin-bottom: 1rem; }
       .auth-trigger-wrap { align-self: center; display: flex; align-items: center; flex-shrink: 0; }
       .auth-trigger { display: block; background: transparent; border: none; border-radius: 999px; padding: 0; cursor: default; overflow: hidden; height: 3.5rem; aspect-ratio: 1 / 1; width: auto; }
@@ -186,6 +286,12 @@
     </style>
   </head>
   <body>
+    <!-- Atmospheric stadium-style background (PVT indigo): spotlight beams + drifting orbs -->
+    <div class="bg-stage-glow" aria-hidden="true"></div>
+    <div class="bg-orb o1" aria-hidden="true"></div>
+    <div class="bg-orb o2" aria-hidden="true"></div>
+    <div class="bg-orb o3" aria-hidden="true"></div>
+
     <div class="auth-modal" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" hidden>
       <div class="auth-dialog">
         <h2 id="auth-title">Anmelden</h2>
