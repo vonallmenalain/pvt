@@ -292,9 +292,9 @@ function renderGroupStandings(selectedTeam, groupPeers) {
   const rows = getSortedStandings(teamsInCategory)
     .map(({ team, pts, gf, ga, played }, idx) => {
       const ratio = ga === 0 ? (gf > 0 ? "∞" : "0") : (gf / ga).toFixed(2);
-      const highlight = team.id === selectedTeam.id ? ' style="font-weight:700;background:rgba(40,53,147,0.25);"' : "";
+      const rowClass = team.id === selectedTeam.id ? ' class="is-selected-row"' : "";
       const nameCell = `<button type="button" class="team-link" data-team-select="${team.id}">${escapeHtml(team.name)}</button>`;
-      return `<tr${highlight}><td>${idx + 1}</td><td>${nameCell}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
+      return `<tr${rowClass}><td>${idx + 1}</td><td>${nameCell}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
     });
   dashboardGroupTable.innerHTML = rows.join("") || `<tr><td>1</td><td>${escapeHtml(selectedTeam.name)}</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>`;
 }
