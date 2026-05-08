@@ -656,7 +656,7 @@ const infosSubPanels = {
   rules: document.getElementById("infos-section-rules"),
 };
 
-function setInfosSection(section) {
+function setInfosSection(section, { updateHash = true } = {}) {
   Object.entries(infosSubPanels).forEach(([key, panel]) => {
     if (!panel) return;
     panel.hidden = key !== section;
@@ -667,6 +667,8 @@ function setInfosSection(section) {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-expanded", String(active));
   });
+  currentInfosSection = section;
+  if (updateHash && currentView === "infos") syncLocationHash();
 }
 
 const infosViewBtn = document.getElementById("show-infos");
@@ -679,7 +681,40 @@ const schedulePanel = document.getElementById("schedule-panel");
 const orgViewBtn = document.getElementById("show-org");
 const orgPanel = document.getElementById("org-panel");
 const orgRows = document.getElementById("org-rows");
-function setView(view) {
+// ── History / Back-Button-Navigation ───────────────────────────────────────
+// Wir spiegeln den aktuellen View (und die Infos-Unterkategorie) in die URL
+// als Hash, damit der Zurück-/Vorwärts-Button des Browsers zwischen den
+// Ansichten navigieren kann.
+const VALID_VIEWS = ["infos", "teams", "schedule", "dashboard", "rangliste", "org"];
+const VALID_INFOS_SECTIONS = ["time_place", "mode", "rules"];
+let currentView = "infos";
+let currentInfosSection = "time_place";
+
+function buildHash(view, infosSection) {
+  if (view === "infos") return `#infos/${infosSection}`;
+  return `#${view}`;
+}
+
+function syncLocationHash() {
+  const target = buildHash(currentView, currentInfosSection);
+  if (location.hash !== target) {
+    history.pushState({ view: currentView, infosSection: currentInfosSection }, "", target);
+  } else {
+    // Hash already matches – stelle sicher, dass der State-Eintrag gefüllt ist
+    history.replaceState({ view: currentView, infosSection: currentInfosSection }, "");
+  }
+}
+
+function parseHash() {
+  const raw = location.hash.replace(/^#/, "");
+  if (!raw) return { view: "infos", infosSection: "time_place" };
+  const [viewPart, sectionPart] = raw.split("/");
+  const view = VALID_VIEWS.includes(viewPart) ? viewPart : "infos";
+  const infosSection = VALID_INFOS_SECTIONS.includes(sectionPart) ? sectionPart : "time_place";
+  return { view, infosSection };
+}
+
+function setView(view, { updateHash = true } = {}) {
   const showInfos = view === "infos";
   const showTeams = view === "teams";
   const showSchedule = view === "schedule";
@@ -705,6 +740,8 @@ function setView(view) {
   ranglisteViewBtn?.setAttribute("aria-expanded", String(showRangliste));
   orgViewBtn?.setAttribute("aria-expanded", String(showOrg));
   if (showRangliste) renderRangliste();
+  currentView = view;
+  if (updateHash) syncLocationHash();
 }
 infosViewBtn?.addEventListener("click", () => setView("infos"));
 teamsViewBtn?.addEventListener("click", () => setView("teams"));
@@ -715,8 +752,41 @@ orgViewBtn?.addEventListener("click", () => setView("org"));
 infosSubButtons.time_place?.addEventListener("click", () => setInfosSection("time_place"));
 infosSubButtons.mode?.addEventListener("click", () => setInfosSection("mode"));
 infosSubButtons.rules?.addEventListener("click", () => setInfosSection("rules"));
-setInfosSection("time_place");
-setView("infos");
+
+function isViewAccessible(view) {
+  if (view === "org") return Boolean(currentUser);
+  if (view === "rangliste") return Boolean(currentUser) || ranglistePublished;
+  return true;
+}
+
+window.addEventListener("popstate", (event) => {
+  const fromState = event.state && typeof event.state === "object"
+    ? { view: event.state.view, infosSection: event.state.infosSection }
+    : null;
+  const parsed = fromState && VALID_VIEWS.includes(fromState.view)
+    ? {
+        view: fromState.view,
+        infosSection: VALID_INFOS_SECTIONS.includes(fromState.infosSection)
+          ? fromState.infosSection
+          : currentInfosSection,
+      }
+    : parseHash();
+  const targetView = isViewAccessible(parsed.view) ? parsed.view : "infos";
+  setInfosSection(parsed.infosSection, { updateHash: false });
+  setView(targetView, { updateHash: false });
+  // Falls wir umgeleitet haben, Hash ggf. korrigieren
+  if (targetView !== parsed.view) syncLocationHash();
+});
+
+const initial = parseHash();
+setInfosSection(initial.infosSection, { updateHash: false });
+setView(initial.view, { updateHash: false });
+// Initial-Eintrag in den Verlauf schreiben, damit Back/Forward-State greifbar ist
+history.replaceState(
+  { view: currentView, infosSection: currentInfosSection },
+  "",
+  buildHash(currentView, currentInfosSection),
+);
 
 // ── Schlussrangliste ───────────────────────────────────────────────────────
 
