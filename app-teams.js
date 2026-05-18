@@ -310,6 +310,88 @@ function getSortedStandings(category) {
     });
 }
 
+// ── Schlussrangliste (Gruppe + Finalspiele) ─────────────────────────────────
+// Beschreibt, welche Finalspiel-Resultate welchen Schluss-Rang bestimmen.
+// Ränge, die hier nicht aufgeführt sind (z.B. Jugend 5–8), werden aus der
+// Gruppenphase übernommen.
+const FINAL_RANK_RULES = {
+  adult_ambitious: [
+    { rank: 1, kind: "winner", matchId: "a-fin" },
+    { rank: 2, kind: "loser",  matchId: "a-fin" },
+    { rank: 3, kind: "winner", matchId: "a-p3"  },
+    { rank: 4, kind: "loser",  matchId: "a-p3"  },
+    { rank: 5, kind: "winner", matchId: "a-p5"  },
+    { rank: 6, kind: "loser",  matchId: "a-p5"  },
+  ],
+  adult_fun: [
+    { rank: 1, kind: "winner", matchId: "p-fin" },
+    { rank: 2, kind: "loser",  matchId: "p-fin" },
+    { rank: 3, kind: "winner", matchId: "p-p3"  },
+    { rank: 4, kind: "loser",  matchId: "p-p3"  },
+  ],
+  youth: [
+    { rank: 1, kind: "winner", matchId: "j-fin" },
+    { rank: 2, kind: "loser",  matchId: "j-fin" },
+    { rank: 3, kind: "winner", matchId: "j-p3"  },
+    { rank: 4, kind: "loser",  matchId: "j-p3"  },
+  ],
+};
+
+// Liefert die Schlussrangliste einer Kategorie als Array von
+// { rank, code, team, pts, gf, ga, played }.
+//
+// Vorgehen:
+//   1) Gruppenstandings berechnen (Sortierung wie bisher).
+//   2) Für jeden definierten Finalspiel-Rang den Sieger/Verlierer einsetzen,
+//      sofern das Spiel bereits ein vollständiges Resultat hat.
+//   3) Verbleibende Ränge mit den (noch nicht zugewiesenen) Teams aus der
+//      Gruppenphase auffüllen – in deren Reihenfolge.
+//   Damit funktioniert die Anzeige auch während des Turniers korrekt:
+//   So lange ein Finalspiel noch nicht gespielt ist, dient die Gruppenphase
+//   als Fallback.
+function getFinalRanking(category) {
+  const groupStandings = getSortedStandings(category);
+  const total = groupStandings.length;
+  const rules = FINAL_RANK_RULES[category] || [];
+
+  const ranked = new Array(total).fill(null);
+  const usedCodes = new Set();
+
+  for (const { rank, kind, matchId } of rules) {
+    if (rank < 1 || rank > total) continue;
+    const { winnerCode, loserCode } = getWinnerLoserOf(matchId);
+    const code = kind === "winner" ? winnerCode : loserCode;
+    if (!code || usedCodes.has(code)) continue;
+    ranked[rank - 1] = code;
+    usedCodes.add(code);
+  }
+
+  const fallback = groupStandings.filter((s) => !usedCodes.has(s.code));
+  let fbIdx = 0;
+  for (let i = 0; i < total; i++) {
+    if (ranked[i] !== null) continue;
+    while (fbIdx < fallback.length && usedCodes.has(fallback[fbIdx].code)) fbIdx++;
+    if (fbIdx >= fallback.length) break;
+    ranked[i] = fallback[fbIdx].code;
+    usedCodes.add(fallback[fbIdx].code);
+    fbIdx++;
+  }
+
+  const statsByCode = new Map(groupStandings.map((s) => [s.code, s]));
+  return ranked.map((code, i) => {
+    const stats = code ? statsByCode.get(code) : null;
+    return {
+      rank: i + 1,
+      code: code ?? null,
+      team: stats?.team ?? (code ? getTeamByCode(code) : null),
+      pts: stats?.pts ?? 0,
+      gf: stats?.gf ?? 0,
+      ga: stats?.ga ?? 0,
+      played: stats?.played ?? 0,
+    };
+  });
+}
+
 function ratioText(gf, ga) {
   if (ga === 0) return gf > 0 ? "∞" : "0";
   return (gf / ga).toFixed(2);
@@ -1046,9 +1128,11 @@ function renderRangliste() {
     ranglisteTableBody.innerHTML = '<tr><td colspan="7">Keine Daten verfügbar.</td></tr>';
     return;
   }
-  const rows = getSortedStandings(selectedRanglisteCategory).map(({ code, team, pts, gf, ga, played }, idx) => {
-    const teamLabel = team ? escapeHtml(team.name) : `<span class="team-placeholder">–</span>`;
-    return `<tr><td>${idx + 1}</td><td>${teamLabel}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
+  const rows = getFinalRanking(selectedRanglisteCategory).map(({ rank, code, team, pts, gf, ga, played }) => {
+    const teamLabel = team
+      ? escapeHtml(team.name)
+      : (code ? escapeHtml(code) : `<span class="team-placeholder">–</span>`);
+    return `<tr><td>${rank}</td><td>${teamLabel}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
   });
   ranglisteTableBody.innerHTML = rows.join("");
 }
