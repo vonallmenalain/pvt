@@ -317,8 +317,19 @@ function rowClassForPhase(kind) {
   return kind === "group" ? "" : `row-phase-${kind}`;
 }
 
-function scoreCellHtml(match) {
+function scoreCellHtml(match, { editable = false } = {}) {
   const score = resultMap[match.id] || { home: "", away: "" };
+  if (editable) {
+    const homeCode = refTeamCode(match.home, match.category);
+    const awayCode = refTeamCode(match.away, match.category);
+    if (homeCode && awayCode) {
+      return `<span class="schedule-result schedule-result-editable">`
+        + `<input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" aria-label="Punkte Heim">`
+        + ` : `
+        + `<input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" aria-label="Punkte Gast">`
+        + `</span>`;
+    }
+  }
   if (hasCompleteScore(match.id)) {
     return `<span class="schedule-result">${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}</span>`;
   }
@@ -368,7 +379,7 @@ function renderSchedule() {
     const catBadge = categoryChipHtml(match.category);
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
-    const scoreCell = scoreCellHtml(match);
+    const scoreCell = scoreCellHtml(match, { editable: !!currentUser });
     const timeCell = `<span class="time-start">${match.time}</span><span class="time-range"> – ${match.endTime}</span>`;
     return `<tr class="${rowCls}">
       <td class="col-time">${timeCell}</td>
@@ -720,11 +731,11 @@ document.addEventListener("click", (event) => {
   setView("schedule");
 });
 
-// ── Ergebniseingabe (nur Org-Panel) ─────────────────────────────────────────
+// ── Ergebniseingabe (Org-Panel + Spielplan, nur angemeldet) ─────────────────
 document.addEventListener("change", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
-  if (!target.matches(".result-input.org-input") || !currentUser) return;
+  if (!target.matches(".result-input[data-result-match]") || !currentUser) return;
   const matchId = target.dataset.resultMatch;
   const side = target.dataset.side;
   if (!matchId || !side) return;
