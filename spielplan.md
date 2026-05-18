@@ -23,11 +23,11 @@ Vor folgenden Slots muss das Netz auf Feld 2 umgestellt werden:
 
 | Wechsel | Block | Netzhöhe |
 |---------|-------|----------|
+| Start 11:30 | 11:30–12:30 (Plausch-Block) | Erwachsene |
 | Vor 12:45 | 12:45–13:15 (3 Jugendspiele) | Jugend |
-| Vor 13:30 | 13:30–15:45 (Plausch-Block) | Erwachsene |
-| Vor 15:00 | 15:00–15:30 (3 Jugendspiele) | Jugend |
-| Vor 15:45 | 15:45–16:45 (Plausch-Block inkl. Finalrunde) | Erwachsene |
-| Vor 17:00 | 17:00 (Jugend Spiel um Platz 3) | Jugend |
+| Vor 13:30 | 13:30–14:30 (Plausch-Block) | Erwachsene |
+| Vor 14:45 | 14:45–15:45 (5 Jugendspiele) | Jugend |
+| Vor 16:00 | 16:00–17:00 (Plausch-Block inkl. Halbfinals & Finale) | Erwachsene |
 
 ## Kategorien & Modus
 
@@ -44,13 +44,15 @@ Vor folgenden Slots muss das Netz auf Feld 2 umgestellt werden:
 
 - Vorrunde: Doppel-Round-Robin (12 Spiele)
 - Halbfinals: HF1 (Rang 1 vs Rang 4), HF2 (Rang 2 vs Rang 3)
-- Spiel um Platz 3: Verlierer HF1 vs Verlierer HF2
-- Finale: Sieger HF1 vs Sieger HF2
+- Spiel um Platz 3 (17:00 auf **Feld 1**, parallel zum Plausch-Finale)
+- Finale (17:00 auf Feld 2)
 
 ### Jugendliche – Feld 2/3 (8 Teams: J1–J8)
 
-- Vorrunde: Volles Round-Robin (28 Spiele)
-- Spiel um Platz 3 (Feld 2) **und** Finale (Feld 3) gleichzeitig um 17:00
+- Vorrunde: Volles Round-Robin (28 Spiele, 20 auf Feld 3 und 8 auf Feld 2)
+- Spiel um Platz 3: 16:30 auf Feld 3
+- Finale: 16:45 auf Feld 3
+- Kein Jugend-Spielstart nach 16:45; Feld 3 ab 17:00 frei für Siegerehrung / Abbau
 
 ## Quelle der Wahrheit
 
