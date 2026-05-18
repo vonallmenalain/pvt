@@ -18,8 +18,6 @@ import {
   CATEGORY_SHORT_LABELS,
   CATEGORY_CODES,
   CODE_TO_CATEGORY,
-  getField2NetSwitches,
-  getField2Blocks,
 } from "./tournament-schedule.js";
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
@@ -65,9 +63,6 @@ let selectedScheduleCategory = "all";
 let selectedScheduleTeam = "";
 let selectedRanglisteCategory = "adult_ambitious";
 let ranglistePublished = false;
-
-const FIELD2_SWITCHES = getField2NetSwitches();
-const FIELD2_BLOCKS = getField2Blocks();
 
 // ── Modal Helper ─────────────────────────────────────────────────────────────
 function openModal() {
@@ -305,20 +300,6 @@ function categoryChipHtml(category, { clickable = true } = {}) {
   return `<button type="button" class="cat-chip cat-chip-clickable cat-${category}" data-category-filter="${category}" title="Spielplan auf ${escapeHtml(label)} filtern">${escapeHtml(label)}</button>`;
 }
 
-function netSwitchChipHtml(match) {
-  if (match.field !== "2") return "";
-  const sw = FIELD2_SWITCHES.get(match.id);
-  if (!sw) return "";
-  const to = sw.to === "youth" ? "Jugend" : "Erwachsene";
-  return `<span class="net-switch" title="Netzhöhe wechseln auf ${to}">⇅ Netzhöhe → ${to}</span>`;
-}
-
-function netHeightChipHtml(match) {
-  const label = match.netHeight === "youth" ? "Netzhöhe Jugend" : "Netzhöhe Erwachsene";
-  const cls = match.netHeight === "youth" ? "net-chip net-youth" : "net-chip net-adult";
-  return `<span class="${cls}">${label}</span>`;
-}
-
 function teamCellHtml(ref, category, matchId, side) {
   const teamId = refTeamId(ref, category);
   const displayName = refDisplayName(ref, category);
@@ -326,11 +307,9 @@ function teamCellHtml(ref, category, matchId, side) {
   const score = resultMap[matchId] || { home: "", away: "" };
   const outcome = getMatchOutcomeClass(score.home, score.away, side);
   const isPlaceholder = !teamId && !code;
-  const codeSuffix = code ? ` <span class="team-code">(${escapeHtml(code)})</span>` : "";
   if (teamId) {
-    return `<button type="button" class="team-link ${outcome}" data-team-select="${teamId}">${escapeHtml(displayName)}</button>${codeSuffix}`;
+    return `<button type="button" class="team-link ${outcome}" data-team-select="${teamId}">${escapeHtml(displayName)}</button>`;
   }
-  // Kein Team registriert: zeige Code/Platzhalter
   return `<span class="team-placeholder${isPlaceholder ? " is-dynamic" : ""}">${escapeHtml(displayName)}</span>`;
 }
 
@@ -387,14 +366,13 @@ function renderSchedule() {
     const rowCls = rowClassForPhase(match.phaseKind);
     const phaseBadge = phaseChipHtml(match);
     const catBadge = categoryChipHtml(match.category);
-    const netSwitch = netSwitchChipHtml(match);
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match);
     const timeCell = `<span class="time-start">${match.time}</span><span class="time-range"> – ${match.endTime}</span>`;
     return `<tr class="${rowCls}">
       <td class="col-time">${timeCell}</td>
-      <td class="col-field">Feld ${match.field}${netSwitch}</td>
+      <td class="col-field">Feld ${match.field}</td>
       <td class="col-category">${catBadge}${phaseBadge ? " " + phaseBadge : ""}</td>
       <td class="col-game">
         <div class="col-game-inner">
@@ -414,9 +392,9 @@ function refreshScheduleTeamOptions() {
   // Aktuelle Auswahl ggf. löschen, falls Kategorie gewechselt wird
   const currentValid = teams.some((t) => t.id === selectedScheduleTeam);
   if (!currentValid) selectedScheduleTeam = "";
-  const sorted = teams.slice().sort((a, b) => (a.code || a.name).localeCompare(b.code || b.name, "de"));
+  const sorted = teams.slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
   const opts = ['<option value="">Alle Teams</option>']
-    .concat(sorted.map((t) => `<option value="${t.id}">${escapeHtml(t.code ? `${t.code} – ${t.name}` : t.name)}</option>`));
+    .concat(sorted.map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`));
   scheduleTeamFilter.innerHTML = opts.join("");
   scheduleTeamFilter.value = selectedScheduleTeam;
 }
@@ -438,10 +416,9 @@ scheduleTeamFilter?.addEventListener("change", (event) => {
 // ── Teams-Tab ────────────────────────────────────────────────────────────────
 function renderTeamCard(team) {
   const canDelete = Boolean(currentUser);
-  const codeBadge = team.code ? `<span class="team-card-code">${escapeHtml(team.code)}</span>` : "";
   return `<li class="team-card" data-team-select="${team.id}">
     <div class="team-card-content">
-      <p class="team-name">${codeBadge}${escapeHtml(team.name)}</p>
+      <p class="team-name">${escapeHtml(team.name)}</p>
       <p class="team-meta">Gemeinde: ${escapeHtml(team.community)}</p>
       <p class="team-meta">Mannschaftsverantwortlich: ${escapeHtml(team.manager)}</p>
     </div>
@@ -482,11 +459,9 @@ function renderGroupStandings(category, selectedCode) {
   const rows = getSortedStandings(category)
     .map(({ code, team, pts, gf, ga, played }, idx) => {
       const rowClass = code === selectedCode ? ' class="is-selected-row"' : "";
-      const displayName = team ? team.name : code;
-      const codeLabel = team ? `<span class="team-code">${escapeHtml(code)}</span> ${escapeHtml(displayName)}` : `<em>${escapeHtml(code)}</em>`;
       const nameCell = team
-        ? `<button type="button" class="team-link" data-team-select="${team.id}">${codeLabel}</button>`
-        : codeLabel;
+        ? `<button type="button" class="team-link" data-team-select="${team.id}">${escapeHtml(team.name)}</button>`
+        : `<span class="team-placeholder">–</span>`;
       return `<tr${rowClass}><td>${idx + 1}</td><td>${nameCell}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
     });
   dashboardGroupTable.innerHTML = rows.join("");
@@ -542,9 +517,8 @@ function renderTeamDashboard(teamId) {
   const category = selectedTeam.category;
   const code = selectedTeam.code || null;
 
-  const codeText = code ? ` · Code ${code}` : "";
   dashboardTitle.textContent = selectedTeam.name;
-  dashboardInfo.textContent = `${CATEGORY_LABELS[category]}${codeText}`;
+  dashboardInfo.textContent = CATEGORY_LABELS[category];
 
   renderGroupStandings(category, code);
 
@@ -562,7 +536,7 @@ function renderTeamDashboard(teamId) {
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match);
-    const phaseLabel = match.phase + (match.field === "2" && FIELD2_SWITCHES.has(match.id) ? " ⇅" : "");
+    const phaseLabel = match.phase;
     return `<tr><td>${escapeHtml(phaseLabel)}</td><td class="col-time">${match.time}</td><td>Feld ${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeCell}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${awayCell}</span></div></td></tr>`;
   }).join("");
 }
@@ -571,10 +545,9 @@ function renderDashboardTeamOptions() {
   if (!dashboardTeamSelect) return;
   const options = allTeams
     .slice()
-    .sort((a, b) => (a.code || a.name).localeCompare(b.code || b.name, "de"))
+    .sort((a, b) => a.name.localeCompare(b.name, "de"))
     .map((team) => {
-      const codePrefix = team.code ? `${team.code} – ` : "";
-      return `<option value="${team.id}">${escapeHtml(codePrefix + team.name)} (${CATEGORY_SHORT_LABELS[team.category]})</option>`;
+      return `<option value="${team.id}">${escapeHtml(team.name)} (${CATEGORY_SHORT_LABELS[team.category]})</option>`;
     }).join("");
   dashboardTeamSelect.innerHTML = `<option value="">Bitte Team auswählen</option>${options}`;
   dashboardTeamSelect.value = selectedTeamId || "";
@@ -601,7 +574,6 @@ function renderOrganizationPanel() {
       const homeCode = refTeamCode(match.home, match.category);
       const awayCode = refTeamCode(match.away, match.category);
       const hasBoth = homeCode && awayCode;
-      const netSwitch = netSwitchChipHtml(match);
       const phaseInfo = match.phaseKind === "group" ? "" : ` <em class="org-phase">(${escapeHtml(match.phase)})</em>`;
       const inputs = hasBoth
         ? `<input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}"> : <input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}">`
@@ -612,7 +584,7 @@ function renderOrganizationPanel() {
         <span class="org-team">${escapeHtml(homeName)}</span>
         <span class="org-score">${inputs}</span>
         <span class="org-team org-team-away">${escapeHtml(awayName)}</span>
-        ${netSwitch}${phaseInfo}
+        ${phaseInfo}
       </div>`;
     }).join("");
     return `<div class="org-row"><button type="button" class="org-toggle" data-org-toggle="${idx}"><span>${slot.time}</span><span>▾</span></button><div class="org-body" id="org-body-${idx}" hidden><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
@@ -897,7 +869,7 @@ function renderRangliste() {
     return;
   }
   const rows = getSortedStandings(selectedRanglisteCategory).map(({ code, team, pts, gf, ga, played }, idx) => {
-    const teamLabel = team ? `<span class="team-code">${escapeHtml(code)}</span> ${escapeHtml(team.name)}` : `<em>${escapeHtml(code)}</em>`;
+    const teamLabel = team ? escapeHtml(team.name) : `<span class="team-placeholder">–</span>`;
     return `<tr><td>${idx + 1}</td><td>${teamLabel}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
   });
   ranglisteTableBody.innerHTML = rows.join("");
@@ -931,24 +903,6 @@ onSnapshot(doc(db, "rangliste", "status"), (snap) => {
   ranglistePublished = snap.exists() ? Boolean(snap.data()?.published) : false;
   updateRanglisteVisibility();
 });
-
-// ── Netzhöhen-Hinweise (Infos-Bereich) ───────────────────────────────────────
-// Erzeugt zur Laufzeit die Liste der Field-2-Jugendblöcke unter "Spielmodus".
-function renderNetHeightInfo() {
-  const container = document.getElementById("net-height-info");
-  if (!container) return;
-  const youthBlocks = FIELD2_BLOCKS.filter((b) => b.netHeight === "youth");
-  if (!youthBlocks.length) {
-    container.innerHTML = "";
-    return;
-  }
-  const items = youthBlocks.map((b) => {
-    const count = b.matches.length;
-    return `<li>${b.startTime} – ${b.endTime} (${count} Jugendspiel${count === 1 ? "" : "e"})</li>`;
-  });
-  container.innerHTML = `<ul class="net-height-list">${items.join("")}</ul>`;
-}
-renderNetHeightInfo();
 
 // Initial render
 renderSchedule();
