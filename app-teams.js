@@ -335,6 +335,10 @@ const FINAL_RANK_RULES = {
     { rank: 2, kind: "loser",  matchId: "j-fin" },
     { rank: 3, kind: "winner", matchId: "j-p3"  },
     { rank: 4, kind: "loser",  matchId: "j-p3"  },
+    { rank: 5, kind: "winner", matchId: "j-p5"  },
+    { rank: 6, kind: "loser",  matchId: "j-p5"  },
+    { rank: 7, kind: "winner", matchId: "j-p7"  },
+    { rank: 8, kind: "loser",  matchId: "j-p7"  },
   ],
 };
 
