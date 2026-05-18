@@ -187,6 +187,43 @@ function getTeamById(id) {
   return allTeams.find((t) => t.id === id) || null;
 }
 
+// Auto-Zuordnung von Spielcodes über das Namens-Schema der Teams in der DB:
+//   "Jugendliche 1"  → J1 … "Jugendliche 8"   → J8
+//   "Plausch 1"      → P1 … "Plausch 4"       → P4
+//   "Ambitioniert 1" → A1 … "Ambitioniert 6"  → A6
+// So sind Teams ohne explizit gesetzten Code automatisch an den Spielplan
+// gekoppelt. Ein bereits gesetzter Code hat Vorrang; doppelte Codes werden
+// nicht überschrieben.
+const AUTO_CODE_PATTERNS = [
+  { prefix: "J", re: /^Jugendliche\s+(\d+)$/i,  max: 8, category: "youth" },
+  { prefix: "P", re: /^Plausch\s+(\d+)$/i,      max: 4, category: "adult_fun" },
+  { prefix: "A", re: /^Ambitioniert\s+(\d+)$/i, max: 6, category: "adult_ambitious" },
+];
+
+function autoResolveCodeFromName(team) {
+  if (!team?.name) return null;
+  for (const { prefix, re, max, category } of AUTO_CODE_PATTERNS) {
+    if (team.category && team.category !== category) continue;
+    const match = team.name.match(re);
+    if (!match) continue;
+    const num = Number(match[1]);
+    if (!Number.isInteger(num) || num < 1 || num > max) continue;
+    return `${prefix}${num}`;
+  }
+  return null;
+}
+
+function annotateTeamsWithAutoCodes(teams) {
+  const taken = new Set(teams.filter((t) => t.code).map((t) => t.code));
+  return teams.map((team) => {
+    if (team.code) return team;
+    const auto = autoResolveCodeFromName(team);
+    if (!auto || taken.has(auto)) return team;
+    taken.add(auto);
+    return { ...team, code: auto, autoCode: true };
+  });
+}
+
 // ── Standings (per Kategorie, nur Gruppenspiele) ─────────────────────────────
 function getGroupMatchesForCategory(category) {
   return TOURNAMENT_SCHEDULE.filter((m) => m.category === category && m.phaseKind === "group");
@@ -260,9 +297,12 @@ function phaseChipHtml(match) {
   return `<span class="phase-chip phase-${kind}">${escapeHtml(match.phase)}</span>`;
 }
 
-function categoryChipHtml(category) {
+function categoryChipHtml(category, { clickable = true } = {}) {
   const label = CATEGORY_SHORT_LABELS[category] || category;
-  return `<span class="cat-chip cat-${category}">${escapeHtml(label)}</span>`;
+  if (!clickable) {
+    return `<span class="cat-chip cat-${category}">${escapeHtml(label)}</span>`;
+  }
+  return `<button type="button" class="cat-chip cat-chip-clickable cat-${category}" data-category-filter="${category}" title="Spielplan auf ${escapeHtml(label)} filtern">${escapeHtml(label)}</button>`;
 }
 
 function netSwitchChipHtml(match) {
@@ -649,7 +689,8 @@ onAuthStateChanged(auth, (user) => {
 });
 
 onSnapshot(query(collection(db, "teams"), orderBy("createdAt", "desc")), (snapshot) => {
-  allTeams = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+  const rawTeams = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+  allTeams = annotateTeamsWithAutoCodes(rawTeams);
   renderTeams(allTeams);
 });
 
@@ -675,6 +716,25 @@ document.addEventListener("click", async (event) => {
   const teamId = target.dataset.teamId;
   if (!teamId) return;
   await deleteDoc(doc(db, "teams", teamId));
+});
+
+// ── Kategorie-Klicks (Spielplan filtern) ─────────────────────────────────────
+// Klick auf einen Kategorie-Chip (z.B. "Ambitioniert") öffnet den Spielplan
+// und filtert sofort auf die angeklickte Kategorie.
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  const chip = target.closest("[data-category-filter]");
+  if (!chip) return;
+  event.preventDefault();
+  const category = chip.getAttribute("data-category-filter");
+  if (!category) return;
+  selectedScheduleCategory = category;
+  selectedScheduleTeam = "";
+  if (scheduleCategoryFilter) scheduleCategoryFilter.value = category;
+  if (scheduleTeamFilter) scheduleTeamFilter.value = "";
+  setView("schedule");
+  renderSchedule();
 });
 
 // ── Ergebniseingabe (nur Org-Panel) ─────────────────────────────────────────
