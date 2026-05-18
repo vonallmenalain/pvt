@@ -335,6 +335,29 @@
       .schedule-legend { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; margin: 0.4rem 0 0.6rem; font-size: 0.78rem; color: var(--muted); align-items: center; }
       .schedule-legend .legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
 
+      /* Kategorie-Picker (4 Kacheln) im Spielplan */
+      .schedule-picker-label { margin: 0.15rem 0 0.5rem; font-size: 0.95rem; color: var(--muted); }
+      .schedule-category-tiles {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 0.55rem; margin: 0 0 0.9rem;
+      }
+      .cat-tile {
+        font-family: inherit; font-weight: 700; font-size: 0.9rem;
+        padding: 0.6rem 0.45rem; border-radius: 0.55rem;
+        border: 1px solid currentColor; cursor: pointer;
+        text-align: center; line-height: 1.2;
+        background: rgba(255, 255, 255, 0.04);
+        transition: transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      }
+      .cat-tile:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
+      .cat-tile:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.55); outline-offset: 2px; }
+      .cat-tile.is-active {
+        box-shadow: 0 0 0 2px currentColor inset, 0 2px 8px rgba(0, 0, 0, 0.35);
+        filter: brightness(1.1);
+      }
+      .cat-tile-all { color: #e0e0e0; border-color: rgba(255, 255, 255, 0.55); background: rgba(255, 255, 255, 0.08); }
+      .cat-tile-all.is-active { background: rgba(255, 255, 255, 0.18); }
+
       /* Kategorie-Chips (farblich) */
       .cat-chip {
         display: inline-block; padding: 0.1rem 0.45rem; border-radius: 999px;
@@ -373,11 +396,10 @@
       .phase-placement { background: rgba(176, 190, 197, 0.20); color: #cfd8dc; }
       .phase-final     { background: rgba(229, 57, 53, 0.22);  color: #ffab91; font-weight: 800; }
 
-      /* Final-Reihen leicht hervorheben */
-      .schedule-table tr.row-phase-final td        { background: rgba(229, 57, 53, 0.08) !important; }
-      .schedule-table tr.row-phase-semifinal td    { background: rgba(255, 145, 0, 0.07) !important; }
-      .schedule-table tr.row-phase-quali td        { background: rgba(255, 235, 59, 0.06) !important; }
-      .schedule-table tr.row-phase-placement td    { background: rgba(176, 190, 197, 0.05) !important; }
+      /* Zeilen nach Kategorie leicht einfärben */
+      .schedule-table tr.row-cat-adult_ambitious td { background: rgba(255, 167, 38, 0.08) !important; }
+      .schedule-table tr.row-cat-adult_fun       td { background: rgba(102, 187, 106, 0.08) !important; }
+      .schedule-table tr.row-cat-youth           td { background: rgba(92, 107, 192, 0.10) !important; }
 
       /* Netzhöhen-Wechsel-Hinweis */
       .net-switch {
@@ -438,6 +460,7 @@
         body { background: #fff; color: #000; }
         .bg-stage-glow, .bg-orb, .view-toggle, .auth-trigger-wrap,
         .hero-row .auth-trigger-wrap, .schedule-filters, .schedule-legend,
+        .schedule-category-tiles, .schedule-picker-label,
         button, .team-delete, .auth-modal { display: none !important; }
         .wrap { max-width: 100%; padding: 0.5cm; }
         .hero { background: none; color: #000; padding: 0 0 0.5cm; }
@@ -446,10 +469,9 @@
         .schedule-table { font-size: 9pt; }
         .schedule-table th { background: #ddd !important; color: #000 !important; }
         .schedule-table td { color: #000 !important; }
-        .schedule-table tr.row-phase-final td { background: #fce4ec !important; }
-        .schedule-table tr.row-phase-semifinal td { background: #fff3e0 !important; }
-        .schedule-table tr.row-phase-quali td { background: #fff9c4 !important; }
-        .schedule-table tr.row-phase-placement td { background: #eceff1 !important; }
+        .schedule-table tr.row-cat-adult_ambitious td { background: #fff3e0 !important; }
+        .schedule-table tr.row-cat-adult_fun td { background: #e8f5e9 !important; }
+        .schedule-table tr.row-cat-youth td { background: #e8eaf6 !important; }
         .cat-chip, .phase-chip, .net-switch, .team-code { border: 1px solid #999; color: #000 !important; background: #fff !important; }
         .team-link, .team-placeholder { color: #000 !important; }
         .final-ranking .rank-row { background: #fff !important; border: 1px solid #ccc; }
@@ -510,6 +532,17 @@
 
         /* Schedule filter on Spielplan panel */
         .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
+
+        /* Kategorie-Kacheln: auch auf Mobile in einer Reihe mit 4 Spalten */
+        .schedule-category-tiles { grid-template-columns: repeat(4, 1fr); gap: 0.35rem; }
+        .cat-tile {
+          padding: 0.5rem 0.2rem;
+          font-size: 0.72rem;
+          letter-spacing: -0.01em;
+          word-break: break-word;
+          hyphens: auto;
+        }
+        .schedule-picker-label { font-size: 0.85rem; }
 
         /* Hinweis: Früher stand hier zusätzlich
            `overscroll-behavior-y: none` auf html/body, um den
@@ -652,7 +685,7 @@
                 <strong>Feld 3</strong>: Jugend
               </dd>
               <dt>Spielmodus Ambitioniert</dt>
-              <dd>6 Teams · Round-Robin (15 Spiele) · Zwischenrunde Q1/Q2 · Halbfinals · Spiel um Platz 3 &amp; 5 · Finale</dd>
+              <dd>6 Teams · Round-Robin (15 Spiele) · Zwischenrunde · Halbfinals · Spiel um Platz 3 &amp; 5 · Finale</dd>
               <dt>Spielmodus Plausch</dt>
               <dd>4 Teams · Doppel-Round-Robin (12 Spiele) · Halbfinals · Spiel um Platz 3 · Finale</dd>
               <dt>Spielmodus Jugend</dt>
@@ -684,31 +717,16 @@
 
       <section class="content-panel tile-panel" id="schedule-panel" aria-label="Spielplan" hidden>
           <h2 id="schedule-title">Spielplan</h2>
-          <div class="schedule-filters">
-            <div class="schedule-filter">
-              <label for="schedule-category-filter">Kategorie</label>
-              <select id="schedule-category-filter">
-                <option value="all">Alle Kategorien</option>
-                <option value="adult_ambitious">Erwachsene Ambitioniert</option>
-                <option value="adult_fun">Erwachsene Plausch</option>
-                <option value="youth">Jugendliche</option>
-              </select>
-            </div>
-            <div class="schedule-filter">
-              <label for="schedule-team-filter">Team</label>
-              <select id="schedule-team-filter">
-                <option value="">Alle Teams</option>
-              </select>
-            </div>
-          </div>
-          <div class="schedule-legend" aria-label="Legende">
-            <span class="legend-item"><button type="button" class="cat-chip cat-chip-clickable cat-adult_ambitious" data-category-filter="adult_ambitious" title="Spielplan auf Ambitioniert filtern">Ambitioniert</button> Feld 1</span>
-            <span class="legend-item"><button type="button" class="cat-chip cat-chip-clickable cat-adult_fun" data-category-filter="adult_fun" title="Spielplan auf Plausch filtern">Plausch</button> Feld 2</span>
-            <span class="legend-item"><button type="button" class="cat-chip cat-chip-clickable cat-youth" data-category-filter="youth" title="Spielplan auf Jugend filtern">Jugend</button> Feld 2 / 3</span>
+          <p class="schedule-picker-label" id="schedule-picker-label">Wähle die Kategorie</p>
+          <div class="schedule-category-tiles" role="group" aria-labelledby="schedule-picker-label">
+            <button type="button" class="cat-tile cat-tile-all is-active" data-category-filter="all" aria-pressed="true">Alle</button>
+            <button type="button" class="cat-tile cat-adult_ambitious" data-category-filter="adult_ambitious" aria-pressed="false">Ambitioniert</button>
+            <button type="button" class="cat-tile cat-adult_fun" data-category-filter="adult_fun" aria-pressed="false">Plausch</button>
+            <button type="button" class="cat-tile cat-youth" data-category-filter="youth" aria-pressed="false">Jugend</button>
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
-              <thead><tr><th>Zeit</th><th>Feld</th><th>Kategorie / Phase</th><th>Spiel</th></tr></thead>
+              <thead><tr><th>Zeit</th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
               <tbody id="schedule-table-body"><tr><td colspan="4">Spielplan wird geladen…</td></tr></tbody>
             </table>
           </div>

@@ -112,34 +112,34 @@ const SCHEDULE_AMBI = [
   ["a-g15", "14:48", "A4", "A5"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "1", category: "adult_ambitious",
-  phase: "Vorrunde", phaseKind: "group",
+  phase: "Gruppe", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
 const SCHEDULE_AMBI_FINALS = [
   makeEntry({
     id: "a-q1", time: "15:00", field: "1", category: "adult_ambitious",
-    phase: "Zwischenrunde Q1", phaseKind: "quali",
+    phase: "Zwischenrunde", phaseKind: "quali",
     home: { rank: 3 }, away: { rank: 6 },
   }),
   makeEntry({
     id: "a-q2", time: "15:12", field: "1", category: "adult_ambitious",
-    phase: "Zwischenrunde Q2", phaseKind: "quali",
+    phase: "Zwischenrunde", phaseKind: "quali",
     home: { rank: 4 }, away: { rank: 5 },
   }),
   makeEntry({
     id: "a-qtop", time: "15:24", field: "1", category: "adult_ambitious",
-    phase: "Zwischenrunde Top", phaseKind: "quali",
+    phase: "Zwischenrunde", phaseKind: "quali",
     home: { rank: 1 }, away: { rank: 2 },
   }),
   makeEntry({
     id: "a-quali1", time: "15:36", field: "1", category: "adult_ambitious",
-    phase: "Quali 1", phaseKind: "semifinal",
+    phase: "Halbfinal 1", phaseKind: "semifinal",
     home: { winnerOf: "a-qtop" }, away: { winnerOf: "a-q2" },
   }),
   makeEntry({
     id: "a-quali2", time: "15:48", field: "1", category: "adult_ambitious",
-    phase: "Quali 2", phaseKind: "semifinal",
+    phase: "Halbfinal 2", phaseKind: "semifinal",
     home: { loserOf: "a-qtop" }, away: { winnerOf: "a-q1" },
   }),
   // Ab hier 15-Minuten-Slots (13 Min Spielzeit + 2 Min Pause).
@@ -179,7 +179,7 @@ const SCHEDULE_PLAUSCH = [
   ["p-g12", "15:48", "P2", "P3"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "2", category: "adult_fun",
-  phase: "Vorrunde", phaseKind: "group",
+  phase: "Gruppe", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
@@ -234,7 +234,7 @@ const SCHEDULE_YOUTH_F3 = [
   ["j-g20", "15:48", "J1", "J2"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "3", category: "youth",
-  phase: "Vorrunde", phaseKind: "group",
+  phase: "Gruppe", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
@@ -252,7 +252,7 @@ const SCHEDULE_YOUTH_F2 = [
   ["j-g28", "15:36", "J6", "J8"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "2", category: "youth",
-  phase: "Vorrunde", phaseKind: "group",
+  phase: "Gruppe", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 

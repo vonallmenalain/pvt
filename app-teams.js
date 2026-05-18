@@ -51,8 +51,7 @@ const dashboardInfo = document.getElementById("dashboard-team-info");
 const dashboardGroupTable = document.getElementById("dashboard-group-table");
 const dashboardMatchTable = document.getElementById("dashboard-match-table");
 
-const scheduleCategoryFilter = document.getElementById("schedule-category-filter");
-const scheduleTeamFilter = document.getElementById("schedule-team-filter");
+const scheduleCategoryTiles = document.querySelectorAll(".schedule-category-tiles .cat-tile");
 const scheduleTableBody = document.getElementById("schedule-table-body");
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -61,7 +60,6 @@ let allTeams = [];
 let selectedTeamId = null;
 let resultMap = {};
 let selectedScheduleCategory = "all";
-let selectedScheduleTeam = "";
 let selectedRanglisteCategory = "adult_ambitious";
 let ranglistePublished = false;
 
@@ -426,7 +424,6 @@ teamCategorySelect?.addEventListener("change", () => refreshTeamCodeOptions());
 // ── Spielplan-Rendering ──────────────────────────────────────────────────────
 function phaseChipHtml(match) {
   const kind = match.phaseKind;
-  if (kind === "group") return "";
   return `<span class="phase-chip phase-${kind}">${escapeHtml(match.phase)}</span>`;
 }
 
@@ -436,6 +433,10 @@ function categoryChipHtml(category, { clickable = true } = {}) {
     return `<span class="cat-chip cat-${category}">${escapeHtml(label)}</span>`;
   }
   return `<button type="button" class="cat-chip cat-chip-clickable cat-${category}" data-category-filter="${category}" title="Spielplan auf ${escapeHtml(label)} filtern">${escapeHtml(label)}</button>`;
+}
+
+function rowClassForCategory(category) {
+  return `row-cat-${category}`;
 }
 
 function teamCellHtml(ref, category, matchId, side) {
@@ -451,9 +452,6 @@ function teamCellHtml(ref, category, matchId, side) {
   return `<span class="team-placeholder${isPlaceholder ? " is-dynamic" : ""}">${escapeHtml(displayName)}</span>`;
 }
 
-function rowClassForPhase(kind) {
-  return kind === "group" ? "" : `row-phase-${kind}`;
-}
 
 function scoreCellHtml(match, { editable = false } = {}) {
   const score = resultMap[match.id] || { home: "", away: "" };
@@ -479,23 +477,6 @@ function scheduleMatchesFiltered() {
   if (selectedScheduleCategory !== "all") {
     list = list.filter((m) => m.category === selectedScheduleCategory);
   }
-  if (selectedScheduleTeam) {
-    const team = getTeamById(selectedScheduleTeam);
-    const code = team?.code;
-    if (code) {
-      list = list.filter((m) => {
-        const hc = refTeamCode(m.home, m.category);
-        const ac = refTeamCode(m.away, m.category);
-        return hc === code || ac === code;
-      });
-    } else if (team) {
-      list = list.filter((m) => {
-        const hid = refTeamId(m.home, m.category);
-        const aid = refTeamId(m.away, m.category);
-        return hid === team.id || aid === team.id;
-      });
-    }
-  }
   // Sort by time, then field
   return list.sort((a, b) => {
     if (a.time !== b.time) return a.time.localeCompare(b.time);
@@ -506,25 +487,23 @@ function scheduleMatchesFiltered() {
 function renderSchedule() {
   if (!scheduleTableBody) return;
   const focus = captureResultInputFocus();
-  refreshScheduleTeamOptions();
   const matches = scheduleMatchesFiltered();
   if (!matches.length) {
-    scheduleTableBody.innerHTML = '<tr><td colspan="6">Keine Spiele für die gewählten Filter.</td></tr>';
+    scheduleTableBody.innerHTML = '<tr><td colspan="4">Keine Spiele für die gewählten Filter.</td></tr>';
     restoreResultInputFocus(focus);
     return;
   }
   scheduleTableBody.innerHTML = matches.map((match) => {
-    const rowCls = rowClassForPhase(match.phaseKind);
+    const rowCls = rowClassForCategory(match.category);
     const phaseBadge = phaseChipHtml(match);
-    const catBadge = categoryChipHtml(match.category);
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match, { editable: !!currentUser });
     const timeCell = `<span class="time-start">${match.time}</span><span class="time-range"> – ${match.endTime}</span>`;
     return `<tr class="${rowCls}">
       <td class="col-time">${timeCell}</td>
-      <td class="col-field">Feld ${match.field}</td>
-      <td class="col-category">${catBadge}${phaseBadge ? " " + phaseBadge : ""}</td>
+      <td class="col-field">${escapeHtml(match.field)}</td>
+      <td class="col-category">${phaseBadge}</td>
       <td class="col-game">
         <div class="col-game-inner">
           <span class="col-game-home">${homeCell}</span>
@@ -537,42 +516,14 @@ function renderSchedule() {
   restoreResultInputFocus(focus);
 }
 
-function refreshScheduleTeamOptions() {
-  if (!scheduleTeamFilter) return;
-  const cat = selectedScheduleCategory;
-  const teams = allTeams.filter((t) => cat === "all" || t.category === cat);
-  // Aktuelle Auswahl ggf. löschen, falls Kategorie gewechselt wird
-  const currentValid = teams.some((t) => t.id === selectedScheduleTeam);
-  if (!currentValid) selectedScheduleTeam = "";
-  const sorted = teams.slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
-  const opts = ['<option value="">Alle Teams</option>']
-    .concat(sorted.map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`));
-  scheduleTeamFilter.innerHTML = opts.join("");
-  scheduleTeamFilter.value = selectedScheduleTeam;
+function syncScheduleTilesUI() {
+  scheduleCategoryTiles.forEach((tile) => {
+    const cat = tile.getAttribute("data-category-filter");
+    const active = cat === selectedScheduleCategory;
+    tile.classList.toggle("is-active", active);
+    tile.setAttribute("aria-pressed", String(active));
+  });
 }
-
-scheduleCategoryFilter?.addEventListener("change", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLSelectElement)) return;
-  selectedScheduleCategory = target.value;
-  // Bei Kategoriewechsel muss die Team-Auswahl ggf. zurückgesetzt werden.
-  // refreshScheduleTeamOptions() innerhalb renderSchedule() macht das automatisch,
-  // aber wir wollen den Zustand für die History bereits vorab korrigieren.
-  const stillValid = allTeams.some(
-    (t) => t.id === selectedScheduleTeam && (selectedScheduleCategory === "all" || t.category === selectedScheduleCategory),
-  );
-  if (!stillValid) selectedScheduleTeam = "";
-  renderSchedule();
-  commitNavigation();
-});
-
-scheduleTeamFilter?.addEventListener("change", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLSelectElement)) return;
-  selectedScheduleTeam = target.value;
-  renderSchedule();
-  commitNavigation();
-});
 
 // ── Teams-Tab ────────────────────────────────────────────────────────────────
 function renderTeamCard(team) {
@@ -874,8 +825,8 @@ document.addEventListener("click", async (event) => {
 });
 
 // ── Kategorie-Klicks (Spielplan filtern) ─────────────────────────────────────
-// Klick auf einen Kategorie-Chip (z.B. "Ambitioniert") öffnet den Spielplan
-// und filtert sofort auf die angeklickte Kategorie.
+// Klick auf einen Kategorie-Tile (z.B. "Ambitioniert" oder "Alle") setzt den
+// Filter und öffnet bei Bedarf den Spielplan.
 document.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
@@ -885,12 +836,15 @@ document.addEventListener("click", (event) => {
   const category = chip.getAttribute("data-category-filter");
   if (!category) return;
   selectedScheduleCategory = category;
-  selectedScheduleTeam = "";
-  if (scheduleCategoryFilter) scheduleCategoryFilter.value = category;
-  if (scheduleTeamFilter) scheduleTeamFilter.value = "";
-  // setView pusht den neuen History-Eintrag inkl. Filter-Zustand,
-  // damit der Zurück-Button den Filter wieder entfernt.
-  setView("schedule");
+  syncScheduleTilesUI();
+  if (currentView === "schedule") {
+    renderSchedule();
+    commitNavigation();
+  } else {
+    // setView pusht den neuen History-Eintrag inkl. Filter-Zustand,
+    // damit der Zurück-Button den Filter wieder entfernt.
+    setView("schedule");
+  }
 });
 
 // ── Ergebniseingabe (Org-Panel + Spielplan, nur angemeldet) ─────────────────
@@ -958,7 +912,6 @@ function getCurrentState() {
     view: currentView,
     infosSection: currentInfosSection,
     scheduleCategory: selectedScheduleCategory,
-    scheduleTeam: selectedScheduleTeam,
     dashboardTeam: selectedTeamId,
     ranglisteCategory: selectedRanglisteCategory,
   };
@@ -973,7 +926,6 @@ function buildHash(state) {
     if (state.scheduleCategory && state.scheduleCategory !== "all") {
       params.set("cat", state.scheduleCategory);
     }
-    if (state.scheduleTeam) params.set("team", state.scheduleTeam);
   } else if (state.view === "dashboard") {
     if (state.dashboardTeam) params.set("team", state.dashboardTeam);
   } else if (state.view === "rangliste") {
@@ -1004,7 +956,6 @@ function parseHash() {
     view: "infos",
     infosSection: "time_place",
     scheduleCategory: "all",
-    scheduleTeam: "",
     dashboardTeam: null,
     ranglisteCategory: "adult_ambitious",
   };
@@ -1020,7 +971,6 @@ function parseHash() {
   } else if (view === "schedule") {
     const cat = params.get("cat");
     state.scheduleCategory = cat && (cat === "all" || VALID_CATEGORIES.includes(cat)) ? cat : "all";
-    state.scheduleTeam = params.get("team") || "";
   } else if (view === "dashboard") {
     state.dashboardTeam = params.get("team") || null;
   } else if (view === "rangliste") {
@@ -1066,7 +1016,6 @@ function setView(view, { updateHash = true } = {}) {
 // verwendet, um den UI-Zustand mit dem History-Eintrag zu synchronisieren.
 function applyState(state, { updateHash = false } = {}) {
   selectedScheduleCategory = state.scheduleCategory ?? "all";
-  selectedScheduleTeam = state.scheduleTeam ?? "";
   selectedRanglisteCategory = state.ranglisteCategory ?? "adult_ambitious";
   currentInfosSection = state.infosSection ?? "time_place";
 
@@ -1079,8 +1028,7 @@ function applyState(state, { updateHash = false } = {}) {
 
   setInfosSection(currentInfosSection, { updateHash: false });
 
-  if (scheduleCategoryFilter) scheduleCategoryFilter.value = selectedScheduleCategory;
-  if (scheduleTeamFilter) scheduleTeamFilter.value = selectedScheduleTeam;
+  syncScheduleTilesUI();
   if (ranglisteCategoryFilter) ranglisteCategoryFilter.value = selectedRanglisteCategory;
   if (dashboardTeamSelect) dashboardTeamSelect.value = selectedTeamId || "";
 
