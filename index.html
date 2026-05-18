@@ -455,7 +455,7 @@
           <div class="auth-field"><label for="team-community">Gemeinde</label><input id="team-community" name="community" type="text" required /></div>
           <div class="auth-field"><label for="team-manager">Mannschaftsverantwortlicher</label><input id="team-manager" name="manager" type="text" required /></div>
           <div class="auth-field"><label for="team-category">Kategorie</label><select id="team-category" name="category" required><option value="youth">Jugendliche</option><option value="adult_fun">Erwachsene Plausch</option><option value="adult_ambitious">Erwachsene Ambitioniert</option></select></div>
-          <div class="auth-field"><label for="team-code">Spielcode (Kürzel im Plan)</label><select id="team-code" name="code"><option value="">– kein Code –</option></select></div>
+          <div class="auth-field" hidden><label for="team-code">Spielcode (Kürzel im Plan)</label><select id="team-code" name="code"><option value="">– kein Code –</option></select></div>
           <p class="auth-error" id="team-error" role="alert"></p>
           <div class="auth-actions"><button type="button" class="secondary" id="team-cancel">Abbrechen</button><button type="submit">Speichern</button></div>
         </form>
@@ -519,20 +519,16 @@
               <dd>Begrüssung / Eröffnung</dd>
               <dt>11:30 Uhr</dt>
               <dd>Spielbeginn gemäss Spielplänen</dd>
-              <dt>17:00 Uhr</dt>
-              <dd>Letzte Spiele fertig</dd>
               <dt>17:30 Uhr</dt>
               <dd>Turnierende</dd>
               <dt>Modus</dt>
               <dd>Gespielt wird eine Gruppenphase und anschliessend eine Finalrunde. Bei den Erwachsenen gibt es zwei Kategorien: Plausch und Ambitioniert.</dd>
               <dt>Felder</dt>
               <dd>
-                <strong>Feld 1</strong>: Erwachsene Ambitioniert (durchgehend Erwachsenen-Netzhöhe)<br />
-                <strong>Feld 2</strong>: Erwachsene Plausch (Erwachsenen-Netzhöhe) – mit Jugend-Blöcken (Netzhöhe wird umgestellt)<br />
-                <strong>Feld 3</strong>: Jugend (durchgehend Jugend-Netzhöhe)
+                <strong>Feld 1</strong>: Erwachsene Ambitioniert<br />
+                <strong>Feld 2</strong>: Erwachsene Plausch – mit Jugend-Blöcken<br />
+                <strong>Feld 3</strong>: Jugend
               </dd>
-              <dt>Netzhöhe Feld 2 – Jugend-Blöcke</dt>
-              <dd><div id="net-height-info"></div></dd>
               <dt>Spielmodus Ambitioniert</dt>
               <dd>6 Teams · Round-Robin (15 Spiele) · Zwischenrunde Q1/Q2 · Halbfinals · Spiel um Platz 3 &amp; 5 · Finale</dd>
               <dt>Spielmodus Plausch</dt>
@@ -587,7 +583,6 @@
             <span class="legend-item"><button type="button" class="cat-chip cat-chip-clickable cat-adult_ambitious" data-category-filter="adult_ambitious" title="Spielplan auf Ambitioniert filtern">Ambitioniert</button> Feld 1</span>
             <span class="legend-item"><button type="button" class="cat-chip cat-chip-clickable cat-adult_fun" data-category-filter="adult_fun" title="Spielplan auf Plausch filtern">Plausch</button> Feld 2</span>
             <span class="legend-item"><button type="button" class="cat-chip cat-chip-clickable cat-youth" data-category-filter="youth" title="Spielplan auf Jugend filtern">Jugend</button> Feld 2 / 3</span>
-            <span class="legend-item legend-net"><span class="net-switch-mini">⇅</span> Netzhöhen-Wechsel auf Feld 2</span>
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
