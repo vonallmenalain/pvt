@@ -64,6 +64,54 @@ let selectedScheduleTeam = "";
 let selectedRanglisteCategory = "adult_ambitious";
 let ranglistePublished = false;
 
+// ── Focus-Preservation für Result-Inputs ────────────────────────────────────
+// Beim Speichern eines Punktestands triggert Firestore via onSnapshot ein
+// Re-Render der Spielplan- und Org-Tabellen. Ohne Schutz löscht das via
+// innerHTML den gerade aktiven Input (z.B. nach Tab) und zerstört damit den
+// Eingabefokus. Wir speichern daher Match-ID, Seite, Caret-Position und
+// (optional) den noch nicht abgespeicherten Wert vor jedem Re-Render und
+// stellen den Fokus danach wieder her.
+function captureResultInputFocus() {
+  const active = document.activeElement;
+  if (!active || !(active instanceof HTMLInputElement)) return null;
+  if (!active.matches(".result-input[data-result-match]")) return null;
+  const panel = active.closest("#org-panel, #schedule-panel, #dashboard-panel");
+  return {
+    matchId: active.dataset.resultMatch,
+    side: active.dataset.side,
+    selectionStart: active.selectionStart,
+    selectionEnd: active.selectionEnd,
+    pendingValue: active.value,
+    panelId: panel?.id || null,
+  };
+}
+
+function restoreResultInputFocus(focus) {
+  if (!focus) return;
+  const root = focus.panelId ? document.getElementById(focus.panelId) : document;
+  if (!root) return;
+  const escMatch = (window.CSS && CSS.escape) ? CSS.escape(focus.matchId) : focus.matchId;
+  const next = root.querySelector(
+    `.result-input[data-result-match="${escMatch}"][data-side="${focus.side}"]`
+  );
+  if (!next) return;
+  // Wenn der Nutzer nach Tab bereits Zeichen ins neue Feld getippt hat, ist
+  // dieser Wert noch nicht in resultMap — beim Re-Render würde der frische
+  // Wert verloren gehen. Wir übernehmen ihn daher zurück, sofern er vom neu
+  // gerenderten Wert abweicht.
+  if (typeof focus.pendingValue === "string" && focus.pendingValue !== next.value) {
+    next.value = focus.pendingValue;
+  }
+  next.focus();
+  try {
+    const start = focus.selectionStart ?? next.value.length;
+    const end = focus.selectionEnd ?? next.value.length;
+    next.setSelectionRange(start, end);
+  } catch (_) {
+    // Manche Browser werfen bei type=number auf setSelectionRange — ignorieren.
+  }
+}
+
 // ── Modal Helper ─────────────────────────────────────────────────────────────
 function openModal() {
   if (errorEl) errorEl.textContent = "";
@@ -367,10 +415,12 @@ function scheduleMatchesFiltered() {
 
 function renderSchedule() {
   if (!scheduleTableBody) return;
+  const focus = captureResultInputFocus();
   refreshScheduleTeamOptions();
   const matches = scheduleMatchesFiltered();
   if (!matches.length) {
     scheduleTableBody.innerHTML = '<tr><td colspan="6">Keine Spiele für die gewählten Filter.</td></tr>';
+    restoreResultInputFocus(focus);
     return;
   }
   scheduleTableBody.innerHTML = matches.map((match) => {
@@ -394,6 +444,7 @@ function renderSchedule() {
       </td>
     </tr>`;
   }).join("");
+  restoreResultInputFocus(focus);
 }
 
 function refreshScheduleTeamOptions() {
@@ -576,8 +627,14 @@ function renderDashboardTeamOptions() {
 // ── Turnierorganisation ─────────────────────────────────────────────────────
 const orgRows = document.getElementById("org-rows");
 
+// Welche Zeitslot-Panels sind aktuell ausgeklappt? Ohne diesen externen Zustand
+// würde jedes Re-Render (z.B. nach Speichern eines Punktestands via onSnapshot)
+// alle Panels wieder einklappen, weil der hidden-Zustand nur am DOM hing.
+const openOrgSlots = new Set();
+
 function renderOrganizationPanel() {
   if (!orgRows) return;
+  const focus = captureResultInputFocus();
   // Group matches by time slot
   const slots = SCHEDULE_SLOTS.map((time) => {
     const matches = TOURNAMENT_SCHEDULE
@@ -607,8 +664,12 @@ function renderOrganizationPanel() {
         ${phaseInfo}
       </div>`;
     }).join("");
-    return `<div class="org-row"><button type="button" class="org-toggle" data-org-toggle="${idx}"><span>${slot.time}</span><span>▾</span></button><div class="org-body" id="org-body-${idx}" hidden><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
+    const isOpen = openOrgSlots.has(idx);
+    const hiddenAttr = isOpen ? "" : " hidden";
+    const arrow = isOpen ? "▴" : "▾";
+    return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}"><span>${slot.time}</span><span>${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
   }).join("");
+  restoreResultInputFocus(focus);
 }
 
 document.addEventListener("click", (event) => {
@@ -616,10 +677,21 @@ document.addEventListener("click", (event) => {
   if (!(target instanceof HTMLElement)) return;
   const toggle = target.closest("[data-org-toggle]");
   if (!toggle) return;
-  const idx = toggle.getAttribute("data-org-toggle");
-  const body = document.getElementById(`org-body-${idx}`);
-  if (!body) return;
-  body.hidden = !body.hidden;
+  const idxAttr = toggle.getAttribute("data-org-toggle");
+  if (idxAttr === null) return;
+  const idx = Number(idxAttr);
+  const body = document.getElementById(`org-body-${idxAttr}`);
+  if (openOrgSlots.has(idx)) {
+    openOrgSlots.delete(idx);
+  } else {
+    openOrgSlots.add(idx);
+  }
+  const isOpen = openOrgSlots.has(idx);
+  if (body) body.hidden = !isOpen;
+  toggle.setAttribute("aria-expanded", String(isOpen));
+  toggle.classList.toggle("is-open", isOpen);
+  const arrowEl = toggle.querySelector("span:last-child");
+  if (arrowEl) arrowEl.textContent = isOpen ? "▴" : "▾";
 });
 
 // ── Buttons / Forms ──────────────────────────────────────────────────────────
