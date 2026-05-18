@@ -403,7 +403,15 @@ scheduleCategoryFilter?.addEventListener("change", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLSelectElement)) return;
   selectedScheduleCategory = target.value;
+  // Bei Kategoriewechsel muss die Team-Auswahl ggf. zurückgesetzt werden.
+  // refreshScheduleTeamOptions() innerhalb renderSchedule() macht das automatisch,
+  // aber wir wollen den Zustand für die History bereits vorab korrigieren.
+  const stillValid = allTeams.some(
+    (t) => t.id === selectedScheduleTeam && (selectedScheduleCategory === "all" || t.category === selectedScheduleCategory),
+  );
+  if (!stillValid) selectedScheduleTeam = "";
   renderSchedule();
+  commitNavigation();
 });
 
 scheduleTeamFilter?.addEventListener("change", (event) => {
@@ -411,6 +419,7 @@ scheduleTeamFilter?.addEventListener("change", (event) => {
   if (!(target instanceof HTMLSelectElement)) return;
   selectedScheduleTeam = target.value;
   renderSchedule();
+  commitNavigation();
 });
 
 // ── Teams-Tab ────────────────────────────────────────────────────────────────
@@ -610,6 +619,7 @@ dashboardTeamSelect?.addEventListener("change", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLSelectElement)) return;
   renderTeamDashboard(target.value);
+  commitNavigation();
 });
 
 form?.addEventListener("submit", async (event) => {
@@ -705,8 +715,9 @@ document.addEventListener("click", (event) => {
   selectedScheduleTeam = "";
   if (scheduleCategoryFilter) scheduleCategoryFilter.value = category;
   if (scheduleTeamFilter) scheduleTeamFilter.value = "";
+  // setView pusht den neuen History-Eintrag inkl. Filter-Zustand,
+  // damit der Zurück-Button den Filter wieder entfernt.
   setView("schedule");
-  renderSchedule();
 });
 
 // ── Ergebniseingabe (nur Org-Panel) ─────────────────────────────────────────
@@ -745,7 +756,7 @@ function setInfosSection(section, { updateHash = true } = {}) {
     button.setAttribute("aria-expanded", String(active));
   });
   currentInfosSection = section;
-  if (updateHash && currentView === "infos") syncLocationHash();
+  if (updateHash && currentView === "infos") commitNavigation();
 }
 
 // ── View-Navigation ─────────────────────────────────────────────────────────
@@ -761,30 +772,89 @@ const orgPanel = document.getElementById("org-panel");
 
 const VALID_VIEWS = ["infos", "teams", "schedule", "dashboard", "rangliste", "org"];
 const VALID_INFOS_SECTIONS = ["time_place", "mode", "rules"];
+const VALID_CATEGORIES = ["adult_ambitious", "adult_fun", "youth"];
 let currentView = "infos";
 let currentInfosSection = "time_place";
 
-function buildHash(view, infosSection) {
-  if (view === "infos") return `#infos/${infosSection}`;
-  return `#${view}`;
+// ── Navigation: zentraler History-Zustand ───────────────────────────────────
+// Damit der Zurück-Button die letzte Aktion rückgängig macht (z.B. Filter
+// entfernen, Team-Auswahl zurücksetzen) – statt sofort die vorige Seite zu
+// laden – speichern wir den vollständigen UI-Zustand pro History-Eintrag.
+function getCurrentState() {
+  return {
+    view: currentView,
+    infosSection: currentInfosSection,
+    scheduleCategory: selectedScheduleCategory,
+    scheduleTeam: selectedScheduleTeam,
+    dashboardTeam: selectedTeamId,
+    ranglisteCategory: selectedRanglisteCategory,
+  };
 }
 
-function syncLocationHash() {
-  const target = buildHash(currentView, currentInfosSection);
-  if (location.hash !== target) {
-    history.pushState({ view: currentView, infosSection: currentInfosSection }, "", target);
+function buildHash(state) {
+  const params = new URLSearchParams();
+  let path = state.view;
+  if (state.view === "infos") {
+    path = `infos/${state.infosSection || "time_place"}`;
+  } else if (state.view === "schedule") {
+    if (state.scheduleCategory && state.scheduleCategory !== "all") {
+      params.set("cat", state.scheduleCategory);
+    }
+    if (state.scheduleTeam) params.set("team", state.scheduleTeam);
+  } else if (state.view === "dashboard") {
+    if (state.dashboardTeam) params.set("team", state.dashboardTeam);
+  } else if (state.view === "rangliste") {
+    if (state.ranglisteCategory && state.ranglisteCategory !== "adult_ambitious") {
+      params.set("cat", state.ranglisteCategory);
+    }
+  }
+  const qs = params.toString();
+  return `#${path}${qs ? "?" + qs : ""}`;
+}
+
+function commitNavigation({ replace = false } = {}) {
+  const state = getCurrentState();
+  const target = buildHash(state);
+  if (replace || location.hash === target) {
+    history.replaceState(state, "", target);
   } else {
-    history.replaceState({ view: currentView, infosSection: currentInfosSection }, "");
+    history.pushState(state, "", target);
   }
 }
 
+// Zur Abwärtskompatibilität – einige Callsites verwendeten syncLocationHash().
+function syncLocationHash() { commitNavigation(); }
+
 function parseHash() {
   const raw = location.hash.replace(/^#/, "");
-  if (!raw) return { view: "infos", infosSection: "time_place" };
-  const [viewPart, sectionPart] = raw.split("/");
+  const defaults = {
+    view: "infos",
+    infosSection: "time_place",
+    scheduleCategory: "all",
+    scheduleTeam: "",
+    dashboardTeam: null,
+    ranglisteCategory: "adult_ambitious",
+  };
+  if (!raw) return defaults;
+  const [pathPart, queryPart] = raw.split("?");
+  const params = new URLSearchParams(queryPart || "");
+  const segs = pathPart.split("/");
+  const viewPart = segs[0];
   const view = VALID_VIEWS.includes(viewPart) ? viewPart : "infos";
-  const infosSection = VALID_INFOS_SECTIONS.includes(sectionPart) ? sectionPart : "time_place";
-  return { view, infosSection };
+  const state = { ...defaults, view };
+  if (view === "infos") {
+    state.infosSection = VALID_INFOS_SECTIONS.includes(segs[1]) ? segs[1] : "time_place";
+  } else if (view === "schedule") {
+    const cat = params.get("cat");
+    state.scheduleCategory = cat && (cat === "all" || VALID_CATEGORIES.includes(cat)) ? cat : "all";
+    state.scheduleTeam = params.get("team") || "";
+  } else if (view === "dashboard") {
+    state.dashboardTeam = params.get("team") || null;
+  } else if (view === "rangliste") {
+    const cat = params.get("cat");
+    state.ranglisteCategory = cat && VALID_CATEGORIES.includes(cat) ? cat : "adult_ambitious";
+  }
+  return state;
 }
 
 function setView(view, { updateHash = true } = {}) {
@@ -815,8 +885,42 @@ function setView(view, { updateHash = true } = {}) {
   if (showRangliste) renderRangliste();
   if (showSchedule) renderSchedule();
   currentView = view;
-  if (updateHash) syncLocationHash();
+  if (updateHash) commitNavigation();
 }
+
+// applyState aktualisiert sämtliche View- und Filter-Zustände auf einmal,
+// ohne neue History-Einträge zu erzeugen. Wird nach popstate / beim Laden
+// verwendet, um den UI-Zustand mit dem History-Eintrag zu synchronisieren.
+function applyState(state, { updateHash = false } = {}) {
+  selectedScheduleCategory = state.scheduleCategory ?? "all";
+  selectedScheduleTeam = state.scheduleTeam ?? "";
+  selectedRanglisteCategory = state.ranglisteCategory ?? "adult_ambitious";
+  currentInfosSection = state.infosSection ?? "time_place";
+
+  const desiredDashboardTeam = state.dashboardTeam ?? null;
+  if (desiredDashboardTeam) {
+    selectedTeamId = desiredDashboardTeam;
+  } else {
+    selectedTeamId = null;
+  }
+
+  setInfosSection(currentInfosSection, { updateHash: false });
+
+  if (scheduleCategoryFilter) scheduleCategoryFilter.value = selectedScheduleCategory;
+  if (scheduleTeamFilter) scheduleTeamFilter.value = selectedScheduleTeam;
+  if (ranglisteCategoryFilter) ranglisteCategoryFilter.value = selectedRanglisteCategory;
+  if (dashboardTeamSelect) dashboardTeamSelect.value = selectedTeamId || "";
+
+  renderSchedule();
+  if (selectedTeamId) renderTeamDashboard(selectedTeamId);
+  else renderDashboardEmptyState();
+  renderRangliste();
+
+  const view = isViewAccessible(state.view) ? state.view : "infos";
+  setView(view, { updateHash: false });
+  if (updateHash) commitNavigation({ replace: true });
+}
+
 infosViewBtn?.addEventListener("click", () => setView("infos"));
 teamsViewBtn?.addEventListener("click", () => setView("teams"));
 scheduleViewBtn?.addEventListener("click", () => setView("schedule"));
@@ -834,31 +938,22 @@ function isViewAccessible(view) {
 }
 
 window.addEventListener("popstate", (event) => {
-  const fromState = event.state && typeof event.state === "object"
-    ? { view: event.state.view, infosSection: event.state.infosSection }
+  const fromState = event.state && typeof event.state === "object" && VALID_VIEWS.includes(event.state.view)
+    ? event.state
     : null;
-  const parsed = fromState && VALID_VIEWS.includes(fromState.view)
-    ? {
-        view: fromState.view,
-        infosSection: VALID_INFOS_SECTIONS.includes(fromState.infosSection)
-          ? fromState.infosSection
-          : currentInfosSection,
-      }
-    : parseHash();
-  const targetView = isViewAccessible(parsed.view) ? parsed.view : "infos";
-  setInfosSection(parsed.infosSection, { updateHash: false });
-  setView(targetView, { updateHash: false });
-  if (targetView !== parsed.view) syncLocationHash();
+  const state = fromState || parseHash();
+  applyState(state, { updateHash: false });
+  // Falls der gewünschte View nicht zugänglich ist (z.B. Org ohne Login),
+  // aktualisieren wir den Hash, damit er zur tatsächlichen Anzeige passt.
+  const finalHash = buildHash(getCurrentState());
+  if (location.hash !== finalHash) {
+    history.replaceState(getCurrentState(), "", finalHash);
+  }
 });
 
 const initial = parseHash();
-setInfosSection(initial.infosSection, { updateHash: false });
-setView(initial.view, { updateHash: false });
-history.replaceState(
-  { view: currentView, infosSection: currentInfosSection },
-  "",
-  buildHash(currentView, currentInfosSection),
-);
+applyState(initial, { updateHash: false });
+history.replaceState(getCurrentState(), "", buildHash(getCurrentState()));
 
 // ── Schlussrangliste ────────────────────────────────────────────────────────
 function renderRangliste() {
@@ -887,6 +982,7 @@ function updateRanglisteVisibility() {
 ranglisteCategoryFilter?.addEventListener("change", (e) => {
   selectedRanglisteCategory = e.target.value;
   renderRangliste();
+  commitNavigation();
 });
 
 ranglistePublishBtn?.addEventListener("click", async () => {
