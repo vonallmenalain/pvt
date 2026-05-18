@@ -31,7 +31,18 @@
         --pvt-indigo-light: 92, 107, 192;
       }
       * { box-sizing: border-box; }
-      html { scrollbar-gutter: stable; overflow-x: hidden; max-width: 100%; }
+      /* Wichtig: html bekommt explizit die dunkle App-Hintergrundfarbe.
+         Sonst zeigt der Browser (besonders Chrome auf Android) beim
+         Overscroll-Bounce am unteren Rand und beim Pinch-Zoom kurz die
+         weisse Standardfläche des html-Elements – das wirkt wie ein
+         weisser Balken bzw. weisse Vierecke. Mit `background-color` auf
+         html ist die freigelegte Fläche immer dunkel. */
+      html {
+        scrollbar-gutter: stable;
+        overflow-x: hidden;
+        max-width: 100%;
+        background-color: var(--bg);
+      }
       body {
         margin: 0;
         font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -39,7 +50,11 @@
         min-height: 100vh;
         overflow-x: hidden;
         max-width: 100%;
-        background:
+        /* Solide Fallback-Farbe direkt am body, damit auch der Bereich
+           hinter dem Verlauf nie weiss durchscheint (z. B. während des
+           Re-Compositings beim Pinch-Zoom). */
+        background-color: var(--bg);
+        background-image:
           radial-gradient(ellipse 90% 70% at 50% 110%, rgba(var(--pvt-indigo), 0.45) 0%, transparent 65%),
           radial-gradient(ellipse 70% 50% at 50% 80%,  rgba(var(--pvt-indigo), 0.28) 0%, transparent 55%),
           radial-gradient(ellipse 60% 40% at 20% 0%,   rgba(var(--pvt-indigo-light), 0.10) 0%, transparent 50%),
@@ -495,6 +510,27 @@
 
         /* Schedule filter on Spielplan panel */
         .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
+
+        /* Mobile: Overscroll-Bounce am unteren (und oberen) Rand
+           unterdrücken.
+           Auf Chrome Android erzeugt der "Rubber-Band"-Effekt beim
+           Halten + Wischen nach oben einen leeren Bereich unter dem
+           Dokument. Dieser Bereich wird vom Browser nicht mit dem
+           body-Hintergrund gefüllt, sondern zeigt die Hintergrundfarbe
+           des html-Elements – früher war das die weisse Standardfarbe,
+           was als weisser Balken erschien, der erst nach dem Loslassen
+           verschwand.
+           `overscroll-behavior-y: none` deaktiviert diesen Effekt
+           komplett. Zusätzlich greift die weiter oben gesetzte dunkle
+           Hintergrundfarbe auf html als Sicherheitsnetz, falls die
+           Engine den Overscroll trotzdem anzeigt (z. B. iOS Safari) –
+           dann ist der Bereich wenigstens dunkel statt weiss.
+           `overscroll-behavior-x` bleibt unverändert, damit horizontale
+           Tabellen-Scrolls (.table-scroll) sich normal verhalten. */
+        html, body {
+          overscroll-behavior-y: none;
+          overscroll-behavior-x: auto;
+        }
 
         /* Mobile-Scrollbalken ausblenden.
            Auf Touch-Geräten zeigen Browser (insbesondere Chromium/Android,
