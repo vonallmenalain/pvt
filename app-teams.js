@@ -11,7 +11,18 @@ import {
   serverTimestamp,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  TOURNAMENT_SCHEDULE,
+  SCHEDULE_SLOTS,
+  CATEGORY_LABELS,
+  CATEGORY_SHORT_LABELS,
+  CATEGORY_CODES,
+  CODE_TO_CATEGORY,
+  getField2NetSwitches,
+  getField2Blocks,
+} from "./tournament-schedule.js";
 
+// ── DOM ──────────────────────────────────────────────────────────────────────
 const ranglistePublishBtn = document.getElementById("rangliste-publish-btn");
 const ranglisteUnpublishBtn = document.getElementById("rangliste-unpublish-btn");
 const ranglistePublishedNote = document.getElementById("rangliste-published-note");
@@ -19,15 +30,6 @@ const ranglisteViewBtn = document.getElementById("show-rangliste");
 const ranglistePanel = document.getElementById("rangliste-panel");
 const ranglisteTableBody = document.getElementById("rangliste-table-body");
 const ranglisteCategoryFilter = document.getElementById("rangliste-category-filter");
-
-let ranglistePublished = false;
-let selectedRanglisteCategory = "adult_ambitious";
-
-const CATEGORY_LABELS = {
-  youth: "Jugendliche",
-  adult_fun: "Erwachsene Plausch",
-  adult_ambitious: "Erwachsene Ambitioniert",
-};
 
 const teamLists = {
   youth: document.getElementById("teams-list-youth"),
@@ -40,6 +42,8 @@ const modal = document.getElementById("team-modal");
 const form = document.getElementById("team-form");
 const cancelBtn = document.getElementById("team-cancel");
 const errorEl = document.getElementById("team-error");
+const teamCategorySelect = document.getElementById("team-category");
+const teamCodeSelect = document.getElementById("team-code");
 
 const dashboardPanel = document.getElementById("dashboard-panel");
 const dashboardTeamSelect = document.getElementById("dashboard-team-select");
@@ -48,17 +52,47 @@ const dashboardInfo = document.getElementById("dashboard-team-info");
 const dashboardGroupTable = document.getElementById("dashboard-group-table");
 const dashboardMatchTable = document.getElementById("dashboard-match-table");
 
+const scheduleCategoryFilter = document.getElementById("schedule-category-filter");
+const scheduleTeamFilter = document.getElementById("schedule-team-filter");
+const scheduleTableBody = document.getElementById("schedule-table-body");
+
+// ── State ────────────────────────────────────────────────────────────────────
 let currentUser = null;
 let allTeams = [];
 let selectedTeamId = null;
 let resultMap = {};
-let selectedScheduleCategory = "adult_ambitious";
+let selectedScheduleCategory = "all";
+let selectedScheduleTeam = "";
+let selectedRanglisteCategory = "adult_ambitious";
+let ranglistePublished = false;
 
-function openModal() { if (errorEl) errorEl.textContent = ""; modal.hidden = false; form?.teamName?.focus(); }
-function closeModal() { modal.hidden = true; if (errorEl) errorEl.textContent = ""; form?.reset(); }
+const FIELD2_SWITCHES = getField2NetSwitches();
+const FIELD2_BLOCKS = getField2Blocks();
 
-function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
-function getMatchOutcomeClass(matchId, homeScoreRaw, awayScoreRaw, side) {
+// ── Modal Helper ─────────────────────────────────────────────────────────────
+function openModal() {
+  if (errorEl) errorEl.textContent = "";
+  modal.hidden = false;
+  refreshTeamCodeOptions();
+  form?.teamName?.focus();
+}
+function closeModal() {
+  modal.hidden = true;
+  if (errorEl) errorEl.textContent = "";
+  form?.reset();
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function getMatchOutcomeClass(homeScoreRaw, awayScoreRaw, side) {
   const homeScore = Number(homeScoreRaw);
   const awayScore = Number(awayScoreRaw);
   if (homeScoreRaw === "" || awayScoreRaw === "") return "";
@@ -66,218 +100,335 @@ function getMatchOutcomeClass(matchId, homeScoreRaw, awayScoreRaw, side) {
   if (homeScore < 0 || awayScore < 0) return "";
   if (homeScore === awayScore) return "is-draw";
   const homeWon = homeScore > awayScore;
-  return side === "home"
-    ? (homeWon ? "is-winner" : "is-loser")
-    : (homeWon ? "is-loser" : "is-winner");
+  return side === "home" ? (homeWon ? "is-winner" : "is-loser") : (homeWon ? "is-loser" : "is-winner");
 }
 
-/**
- * 6-team single round-robin group phase (15 unique pairings).
- * 13 min games, 2 min breaks → 15 min slots. Start: 11:30.
- * Slots 0–14: group phase · Slots 15–22: finals (rank-based, determined at run-time)
- */
-const OPTIMIZED_SCHEDULE = [
-  { r: "Gruppenspiel", h: 0, a: 1 },
-  { r: "Gruppenspiel", h: 2, a: 3 },
-  { r: "Gruppenspiel", h: 4, a: 5 },
-  { r: "Gruppenspiel", h: 0, a: 2 },
-  { r: "Gruppenspiel", h: 1, a: 4 },
-  { r: "Gruppenspiel", h: 3, a: 5 },
-  { r: "Gruppenspiel", h: 2, a: 4 },
-  { r: "Gruppenspiel", h: 0, a: 3 },
-  { r: "Gruppenspiel", h: 1, a: 5 },
-  { r: "Gruppenspiel", h: 3, a: 4 },
-  { r: "Gruppenspiel", h: 1, a: 2 },
-  { r: "Gruppenspiel", h: 0, a: 5 },
-  { r: "Gruppenspiel", h: 1, a: 3 },
-  { r: "Gruppenspiel", h: 0, a: 4 },
-  { r: "Gruppenspiel", h: 2, a: 5 },
-];
-
-const SLOT_START_MINUTES = 11 * 60 + 30; // 11:30 in minutes from midnight
-const SLOT_DURATION_MIN = 15;             // 13 min play + 2 min break
-const GAME_DURATION_MIN = 13;
-
-function slotTime(slotIndex) {
-  const start = SLOT_START_MINUTES + slotIndex * SLOT_DURATION_MIN;
-  const end = start + GAME_DURATION_MIN;
-  const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
-  return `${fmt(start)}–${fmt(end)}`;
+function hasCompleteScore(matchId) {
+  const score = resultMap[matchId];
+  if (!score) return false;
+  const home = Number(score.home);
+  const away = Number(score.away);
+  return score.home !== "" && score.away !== "" && Number.isFinite(home) && Number.isFinite(away) && home >= 0 && away >= 0;
 }
 
-/**
- * Calculate full stats for a team (points, GF, GA) across all group matches.
- * Win = 2 pts, Draw = 1 pt each, Loss = 0 pts.
- */
-function calcTeamStats(peerTeam, teamsInCategory) {
-  const peerIndex = teamsInCategory.findIndex((t) => t.id === peerTeam.id);
+function getWinnerLoserOf(matchId) {
+  const match = TOURNAMENT_SCHEDULE.find((m) => m.id === matchId);
+  if (!match) return { winnerCode: null, loserCode: null };
+  if (!hasCompleteScore(matchId)) return { winnerCode: null, loserCode: null };
+  const score = resultMap[matchId];
+  const h = Number(score.home);
+  const a = Number(score.away);
+  const homeRef = resolveRefCode(match.home, match.category);
+  const awayRef = resolveRefCode(match.away, match.category);
+  if (!homeRef || !awayRef) return { winnerCode: null, loserCode: null };
+  if (h > a) return { winnerCode: homeRef, loserCode: awayRef };
+  if (a > h) return { winnerCode: awayRef, loserCode: homeRef };
+  return { winnerCode: null, loserCode: null };
+}
+
+function allGroupMatchesPlayed(category) {
+  const groupMatches = getGroupMatchesForCategory(category);
+  return groupMatches.every((m) => hasCompleteScore(m.id));
+}
+
+// Liefert für eine Match-Referenz (z.B. { rank: 3 }, { code: "A1" }, { winnerOf: "a-q1" })
+// den zugehörigen Team-Code (A1/P3/...) – oder null, falls noch nicht aufgelöst.
+// Rang-Referenzen werden erst aufgelöst, wenn alle Gruppenspiele der Kategorie
+// gespielt sind, damit Platzierungen final feststehen.
+function resolveRefCode(ref, category) {
+  if (!ref) return null;
+  if (ref.code) return ref.code;
+  if (ref.rank) {
+    if (!allGroupMatchesPlayed(category)) return null;
+    const standings = getSortedStandings(category);
+    return standings[ref.rank - 1]?.code ?? null;
+  }
+  if (ref.winnerOf) return getWinnerLoserOf(ref.winnerOf).winnerCode;
+  if (ref.loserOf) return getWinnerLoserOf(ref.loserOf).loserCode;
+  return null;
+}
+
+// Display-Text einer Match-Referenz (Code → Teamname falls vorhanden, sonst Platzhalter).
+function refDisplayName(ref, category) {
+  const code = resolveRefCode(ref, category);
+  if (code) {
+    const team = getTeamByCode(code);
+    return team ? team.name : code;
+  }
+  // Noch nicht aufgelöst → Platzhaltertext
+  if (ref.rank) return `Rang ${ref.rank}`;
+  if (ref.winnerOf) {
+    const m = TOURNAMENT_SCHEDULE.find((x) => x.id === ref.winnerOf);
+    return m ? `Sieger ${m.phase}` : "Sieger";
+  }
+  if (ref.loserOf) {
+    const m = TOURNAMENT_SCHEDULE.find((x) => x.id === ref.loserOf);
+    return m ? `Verlierer ${m.phase}` : "Verlierer";
+  }
+  return "–";
+}
+
+function refTeamId(ref, category) {
+  const code = resolveRefCode(ref, category);
+  if (!code) return null;
+  return getTeamByCode(code)?.id ?? null;
+}
+
+function refTeamCode(ref, category) {
+  return resolveRefCode(ref, category);
+}
+
+function getTeamByCode(code) {
+  if (!code) return null;
+  return allTeams.find((t) => t.code === code) || null;
+}
+
+function getTeamById(id) {
+  return allTeams.find((t) => t.id === id) || null;
+}
+
+// ── Standings (per Kategorie, nur Gruppenspiele) ─────────────────────────────
+function getGroupMatchesForCategory(category) {
+  return TOURNAMENT_SCHEDULE.filter((m) => m.category === category && m.phaseKind === "group");
+}
+
+function calcStatsForCode(code, category) {
   let pts = 0, gf = 0, ga = 0, played = 0;
-  OPTIMIZED_SCHEDULE.forEach((entry, slotIdx) => {
-    const isHome = entry.h === peerIndex;
-    const isAway = entry.a === peerIndex;
-    if (!isHome && !isAway) return;
-    const matchId = `match-${peerTeam.category}-${slotIdx}-${entry.h}-${entry.a}`;
-    const score = resultMap[matchId];
-    if (!score || score.home === "" || score.away === "") return;
-    const homeScore = Number(score.home);
-    const awayScore = Number(score.away);
-    if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) return;
-    if (homeScore < 0 || awayScore < 0) return;
+  const groupMatches = getGroupMatchesForCategory(category);
+  for (const match of groupMatches) {
+    const homeCode = match.home.code;
+    const awayCode = match.away.code;
+    const isHome = homeCode === code;
+    const isAway = awayCode === code;
+    if (!isHome && !isAway) continue;
+    if (!hasCompleteScore(match.id)) continue;
+    const score = resultMap[match.id];
+    const h = Number(score.home);
+    const a = Number(score.away);
     played++;
-    if (isHome) { gf += homeScore; ga += awayScore; }
-    else { gf += awayScore; ga += homeScore; }
-    if (homeScore === awayScore) { pts += 1; }
-    else if ((isHome && homeScore > awayScore) || (isAway && awayScore > homeScore)) { pts += 2; }
-  });
+    if (isHome) { gf += h; ga += a; }
+    else { gf += a; ga += h; }
+    if (h === a) pts += 1;
+    else if ((isHome && h > a) || (isAway && a > h)) pts += 2;
+  }
   return { pts, gf, ga, played };
 }
 
-/** Legacy wrapper – still used where only points are needed */
-function calcTeamPoints(peerTeam, teamsInCategory) {
-  return calcTeamStats(peerTeam, teamsInCategory).pts;
-}
-
-/**
- * Sort teams in category by: 1) pts desc, 2) gf desc, 3) gf/ga ratio desc.
- * Returns array of { team, pts, gf, ga, played } sorted by rank.
- */
-function getSortedStandings(teamsInCategory) {
-  return teamsInCategory
-    .map((team) => ({ team, ...calcTeamStats(team, teamsInCategory) }))
+// Sortiert die Codes einer Kategorie nach: Punkte > Tordifferenz > geschossene Punkte > Code.
+// Liefert Array von { code, team, pts, gf, ga, played }.
+function getSortedStandings(category) {
+  const codes = CATEGORY_CODES[category] || [];
+  return codes
+    .map((code) => ({ code, team: getTeamByCode(code), ...calcStatsForCode(code, category) }))
     .sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
+      const diffA = a.gf - a.ga;
+      const diffB = b.gf - b.ga;
+      if (diffB !== diffA) return diffB - diffA;
       if (b.gf !== a.gf) return b.gf - a.gf;
-      const ratioA = a.ga === 0 ? (a.gf > 0 ? Infinity : 0) : a.gf / a.ga;
-      const ratioB = b.ga === 0 ? (b.gf > 0 ? Infinity : 0) : b.gf / b.ga;
-      if (ratioB === ratioA) return 0;
-      if (ratioB === Infinity) return 1;
-      if (ratioA === Infinity) return -1;
-      return ratioB - ratioA;
+      return a.code.localeCompare(b.code);
     });
 }
 
-/**
- * Resolve final-round participant names from current standings.
- * Returns an object keyed by placeholder strings → real team names (or placeholder if not determined).
- */
-function resolveFinalNames(category) {
-  const teams = allTeams.filter((t) => t.category === category);
-  const label = CATEGORY_LABELS[category];
-  const standings = getSortedStandings(teams);
+function ratioText(gf, ga) {
+  if (ga === 0) return gf > 0 ? "∞" : "0";
+  return (gf / ga).toFixed(2);
+}
 
-  // Check if ALL group matches have been played (results entered)
-  const allGroupMatchesPlayed = OPTIMIZED_SCHEDULE.every((entry, slotIdx) => {
-    if (teams.length < Math.max(entry.h, entry.a) + 1) return false;
-    const matchId = `match-${category}-${slotIdx}-${entry.h}-${entry.a}`;
-    const score = resultMap[matchId];
-    return score && score.home !== "" && score.away !== "" &&
-      Number.isFinite(Number(score.home)) && Number.isFinite(Number(score.away)) &&
-      Number(score.home) >= 0 && Number(score.away) >= 0;
-  });
-
-  const resolved = {};
-  if (allGroupMatchesPlayed && standings.length >= 6) {
-    resolved[`${label} Rang 1`] = standings[0].team.name;
-    resolved[`${label} Rang 2`] = standings[1].team.name;
-    resolved[`${label} Rang 3`] = standings[2].team.name;
-    resolved[`${label} Rang 4`] = standings[3].team.name;
-    resolved[`${label} Rang 5`] = standings[4].team.name;
-    resolved[`${label} Rang 6`] = standings[5].team.name;
+// ── Team-Auswahl im Dropdown beim Team-Erfassen ──────────────────────────────
+function refreshTeamCodeOptions() {
+  if (!teamCodeSelect || !teamCategorySelect) return;
+  const category = teamCategorySelect.value;
+  const codes = CATEGORY_CODES[category] || [];
+  const takenCodes = new Set(
+    allTeams.filter((t) => t.category === category && t.code).map((t) => t.code)
+  );
+  const html = ['<option value="">– kein Code –</option>'];
+  for (const code of codes) {
+    const taken = takenCodes.has(code);
+    html.push(`<option value="${code}"${taken ? " disabled" : ""}>${code}${taken ? " (vergeben)" : ""}</option>`);
   }
-  return resolved;
+  teamCodeSelect.innerHTML = html.join("");
 }
 
-/**
- * Resolve a participant name – use resolved map if available, else original placeholder.
- */
-function resolveName(name, resolvedMap) {
-  return resolvedMap[name] || name;
+teamCategorySelect?.addEventListener("change", () => refreshTeamCodeOptions());
+
+// ── Spielplan-Rendering ──────────────────────────────────────────────────────
+function phaseChipHtml(match) {
+  const kind = match.phaseKind;
+  if (kind === "group") return "";
+  return `<span class="phase-chip phase-${kind}">${escapeHtml(match.phase)}</span>`;
 }
 
-function getTeamSchedule(team, teamsInCategory) {
-  const teamIndex = teamsInCategory.findIndex((entry) => entry.id === team.id);
-  const field = team.category === "adult_ambitious" ? "1" : team.category === "adult_fun" ? "2" : "3";
-  const label = CATEGORY_LABELS[team.category];
+function categoryChipHtml(category) {
+  const label = CATEGORY_SHORT_LABELS[category] || category;
+  return `<span class="cat-chip cat-${category}">${escapeHtml(label)}</span>`;
+}
 
-  const groupGames = OPTIMIZED_SCHEDULE
-    .map((entry, slotIdx) => ({ entry, slotIdx }))
-    .filter(({ entry }) => entry.h === teamIndex || entry.a === teamIndex)
-    .map(({ entry, slotIdx }) => {
-      const homeTeam = teamsInCategory[entry.h];
-      const awayTeam = teamsInCategory[entry.a];
-      if (!homeTeam || !awayTeam) return null;
-      const id = `match-${team.category}-${slotIdx}-${entry.h}-${entry.a}`;
-      return {
-        id,
-        stage: entry.r,
-        time: slotTime(slotIdx),
-        field,
-        home: homeTeam.name,
-        homeId: homeTeam.id,
-        away: awayTeam.name,
-        awayId: awayTeam.id,
-        editable: true,
-      };
-    })
-    .filter(Boolean);
+function netSwitchChipHtml(match) {
+  if (match.field !== "2") return "";
+  const sw = FIELD2_SWITCHES.get(match.id);
+  if (!sw) return "";
+  const to = sw.to === "youth" ? "Jugend" : "Erwachsene";
+  return `<span class="net-switch" title="Netzhöhe wechseln auf ${to}">⇅ Netzhöhe → ${to}</span>`;
+}
 
-  const fp = resolveFinalParticipants(team.category);
-  /** Look up a team's ID by name within the category, returning null if not found. */
-  const teamIdByName = (name) => teamsInCategory.find((t) => t.name === name)?.id ?? null;
+function netHeightChipHtml(match) {
+  const label = match.netHeight === "youth" ? "Netzhöhe Jugend" : "Netzhöhe Erwachsene";
+  const cls = match.netHeight === "youth" ? "net-chip net-youth" : "net-chip net-adult";
+  return `<span class="${cls}">${label}</span>`;
+}
 
-  const allFinals = [
-    { id: `final-vfa-${team.category}`, stage: "Viertelfinal A", time: slotTime(15) },
-    { id: `final-vfb-${team.category}`, stage: "Viertelfinal B", time: slotTime(16) },
-    { id: `final-tq-${team.category}`,  stage: "Top-Quali",      time: slotTime(17) },
-    { id: `final-koq-${team.category}`, stage: "K.o.-Quali",     time: slotTime(18) },
-    { id: `final-p5-${team.category}`,  stage: "Platz 5",        time: slotTime(19) },
-    { id: `final-hf-${team.category}`,  stage: "Halbfinal",      time: slotTime(20) },
-    { id: `final-p3-${team.category}`,  stage: "Platz 3",        time: slotTime(21) },
-    { id: `final-1-${team.category}`,   stage: "Finale",         time: slotTime(22) },
-  ].map(({ id, stage, time }) => {
-    const p = fp[id];
-    return { id, stage, time, field, home: p.home, homeId: teamIdByName(p.home), away: p.away, awayId: teamIdByName(p.away), editable: p.editable };
-  });
+function teamCellHtml(ref, category, matchId, side) {
+  const teamId = refTeamId(ref, category);
+  const displayName = refDisplayName(ref, category);
+  const code = refTeamCode(ref, category);
+  const score = resultMap[matchId] || { home: "", away: "" };
+  const outcome = getMatchOutcomeClass(score.home, score.away, side);
+  const isPlaceholder = !teamId && !code;
+  const codeSuffix = code ? ` <span class="team-code">(${escapeHtml(code)})</span>` : "";
+  if (teamId) {
+    return `<button type="button" class="team-link ${outcome}" data-team-select="${teamId}">${escapeHtml(displayName)}</button>${codeSuffix}`;
+  }
+  // Kein Team registriert: zeige Code/Platzhalter
+  return `<span class="team-placeholder${isPlaceholder ? " is-dynamic" : ""}">${escapeHtml(displayName)}</span>`;
+}
 
-  // Only show finals that are relevant for this team
-  const teamName = team.name;
-  const teamPathFinals = allFinals.filter((finalMatch) => finalMatch.home === teamName || finalMatch.away === teamName);
-  const hasCompleteScore = (matchId) => {
-    const score = resultMap[matchId];
-    if (!score) return false;
-    const home = Number(score.home);
-    const away = Number(score.away);
-    return score.home !== "" && score.away !== "" && Number.isFinite(home) && Number.isFinite(away) && home >= 0 && away >= 0;
-  };
+function rowClassForPhase(kind) {
+  return kind === "group" ? "" : `row-phase-${kind}`;
+}
 
-  const relevantFinals = [];
-  for (const finalMatch of teamPathFinals) {
-    // Zeige nur fix zugewiesene Spiele des Teams an
-    if (!(finalMatch.home === teamName || finalMatch.away === teamName)) continue;
-    const previousVisibleMatch = relevantFinals[relevantFinals.length - 1];
-    // Erstes Finalspiel erscheint direkt nach abgeschlossener Gruppenphase (fixe Paarung)
-    if (!previousVisibleMatch) {
-      relevantFinals.push(finalMatch);
-      continue;
-    }
-    // Nächstes Spiel erst anzeigen, wenn das vorherige Spiel des Teams gespielt wurde
-    if (hasCompleteScore(previousVisibleMatch.id)) {
-      relevantFinals.push(finalMatch);
-    } else {
-      break;
+function scoreCellHtml(match) {
+  const score = resultMap[match.id] || { home: "", away: "" };
+  if (hasCompleteScore(match.id)) {
+    return `<span class="schedule-result">${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}</span>`;
+  }
+  return `<span class="schedule-result schedule-result-empty">–</span>`;
+}
+
+function scheduleMatchesFiltered() {
+  let list = TOURNAMENT_SCHEDULE.slice();
+  if (selectedScheduleCategory !== "all") {
+    list = list.filter((m) => m.category === selectedScheduleCategory);
+  }
+  if (selectedScheduleTeam) {
+    const team = getTeamById(selectedScheduleTeam);
+    const code = team?.code;
+    if (code) {
+      list = list.filter((m) => {
+        const hc = refTeamCode(m.home, m.category);
+        const ac = refTeamCode(m.away, m.category);
+        return hc === code || ac === code;
+      });
+    } else if (team) {
+      list = list.filter((m) => {
+        const hid = refTeamId(m.home, m.category);
+        const aid = refTeamId(m.away, m.category);
+        return hid === team.id || aid === team.id;
+      });
     }
   }
-
-  const group = `${label}`;
-  const groupPeers = teamsInCategory;
-  return { group, groupPeers, matches: [...groupGames, ...relevantFinals] };
+  // Sort by time, then field
+  return list.sort((a, b) => {
+    if (a.time !== b.time) return a.time.localeCompare(b.time);
+    return a.field.localeCompare(b.field);
+  });
 }
 
+function renderSchedule() {
+  if (!scheduleTableBody) return;
+  refreshScheduleTeamOptions();
+  const matches = scheduleMatchesFiltered();
+  if (!matches.length) {
+    scheduleTableBody.innerHTML = '<tr><td colspan="6">Keine Spiele für die gewählten Filter.</td></tr>';
+    return;
+  }
+  scheduleTableBody.innerHTML = matches.map((match) => {
+    const rowCls = rowClassForPhase(match.phaseKind);
+    const phaseBadge = phaseChipHtml(match);
+    const catBadge = categoryChipHtml(match.category);
+    const netSwitch = netSwitchChipHtml(match);
+    const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
+    const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
+    const scoreCell = scoreCellHtml(match);
+    const timeCell = `<span class="time-start">${match.time}</span><span class="time-range"> – ${match.endTime}</span>`;
+    return `<tr class="${rowCls}">
+      <td class="col-time">${timeCell}</td>
+      <td class="col-field">Feld ${match.field}${netSwitch}</td>
+      <td class="col-category">${catBadge}${phaseBadge ? " " + phaseBadge : ""}</td>
+      <td class="col-game">
+        <div class="col-game-inner">
+          <span class="col-game-home">${homeCell}</span>
+          <span class="col-game-score">${scoreCell}</span>
+          <span class="col-game-away">${awayCell}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function refreshScheduleTeamOptions() {
+  if (!scheduleTeamFilter) return;
+  const cat = selectedScheduleCategory;
+  const teams = allTeams.filter((t) => cat === "all" || t.category === cat);
+  // Aktuelle Auswahl ggf. löschen, falls Kategorie gewechselt wird
+  const currentValid = teams.some((t) => t.id === selectedScheduleTeam);
+  if (!currentValid) selectedScheduleTeam = "";
+  const sorted = teams.slice().sort((a, b) => (a.code || a.name).localeCompare(b.code || b.name, "de"));
+  const opts = ['<option value="">Alle Teams</option>']
+    .concat(sorted.map((t) => `<option value="${t.id}">${escapeHtml(t.code ? `${t.code} – ${t.name}` : t.name)}</option>`));
+  scheduleTeamFilter.innerHTML = opts.join("");
+  scheduleTeamFilter.value = selectedScheduleTeam;
+}
+
+scheduleCategoryFilter?.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) return;
+  selectedScheduleCategory = target.value;
+  renderSchedule();
+});
+
+scheduleTeamFilter?.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) return;
+  selectedScheduleTeam = target.value;
+  renderSchedule();
+});
+
+// ── Teams-Tab ────────────────────────────────────────────────────────────────
 function renderTeamCard(team) {
   const canDelete = Boolean(currentUser);
-  return `<li class="team-card" data-team-select="${team.id}"><div class="team-card-content"><p class="team-name">${escapeHtml(team.name)}</p><p class="team-meta">Gemeinde: ${escapeHtml(team.community)}</p><p class="team-meta">Mannschaftsverantwortlich: ${escapeHtml(team.manager)}</p></div>${canDelete ? `<button type="button" class="team-delete" data-team-id="${team.id}">Löschen</button>` : ""}</li>`;
+  const codeBadge = team.code ? `<span class="team-card-code">${escapeHtml(team.code)}</span>` : "";
+  return `<li class="team-card" data-team-select="${team.id}">
+    <div class="team-card-content">
+      <p class="team-name">${codeBadge}${escapeHtml(team.name)}</p>
+      <p class="team-meta">Gemeinde: ${escapeHtml(team.community)}</p>
+      <p class="team-meta">Mannschaftsverantwortlich: ${escapeHtml(team.manager)}</p>
+    </div>
+    ${canDelete ? `<button type="button" class="team-delete" data-team-id="${team.id}">Löschen</button>` : ""}
+  </li>`;
 }
 
+function renderTeams(teams) {
+  const byCategory = { youth: [], adult_fun: [], adult_ambitious: [] };
+  teams.forEach((team) => { if (byCategory[team.category]) byCategory[team.category].push(team); });
+  Object.entries(teamLists).forEach(([category, listEl]) => {
+    if (!listEl) return;
+    const entries = byCategory[category];
+    // Sort by code if present, otherwise name
+    entries.sort((a, b) => (a.code || a.name).localeCompare(b.code || b.name, "de"));
+    listEl.innerHTML = entries.length
+      ? entries.map((team) => renderTeamCard(team)).join("")
+      : '<li class="team-empty">Noch keine Teams erfasst.</li>';
+  });
+  renderDashboardTeamOptions();
+  if (selectedTeamId) renderTeamDashboard(selectedTeamId); else renderDashboardEmptyState();
+  renderSchedule();
+  renderOrganizationPanel();
+  renderRangliste();
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
 function renderDashboardEmptyState() {
   if (!dashboardTitle || !dashboardInfo || !dashboardGroupTable || !dashboardMatchTable) return;
   dashboardTitle.textContent = "Team-Dashboard";
@@ -286,32 +437,59 @@ function renderDashboardEmptyState() {
   dashboardMatchTable.innerHTML = '<tr><td colspan="4">Noch kein Team ausgewählt.</td></tr>';
 }
 
-function renderGroupStandings(selectedTeam, groupPeers) {
+function renderGroupStandings(category, selectedCode) {
   if (!dashboardGroupTable) return;
-  const teamsInCategory = allTeams.filter((team) => team.category === selectedTeam.category);
-  const rows = getSortedStandings(teamsInCategory)
-    .map(({ team, pts, gf, ga, played }, idx) => {
-      const ratio = ga === 0 ? (gf > 0 ? "∞" : "0") : (gf / ga).toFixed(2);
-      const rowClass = team.id === selectedTeam.id ? ' class="is-selected-row"' : "";
-      const nameCell = `<button type="button" class="team-link" data-team-select="${team.id}">${escapeHtml(team.name)}</button>`;
-      return `<tr${rowClass}><td>${idx + 1}</td><td>${nameCell}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
+  const rows = getSortedStandings(category)
+    .map(({ code, team, pts, gf, ga, played }, idx) => {
+      const rowClass = code === selectedCode ? ' class="is-selected-row"' : "";
+      const displayName = team ? team.name : code;
+      const codeLabel = team ? `<span class="team-code">${escapeHtml(code)}</span> ${escapeHtml(displayName)}` : `<em>${escapeHtml(code)}</em>`;
+      const nameCell = team
+        ? `<button type="button" class="team-link" data-team-select="${team.id}">${codeLabel}</button>`
+        : codeLabel;
+      return `<tr${rowClass}><td>${idx + 1}</td><td>${nameCell}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
     });
-  dashboardGroupTable.innerHTML = rows.join("") || `<tr><td>1</td><td>${escapeHtml(selectedTeam.name)}</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>`;
+  dashboardGroupTable.innerHTML = rows.join("");
 }
 
-function renderDashboardTeamOptions() {
-  if (!dashboardTeamSelect) return;
-  const options = allTeams
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name, "de"))
-    .map((team) => `<option value="${team.id}">${escapeHtml(team.name)} (${CATEGORY_LABELS[team.category]})</option>`)
-    .join("");
-  dashboardTeamSelect.innerHTML = `<option value="">Bitte Team auswählen</option>${options}`;
-  dashboardTeamSelect.value = selectedTeamId || "";
+function getMatchesForTeam(team) {
+  if (!team || !team.code) return [];
+  const code = team.code;
+  const category = team.category;
+  const teamMatches = [];
+
+  // 1. Gruppenspiele: direkte Code-Matches
+  for (const match of TOURNAMENT_SCHEDULE.filter((m) => m.category === category && m.phaseKind === "group")) {
+    if (match.home.code === code || match.away.code === code) {
+      teamMatches.push(match);
+    }
+  }
+
+  // 2. Finals/Playoffs: aufgelöste Codes
+  const playoffMatches = TOURNAMENT_SCHEDULE.filter((m) => m.category === category && m.phaseKind !== "group");
+
+  // Reveal-Logic: zeige nur Playoff-Spiele, die für dieses Team relevant sind,
+  // und sukzessive (sobald das vorherige Spiel des Teams ein Resultat hat).
+  const sortedPlayoffs = playoffMatches.slice().sort((a, b) => a.time.localeCompare(b.time));
+  let previousVisibleId = teamMatches.length ? teamMatches[teamMatches.length - 1].id : null;
+  for (const m of sortedPlayoffs) {
+    const homeCode = refTeamCode(m.home, m.category);
+    const awayCode = refTeamCode(m.away, m.category);
+    const isMine = homeCode === code || awayCode === code;
+    if (!isMine) continue;
+    // Erstes Playoff direkt nach Gruppenphase, sobald aufgelöst → anzeigen
+    if (!previousVisibleId || hasCompleteScore(previousVisibleId)) {
+      teamMatches.push(m);
+      previousVisibleId = m.id;
+    } else {
+      break;
+    }
+  }
+  return teamMatches.sort((a, b) => a.time.localeCompare(b.time));
 }
 
 function renderTeamDashboard(teamId) {
-  const selectedTeam = allTeams.find((team) => team.id === teamId);
+  const selectedTeam = allTeams.find((t) => t.id === teamId);
   if (!selectedTeam) {
     selectedTeamId = null;
     if (dashboardTeamSelect) dashboardTeamSelect.value = "";
@@ -321,241 +499,84 @@ function renderTeamDashboard(teamId) {
   selectedTeamId = teamId;
   if (dashboardTeamSelect) dashboardTeamSelect.value = selectedTeamId;
 
-  const teamsInCategory = allTeams.filter((team) => team.category === selectedTeam.category);
-  const { group, groupPeers, matches } = getTeamSchedule(selectedTeam, teamsInCategory);
+  const category = selectedTeam.category;
+  const code = selectedTeam.code || null;
 
+  const codeText = code ? ` · Code ${code}` : "";
   dashboardTitle.textContent = selectedTeam.name;
-  dashboardInfo.textContent = CATEGORY_LABELS[selectedTeam.category];
+  dashboardInfo.textContent = `${CATEGORY_LABELS[category]}${codeText}`;
 
-  renderGroupStandings(selectedTeam, groupPeers);
+  renderGroupStandings(category, code);
 
-  const savedFocus = saveFocusedResultInput();
-  dashboardMatchTable.innerHTML = matches
-    .map((match) => {
-      const score = resultMap[match.id] || { home: "", away: "" };
-      const hasScore = score.home !== "" && score.away !== "";
-      const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
-      const readOnly = true;
-      const scoreCell = readOnly
-        ? `<span class="schedule-result">${scoreText}</span>`
-        : `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
-      const homeOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "home");
-      const awayOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "away");
-      const homeSelected = match.homeId === selectedTeam.id ? "is-selected-team" : "";
-      const awaySelected = match.awayId === selectedTeam.id ? "is-selected-team" : "";
-      const homeCell = match.homeId
-        ? `<button type="button" class="team-link ${homeOutcome} ${homeSelected}" data-team-select="${match.homeId}">${escapeHtml(match.home)}</button>`
-        : escapeHtml(match.home);
-      const awayCell = match.awayId
-        ? `<button type="button" class="team-link ${awayOutcome} ${awaySelected}" data-team-select="${match.awayId}">${escapeHtml(match.away)}</button>`
-        : escapeHtml(match.away);
-      return `<tr><td>${match.stage}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeCell}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${awayCell}</span></div></td></tr>`;
-    })
-    .join("");
-  restoreFocusedResultInput(savedFocus);
-}
-
-function renderTeams(teams) {
-  const byCategory = { youth: [], adult_fun: [], adult_ambitious: [] };
-  teams.forEach((team) => { if (byCategory[team.category]) byCategory[team.category].push(team); });
-  Object.entries(teamLists).forEach(([category, listEl]) => {
-    if (!listEl) return;
-    const entries = byCategory[category];
-    listEl.innerHTML = entries.length ? entries.map((team) => renderTeamCard(team)).join("") : '<li class="team-empty">Noch keine Teams erfasst.</li>';
-  });
-  renderDashboardTeamOptions();
-  if (selectedTeamId) renderTeamDashboard(selectedTeamId); else renderDashboardEmptyState();
-  renderSchedule();
-  renderOrganizationPanel();
-  renderRangliste();
-}
-
-/**
- * Resolve all final-round participants and determine editability for each match.
- * A match becomes editable once both participants are real team names (not placeholders).
- * Later rounds are resolved from the results of earlier finals.
- */
-function resolveFinalParticipants(category) {
-  const label = CATEGORY_LABELS[category];
-  const resolvedMap = resolveFinalNames(category);
-
-  const byRank = (placeholder) => resolvedMap[placeholder] ?? null;
-  const r1 = byRank(`${label} Rang 1`);
-  const r2 = byRank(`${label} Rang 2`);
-  const r3 = byRank(`${label} Rang 3`);
-  const r4 = byRank(`${label} Rang 4`);
-  const r5 = byRank(`${label} Rang 5`);
-  const r6 = byRank(`${label} Rang 6`);
-
-  /** Determine clear winner and loser of a final match from resultMap. Draw = null. */
-  const getWinnerLoser = (matchId, homeName, awayName) => {
-    if (!homeName || !awayName) return { winner: null, loser: null };
-    const score = resultMap[matchId];
-    if (!score || score.home === "" || score.away === "") return { winner: null, loser: null };
-    const h = Number(score.home), a = Number(score.away);
-    if (!Number.isFinite(h) || !Number.isFinite(a) || h < 0 || a < 0) return { winner: null, loser: null };
-    if (h > a) return { winner: homeName, loser: awayName };
-    if (a > h) return { winner: awayName, loser: homeName };
-    return { winner: null, loser: null }; // draw – progression unresolved
-  };
-
-  const vfaHome = r3, vfaAway = r6;
-  const vfbHome = r4, vfbAway = r5;
-  const tqHome = r1, tqAway = r2;
-
-  const { winner: vfaWinner, loser: vfaLoser } = getWinnerLoser(`final-vfa-${category}`, vfaHome, vfaAway);
-  const { winner: vfbWinner, loser: vfbLoser } = getWinnerLoser(`final-vfb-${category}`, vfbHome, vfbAway);
-  const { winner: tqWinner, loser: tqLoser } = getWinnerLoser(`final-tq-${category}`, tqHome, tqAway);
-
-  const koqHome = vfaWinner, koqAway = vfbWinner;
-  const p5Home = vfaLoser, p5Away = vfbLoser;
-
-  const { winner: koqWinner, loser: koqLoser } = getWinnerLoser(`final-koq-${category}`, koqHome, koqAway);
-
-  const hfHome = tqLoser, hfAway = koqWinner;
-
-  const { winner: hfWinner, loser: hfLoser } = getWinnerLoser(`final-hf-${category}`, hfHome, hfAway);
-
-  const p3Home = koqLoser, p3Away = hfLoser;
-  const finHome = tqWinner, finAway = hfWinner;
-
-  return {
-    [`final-vfa-${category}`]: { home: vfaHome ?? `${label} Rang 3`, away: vfaAway ?? `${label} Rang 6`, editable: !!(vfaHome && vfaAway) },
-    [`final-vfb-${category}`]: { home: vfbHome ?? `${label} Rang 4`, away: vfbAway ?? `${label} Rang 5`, editable: !!(vfbHome && vfbAway) },
-    [`final-tq-${category}`]:  { home: tqHome  ?? `${label} Rang 1`, away: tqAway  ?? `${label} Rang 2`, editable: !!(tqHome  && tqAway) },
-    [`final-koq-${category}`]: { home: koqHome ?? "Sieger Viertelf. A",    away: koqAway ?? "Sieger Viertelf. B",    editable: !!(koqHome && koqAway) },
-    [`final-p5-${category}`]:  { home: p5Home  ?? "Verlierer Viertelf. A", away: p5Away  ?? "Verlierer Viertelf. B", editable: !!(p5Home  && p5Away) },
-    [`final-hf-${category}`]:  { home: hfHome  ?? "Verlierer Top-Quali",   away: hfAway  ?? "Sieger K.o.-Quali",     editable: !!(hfHome  && hfAway) },
-    [`final-p3-${category}`]:  { home: p3Home  ?? "Verlierer K.o.-Quali",  away: p3Away  ?? "Verlierer Halbfinal",   editable: !!(p3Home  && p3Away) },
-    [`final-1-${category}`]:   { home: finHome ?? "Sieger Top-Quali",      away: finAway ?? "Sieger Halbfinal",      editable: !!(finHome && finAway) },
-  };
-}
-
-function getScheduleMatches(teams, category) {
-  const field = category === "adult_ambitious" ? "1" : category === "adult_fun" ? "2" : "3";
-
-  if (teams.length < 2) return [];
-
-  const preliminaryMatches = OPTIMIZED_SCHEDULE.map((entry, slotIdx) => {
-    const homeTeam = teams[entry.h];
-    const awayTeam = teams[entry.a];
-    if (!homeTeam || !awayTeam) return null;
-    const id = `match-${category}-${slotIdx}-${entry.h}-${entry.a}`;
-    return {
-      id,
-      nr: slotIdx + 1,
-      stage: entry.r,
-      time: slotTime(slotIdx),
-      field,
-      home: homeTeam,
-      away: awayTeam,
-      editable: true,
-    };
-  }).filter(Boolean);
-
-  const fp = resolveFinalParticipants(category);
-
-  const finalMatchDefs = [
-    { id: `final-vfa-${category}`, nr: 16, stage: "Viertelfinal A", time: slotTime(15) },
-    { id: `final-vfb-${category}`, nr: 17, stage: "Viertelfinal B", time: slotTime(16) },
-    { id: `final-tq-${category}`,  nr: 18, stage: "Top-Quali",      time: slotTime(17) },
-    { id: `final-koq-${category}`, nr: 19, stage: "K.o.-Quali",     time: slotTime(18) },
-    { id: `final-p5-${category}`,  nr: 20, stage: "Platz 5",        time: slotTime(19) },
-    { id: `final-hf-${category}`,  nr: 21, stage: "Halbfinal",      time: slotTime(20) },
-    { id: `final-p3-${category}`,  nr: 22, stage: "Platz 3",        time: slotTime(21) },
-    { id: `final-1-${category}`,   nr: 23, stage: "Finale",         time: slotTime(22) },
-  ];
-
-  const finalMatches = finalMatchDefs.map(({ id, nr, stage, time }) => {
-    const p = fp[id];
-    return { id, nr, stage, time, field, home: { name: p.home, id: null }, away: { name: p.away, id: null }, editable: p.editable };
-  });
-
-  return [...preliminaryMatches, ...finalMatches];
-}
-
-/**
- * Returns the focused result-input's identity { matchId, side } so it can be
- * restored after a full DOM re-render, or null if no result-input is focused.
- */
-function saveFocusedResultInput() {
-  const el = document.activeElement;
-  if (el instanceof HTMLInputElement && el.matches(".result-input")) {
-    return { matchId: el.dataset.resultMatch, side: el.dataset.side };
-  }
-  return null;
-}
-
-/** Re-focuses the result-input that was active before a re-render, if still present. */
-function restoreFocusedResultInput(saved) {
-  if (!saved) return;
-  const el = document.querySelector(
-    `.result-input[data-result-match="${CSS.escape(saved.matchId)}"][data-side="${saved.side}"]`
-  );
-  if (el instanceof HTMLInputElement) {
-    el.focus();
-    // Move cursor to end of value
-    const len = el.value.length;
-    el.setSelectionRange(len, len);
-  }
-}
-
-function renderSchedule() {
-  const tableBody = document.getElementById("schedule-table-body");
-  if (!tableBody) return;
-  const savedFocus = saveFocusedResultInput();
-  const teams = allTeams.filter((team) => team.category === selectedScheduleCategory);
-  const matches = getScheduleMatches(teams, selectedScheduleCategory);
+  const matches = getMatchesForTeam(selectedTeam);
   if (!matches.length) {
-    tableBody.innerHTML = '<tr><td colspan="4">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+    if (!code) {
+      dashboardMatchTable.innerHTML = '<tr><td colspan="4">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
+    } else {
+      dashboardMatchTable.innerHTML = '<tr><td colspan="4">Keine Spiele gefunden.</td></tr>';
+    }
     return;
   }
-  tableBody.innerHTML = matches.map((match) => {
-    const score = resultMap[match.id] || { home: "", away: "" };
-    const homeOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "home");
-    const awayOutcome = getMatchOutcomeClass(match.id, score.home, score.away, "away");
-    const homeLink = match.home.id
-      ? `<button type="button" class="team-link ${homeOutcome}" data-team-select="${match.home.id}">${escapeHtml(match.home.name)}</button>`
-      : escapeHtml(match.home.name);
-    const awayLink = match.away.id
-      ? `<button type="button" class="team-link ${awayOutcome}" data-team-select="${match.away.id}">${escapeHtml(match.away.name)}</button>`
-      : escapeHtml(match.away.name);
-    const hasScore = score.home !== "" && score.away !== "";
-    const scoreText = hasScore ? `${escapeHtml(String(score.home))} : ${escapeHtml(String(score.away))}` : "–";
-    let resultCell;
-    const isFinal = match.id.startsWith("final-");
-    if (true) {
-      resultCell = `<span class="schedule-result">${scoreText}</span>`;
-    } else {
-      resultCell = `<span class="schedule-result"><input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}" /> : <input type="number" min="0" class="result-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}" /></span>`;
-    }
 
-    return `<tr><td>${escapeHtml(match.stage)}</td><td class="col-time">${match.time}</td><td>${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeLink}</span><span class="col-game-score">${resultCell}</span><span class="col-game-away">${awayLink}</span></div></td></tr>`;
+  dashboardMatchTable.innerHTML = matches.map((match) => {
+    const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
+    const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
+    const scoreCell = scoreCellHtml(match);
+    const phaseLabel = match.phase + (match.field === "2" && FIELD2_SWITCHES.has(match.id) ? " ⇅" : "");
+    return `<tr><td>${escapeHtml(phaseLabel)}</td><td class="col-time">${match.time}</td><td>Feld ${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeCell}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${awayCell}</span></div></td></tr>`;
   }).join("");
-  restoreFocusedResultInput(savedFocus);
 }
 
-
-function getCategoryByField(field) {
-  if (field === "1") return "adult_ambitious";
-  if (field === "2") return "adult_fun";
-  return "youth";
+function renderDashboardTeamOptions() {
+  if (!dashboardTeamSelect) return;
+  const options = allTeams
+    .slice()
+    .sort((a, b) => (a.code || a.name).localeCompare(b.code || b.name, "de"))
+    .map((team) => {
+      const codePrefix = team.code ? `${team.code} – ` : "";
+      return `<option value="${team.id}">${escapeHtml(codePrefix + team.name)} (${CATEGORY_SHORT_LABELS[team.category]})</option>`;
+    }).join("");
+  dashboardTeamSelect.innerHTML = `<option value="">Bitte Team auswählen</option>${options}`;
+  dashboardTeamSelect.value = selectedTeamId || "";
 }
+
+// ── Turnierorganisation ─────────────────────────────────────────────────────
+const orgRows = document.getElementById("org-rows");
 
 function renderOrganizationPanel() {
   if (!orgRows) return;
-  const slots = [];
-  for (let i=0;i<23;i++) {
-    const matches = ["1","2","3"].flatMap((field) => {
-      const category = getCategoryByField(field);
-      const teams = allTeams.filter((team) => team.category === category);
-      const list = getScheduleMatches(teams, category);
-      const m = list.find((x) => x.nr === i+1);
-      return m ? [{...m, field}] : [];
-    });
-    slots.push({idx:i, time:slotTime(i), matches});
-  }
-  orgRows.innerHTML = slots.map((slot)=>`<div class="org-row"><button type="button" class="org-toggle" data-org-toggle="${slot.idx}"><span>${slot.time}</span><span>▾</span></button><div class="org-body" id="org-body-${slot.idx}" hidden><div class="org-grid">${slot.matches.length?slot.matches.map((match)=>{const score=resultMap[match.id]||{home:"",away:""};return `<div class="org-match"><span class="org-field">Feld ${match.field}</span><span class="org-team">${escapeHtml(match.home.name)}</span><span><input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}"> : <input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}"></span><span class="org-team" style="text-align:right;">${escapeHtml(match.away.name)}</span></div>`;}).join(""):'<div>Keine Paarung</div>'}</div></div></div>`).join("");
+  // Group matches by time slot
+  const slots = SCHEDULE_SLOTS.map((time) => {
+    const matches = TOURNAMENT_SCHEDULE
+      .filter((m) => m.time === time)
+      .sort((a, b) => a.field.localeCompare(b.field));
+    return { time, matches };
+  });
+
+  orgRows.innerHTML = slots.map((slot, idx) => {
+    const inner = slot.matches.map((match) => {
+      const score = resultMap[match.id] || { home: "", away: "" };
+      const homeName = refDisplayName(match.home, match.category);
+      const awayName = refDisplayName(match.away, match.category);
+      const homeCode = refTeamCode(match.home, match.category);
+      const awayCode = refTeamCode(match.away, match.category);
+      const hasBoth = homeCode && awayCode;
+      const netSwitch = netSwitchChipHtml(match);
+      const phaseInfo = match.phaseKind === "group" ? "" : ` <em class="org-phase">(${escapeHtml(match.phase)})</em>`;
+      const inputs = hasBoth
+        ? `<input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}"> : <input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}">`
+        : `<span class="org-pending">noch nicht aufgelöst</span>`;
+      return `<div class="org-match">
+        <span class="org-field">Feld ${match.field}</span>
+        <span class="org-cat">${categoryChipHtml(match.category)}</span>
+        <span class="org-team">${escapeHtml(homeName)}</span>
+        <span class="org-score">${inputs}</span>
+        <span class="org-team org-team-away">${escapeHtml(awayName)}</span>
+        ${netSwitch}${phaseInfo}
+      </div>`;
+    }).join("");
+    return `<div class="org-row"><button type="button" class="org-toggle" data-org-toggle="${idx}"><span>${slot.time}</span><span>▾</span></button><div class="org-body" id="org-body-${idx}" hidden><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
+  }).join("");
 }
 
 document.addEventListener("click", (event) => {
@@ -569,6 +590,7 @@ document.addEventListener("click", (event) => {
   body.hidden = !body.hidden;
 });
 
+// ── Buttons / Forms ──────────────────────────────────────────────────────────
 createButton?.addEventListener("click", () => openModal());
 cancelBtn?.addEventListener("click", () => closeModal());
 
@@ -579,12 +601,40 @@ dashboardTeamSelect?.addEventListener("change", (event) => {
 });
 
 form?.addEventListener("submit", async (event) => {
-  event.preventDefault(); if (!currentUser) return;
-  const payload = { name: form.teamName.value.trim(), community: form.community.value.trim(), manager: form.manager.value.trim(), category: form.category.value, createdAt: serverTimestamp(), ownerUid: currentUser.uid };
-  if (!payload.name || !payload.community || !payload.manager || !payload.category) { if (errorEl) errorEl.textContent = "Bitte alle Felder ausfüllen."; return; }
-  try { await addDoc(collection(db, "teams"), payload); closeModal(); } catch { if (errorEl) errorEl.textContent = "Team konnte nicht gespeichert werden."; }
+  event.preventDefault();
+  if (!currentUser) return;
+  const name = form.teamName.value.trim();
+  const community = form.community.value.trim();
+  const manager = form.manager.value.trim();
+  const category = form.category.value;
+  const code = teamCodeSelect?.value?.trim() || "";
+  if (!name || !community || !manager || !category) {
+    if (errorEl) errorEl.textContent = "Bitte alle Pflichtfelder ausfüllen.";
+    return;
+  }
+  if (code && CODE_TO_CATEGORY[code] !== category) {
+    if (errorEl) errorEl.textContent = "Spielcode passt nicht zur Kategorie.";
+    return;
+  }
+  if (code && allTeams.some((t) => t.code === code)) {
+    if (errorEl) errorEl.textContent = "Dieser Spielcode ist bereits vergeben.";
+    return;
+  }
+  const payload = {
+    name, community, manager, category,
+    code: code || null,
+    createdAt: serverTimestamp(),
+    ownerUid: currentUser.uid,
+  };
+  try {
+    await addDoc(collection(db, "teams"), payload);
+    closeModal();
+  } catch {
+    if (errorEl) errorEl.textContent = "Team konnte nicht gespeichert werden.";
+  }
 });
 
+// ── Firebase Auth + Snapshots ────────────────────────────────────────────────
 onAuthStateChanged(auth, (user) => {
   currentUser = user;
   if (createButton) createButton.hidden = !user;
@@ -603,22 +653,15 @@ onSnapshot(query(collection(db, "teams"), orderBy("createdAt", "desc")), (snapsh
   renderTeams(allTeams);
 });
 
-document.getElementById("schedule-category-filter")?.addEventListener("change", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLSelectElement)) return;
-  selectedScheduleCategory = target.value;
-  renderSchedule();
-  renderOrganizationPanel();
-});
-
 onSnapshot(collection(db, "resultate"), (snapshot) => {
   resultMap = snapshot.docs.reduce((acc, entry) => ({ ...acc, [entry.id]: entry.data() }), {});
-  // Re-render schedule to update results and potentially resolved final names
   renderSchedule();
   renderOrganizationPanel();
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
+  renderRangliste();
 });
 
+// ── Team-Klicks (Dashboard-Sprung) + Löschen ─────────────────────────────────
 document.addEventListener("click", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
@@ -634,6 +677,7 @@ document.addEventListener("click", async (event) => {
   await deleteDoc(doc(db, "teams", teamId));
 });
 
+// ── Ergebniseingabe (nur Org-Panel) ─────────────────────────────────────────
 document.addEventListener("change", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
@@ -645,6 +689,7 @@ document.addEventListener("change", async (event) => {
   await setDoc(doc(db, "resultate", matchId), next, { merge: true });
 });
 
+// ── Infos-Subnav ────────────────────────────────────────────────────────────
 const infosSubButtons = {
   time_place: document.getElementById("infos-sub-time-place"),
   mode: document.getElementById("infos-sub-mode"),
@@ -671,6 +716,7 @@ function setInfosSection(section, { updateHash = true } = {}) {
   if (updateHash && currentView === "infos") syncLocationHash();
 }
 
+// ── View-Navigation ─────────────────────────────────────────────────────────
 const infosViewBtn = document.getElementById("show-infos");
 const teamsViewBtn = document.getElementById("show-teams");
 const scheduleViewBtn = document.getElementById("show-schedule");
@@ -680,11 +726,7 @@ const teamsPanel = document.getElementById("teams-panel");
 const schedulePanel = document.getElementById("schedule-panel");
 const orgViewBtn = document.getElementById("show-org");
 const orgPanel = document.getElementById("org-panel");
-const orgRows = document.getElementById("org-rows");
-// ── History / Back-Button-Navigation ───────────────────────────────────────
-// Wir spiegeln den aktuellen View (und die Infos-Unterkategorie) in die URL
-// als Hash, damit der Zurück-/Vorwärts-Button des Browsers zwischen den
-// Ansichten navigieren kann.
+
 const VALID_VIEWS = ["infos", "teams", "schedule", "dashboard", "rangliste", "org"];
 const VALID_INFOS_SECTIONS = ["time_place", "mode", "rules"];
 let currentView = "infos";
@@ -700,7 +742,6 @@ function syncLocationHash() {
   if (location.hash !== target) {
     history.pushState({ view: currentView, infosSection: currentInfosSection }, "", target);
   } else {
-    // Hash already matches – stelle sicher, dass der State-Eintrag gefüllt ist
     history.replaceState({ view: currentView, infosSection: currentInfosSection }, "");
   }
 }
@@ -740,6 +781,7 @@ function setView(view, { updateHash = true } = {}) {
   ranglisteViewBtn?.setAttribute("aria-expanded", String(showRangliste));
   orgViewBtn?.setAttribute("aria-expanded", String(showOrg));
   if (showRangliste) renderRangliste();
+  if (showSchedule) renderSchedule();
   currentView = view;
   if (updateHash) syncLocationHash();
 }
@@ -774,46 +816,39 @@ window.addEventListener("popstate", (event) => {
   const targetView = isViewAccessible(parsed.view) ? parsed.view : "infos";
   setInfosSection(parsed.infosSection, { updateHash: false });
   setView(targetView, { updateHash: false });
-  // Falls wir umgeleitet haben, Hash ggf. korrigieren
   if (targetView !== parsed.view) syncLocationHash();
 });
 
 const initial = parseHash();
 setInfosSection(initial.infosSection, { updateHash: false });
 setView(initial.view, { updateHash: false });
-// Initial-Eintrag in den Verlauf schreiben, damit Back/Forward-State greifbar ist
 history.replaceState(
   { view: currentView, infosSection: currentInfosSection },
   "",
   buildHash(currentView, currentInfosSection),
 );
 
-// ── Schlussrangliste ───────────────────────────────────────────────────────
-
+// ── Schlussrangliste ────────────────────────────────────────────────────────
 function renderRangliste() {
   if (!ranglisteTableBody) return;
-  const teams = allTeams.filter((t) => t.category === selectedRanglisteCategory);
-  if (!teams.length) {
-    ranglisteTableBody.innerHTML = '<tr><td colspan="7">Noch keine Teams für diese Kategorie erfasst.</td></tr>';
+  const codes = CATEGORY_CODES[selectedRanglisteCategory] || [];
+  if (!codes.length) {
+    ranglisteTableBody.innerHTML = '<tr><td colspan="7">Keine Daten verfügbar.</td></tr>';
     return;
   }
-  const rows = getSortedStandings(teams).map(({ team, pts, gf, ga, played }, idx) => {
-    const ratio = ga === 0 ? (gf > 0 ? "∞" : "0") : (gf / ga).toFixed(2);
-    return `<tr><td>${idx + 1}</td><td>${escapeHtml(team.name)}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratio}</td></tr>`;
+  const rows = getSortedStandings(selectedRanglisteCategory).map(({ code, team, pts, gf, ga, played }, idx) => {
+    const teamLabel = team ? `<span class="team-code">${escapeHtml(code)}</span> ${escapeHtml(team.name)}` : `<em>${escapeHtml(code)}</em>`;
+    return `<tr><td>${idx + 1}</td><td>${teamLabel}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
   });
   ranglisteTableBody.innerHTML = rows.join("");
 }
 
 function updateRanglisteVisibility() {
   const isAuth = Boolean(currentUser);
-  // Nav button: always visible to logged-in users; logged-out only if published
   if (ranglisteViewBtn) ranglisteViewBtn.hidden = !(isAuth || ranglistePublished);
-  // If we're on the rangliste panel as logged-out and it got un-published, go to infos
   if (!isAuth && !ranglistePublished && ranglistePanel && !ranglistePanel.hidden) setView("infos");
-  // Publish/unpublish buttons
   if (ranglistePublishBtn) ranglistePublishBtn.hidden = !(isAuth && !ranglistePublished);
   if (ranglisteUnpublishBtn) ranglisteUnpublishBtn.hidden = !(isAuth && ranglistePublished);
-  // Public note
   if (ranglistePublishedNote) ranglistePublishedNote.hidden = !ranglistePublished;
 }
 
@@ -836,3 +871,26 @@ onSnapshot(doc(db, "rangliste", "status"), (snap) => {
   ranglistePublished = snap.exists() ? Boolean(snap.data()?.published) : false;
   updateRanglisteVisibility();
 });
+
+// ── Netzhöhen-Hinweise (Infos-Bereich) ───────────────────────────────────────
+// Erzeugt zur Laufzeit die Liste der Field-2-Jugendblöcke unter "Spielmodus".
+function renderNetHeightInfo() {
+  const container = document.getElementById("net-height-info");
+  if (!container) return;
+  const youthBlocks = FIELD2_BLOCKS.filter((b) => b.netHeight === "youth");
+  if (!youthBlocks.length) {
+    container.innerHTML = "";
+    return;
+  }
+  const items = youthBlocks.map((b) => {
+    const count = b.matches.length;
+    return `<li>${b.startTime} – ${b.endTime} (${count} Jugendspiel${count === 1 ? "" : "e"})</li>`;
+  });
+  container.innerHTML = `<ul class="net-height-list">${items.join("")}</ul>`;
+}
+renderNetHeightInfo();
+
+// Initial render
+renderSchedule();
+renderOrganizationPanel();
+renderRangliste();
