@@ -53,6 +53,10 @@ const dashboardMatchTable = document.getElementById("dashboard-match-table");
 
 const scheduleCategoryTiles = document.querySelectorAll(".schedule-category-tiles .cat-tile");
 const scheduleTableBody = document.getElementById("schedule-table-body");
+const scheduleStandingsWrap = document.getElementById("schedule-standings");
+const scheduleStandingsToggle = document.getElementById("schedule-standings-toggle");
+const scheduleStandingsBody = document.getElementById("schedule-standings-body");
+const scheduleStandingsTable = document.getElementById("schedule-standings-table");
 
 // ── State ────────────────────────────────────────────────────────────────────
 let currentUser = null;
@@ -62,6 +66,10 @@ let resultMap = {};
 let selectedScheduleCategory = "all";
 let selectedRanglisteCategory = "adult_ambitious";
 let ranglistePublished = false;
+// Gruppentabelle im Spielplan ist standardmässig eingeklappt. Der Zustand
+// bleibt über Kategorie-Wechsel hinweg erhalten, damit Nutzer:innen die
+// Tabelle nicht bei jedem Wechsel erneut aufklappen müssen.
+let scheduleStandingsOpen = false;
 
 // ── Focus-Preservation für Result-Inputs ────────────────────────────────────
 // Beim Speichern eines Punktestands triggert Firestore via onSnapshot ein
@@ -484,7 +492,38 @@ function scheduleMatchesFiltered() {
   });
 }
 
+function renderScheduleStandings() {
+  if (!scheduleStandingsWrap) return;
+  const showStandings =
+    selectedScheduleCategory !== "all" &&
+    (CATEGORY_CODES[selectedScheduleCategory] || []).length > 0;
+  scheduleStandingsWrap.hidden = !showStandings;
+  if (!showStandings) return;
+
+  if (scheduleStandingsBody) scheduleStandingsBody.hidden = !scheduleStandingsOpen;
+  if (scheduleStandingsToggle) {
+    scheduleStandingsToggle.setAttribute("aria-expanded", String(scheduleStandingsOpen));
+    scheduleStandingsToggle.classList.toggle("is-open", scheduleStandingsOpen);
+  }
+
+  if (!scheduleStandingsTable) return;
+  const standings = getSortedStandings(selectedScheduleCategory);
+  if (!standings.length) {
+    scheduleStandingsTable.innerHTML = '<tr><td colspan="7">Noch keine Teams erfasst.</td></tr>';
+    return;
+  }
+  scheduleStandingsTable.innerHTML = standings
+    .map(({ code, team, pts, gf, ga, played }, idx) => {
+      const nameCell = team
+        ? `<button type="button" class="team-link" data-team-select="${team.id}">${escapeHtml(team.name)}</button>`
+        : (code ? escapeHtml(code) : `<span class="team-placeholder">–</span>`);
+      return `<tr><td>${idx + 1}</td><td>${nameCell}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
+    })
+    .join("");
+}
+
 function renderSchedule() {
+  renderScheduleStandings();
   if (!scheduleTableBody) return;
   const focus = captureResultInputFocus();
   const matches = scheduleMatchesFiltered();
@@ -712,6 +751,11 @@ function renderOrganizationPanel() {
   }).join("");
   restoreResultInputFocus(focus);
 }
+
+scheduleStandingsToggle?.addEventListener("click", () => {
+  scheduleStandingsOpen = !scheduleStandingsOpen;
+  renderScheduleStandings();
+});
 
 document.addEventListener("click", (event) => {
   const target = event.target;
