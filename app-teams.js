@@ -27,6 +27,7 @@ const ranglistePublishedNote = document.getElementById("rangliste-published-note
 const ranglisteViewBtn = document.getElementById("show-rangliste");
 const ranglistePanel = document.getElementById("rangliste-panel");
 const ranglisteTableBody = document.getElementById("rangliste-table-body");
+const ranglisteFinalList = document.getElementById("rangliste-final-list");
 const ranglisteCategoryFilter = document.getElementById("rangliste-category-filter");
 
 const teamLists = {
@@ -338,58 +339,61 @@ const FINAL_RANK_RULES = {
 };
 
 // Liefert die Schlussrangliste einer Kategorie als Array von
-// { rank, code, team, pts, gf, ga, played }.
+// { rank, code, team, pts, gf, ga, played, definitive }.
 //
-// Vorgehen:
-//   1) Gruppenstandings berechnen (Sortierung wie bisher).
-//   2) Für jeden definierten Finalspiel-Rang den Sieger/Verlierer einsetzen,
-//      sofern das Spiel bereits ein vollständiges Resultat hat.
-//   3) Verbleibende Ränge mit den (noch nicht zugewiesenen) Teams aus der
-//      Gruppenphase auffüllen – in deren Reihenfolge.
-//   Damit funktioniert die Anzeige auch während des Turniers korrekt:
-//   So lange ein Finalspiel noch nicht gespielt ist, dient die Gruppenphase
-//   als Fallback.
+// Ein Rang gilt als `definitive`, sobald sein endgültiger Platz feststeht:
+//   - Wird er durch ein Finalspiel bestimmt (FINAL_RANK_RULES), muss dieses
+//     Spiel ein vollständiges Resultat haben.
+//   - Wird er nicht durch ein Finalspiel bestimmt (z.B. Jugend Platz 5–8),
+//     muss die Gruppenphase der Kategorie komplett gespielt sein.
+//
+// Nicht-definitive Ränge bleiben in der Schlussrangliste leer (code/team =
+// null), so dass die Ansicht nichts Vorläufiges als „endgültig" suggeriert.
 function getFinalRanking(category) {
   const groupStandings = getSortedStandings(category);
   const total = groupStandings.length;
   const rules = FINAL_RANK_RULES[category] || [];
+  const groupComplete = allGroupMatchesPlayed(category);
 
-  const ranked = new Array(total).fill(null);
-  const usedCodes = new Set();
+  const ruleByRank = new Map();
+  for (const rule of rules) ruleByRank.set(rule.rank, rule);
 
-  for (const { rank, kind, matchId } of rules) {
-    if (rank < 1 || rank > total) continue;
-    const { winnerCode, loserCode } = getWinnerLoserOf(matchId);
-    const code = kind === "winner" ? winnerCode : loserCode;
-    if (!code || usedCodes.has(code)) continue;
-    ranked[rank - 1] = code;
-    usedCodes.add(code);
-  }
-
-  const fallback = groupStandings.filter((s) => !usedCodes.has(s.code));
-  let fbIdx = 0;
+  const result = [];
   for (let i = 0; i < total; i++) {
-    if (ranked[i] !== null) continue;
-    while (fbIdx < fallback.length && usedCodes.has(fallback[fbIdx].code)) fbIdx++;
-    if (fbIdx >= fallback.length) break;
-    ranked[i] = fallback[fbIdx].code;
-    usedCodes.add(fallback[fbIdx].code);
-    fbIdx++;
+    const rank = i + 1;
+    const rule = ruleByRank.get(rank);
+    let code = null;
+    let definitive = false;
+
+    if (rule) {
+      const { winnerCode, loserCode } = getWinnerLoserOf(rule.matchId);
+      const candidate = rule.kind === "winner" ? winnerCode : loserCode;
+      if (candidate) {
+        code = candidate;
+        definitive = true;
+      }
+    } else if (groupComplete) {
+      code = groupStandings[i]?.code ?? null;
+      definitive = code != null;
+    }
+
+    const statsByCode = code
+      ? groupStandings.find((s) => s.code === code)
+      : null;
+
+    result.push({
+      rank,
+      code,
+      team: statsByCode?.team ?? (code ? getTeamByCode(code) : null),
+      pts: statsByCode?.pts ?? 0,
+      gf: statsByCode?.gf ?? 0,
+      ga: statsByCode?.ga ?? 0,
+      played: statsByCode?.played ?? 0,
+      definitive,
+    });
   }
 
-  const statsByCode = new Map(groupStandings.map((s) => [s.code, s]));
-  return ranked.map((code, i) => {
-    const stats = code ? statsByCode.get(code) : null;
-    return {
-      rank: i + 1,
-      code: code ?? null,
-      team: stats?.team ?? (code ? getTeamByCode(code) : null),
-      pts: stats?.pts ?? 0,
-      gf: stats?.gf ?? 0,
-      ga: stats?.ga ?? 0,
-      played: stats?.played ?? 0,
-    };
-  });
+  return result;
 }
 
 function ratioText(gf, ga) {
@@ -1122,19 +1126,51 @@ history.replaceState(getCurrentState(), "", buildHash(getCurrentState()));
 
 // ── Schlussrangliste ────────────────────────────────────────────────────────
 function renderRangliste() {
-  if (!ranglisteTableBody) return;
+  if (!ranglisteTableBody && !ranglisteFinalList) return;
   const codes = CATEGORY_CODES[selectedRanglisteCategory] || [];
+
   if (!codes.length) {
-    ranglisteTableBody.innerHTML = '<tr><td colspan="7">Keine Daten verfügbar.</td></tr>';
+    if (ranglisteFinalList) {
+      ranglisteFinalList.innerHTML = '<li>Keine Daten verfügbar.</li>';
+    }
+    if (ranglisteTableBody) {
+      ranglisteTableBody.innerHTML = '<tr><td colspan="7">Keine Daten verfügbar.</td></tr>';
+    }
     return;
   }
-  const rows = getFinalRanking(selectedRanglisteCategory).map(({ rank, code, team, pts, gf, ga, played }) => {
-    const teamLabel = team
-      ? escapeHtml(team.name)
-      : (code ? escapeHtml(code) : `<span class="team-placeholder">–</span>`);
-    return `<tr><td>${rank}</td><td>${teamLabel}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
-  });
-  ranglisteTableBody.innerHTML = rows.join("");
+
+  // Schlussrangliste oben: pro Rang ein Eintrag. Noch nicht definitive Ränge
+  // werden als „noch offen" angezeigt, statt vorläufige Gruppenphasen-Plätze
+  // als endgültige Platzierung zu suggerieren.
+  if (ranglisteFinalList) {
+    const finalItems = getFinalRanking(selectedRanglisteCategory).map(
+      ({ rank, code, team, definitive }) => {
+        const isPending = !definitive;
+        const teamLabel = !isPending && team
+          ? escapeHtml(team.name)
+          : !isPending && code
+            ? escapeHtml(code)
+            : "noch offen";
+        const teamClass = isPending ? "rank-team is-pending" : "rank-team";
+        const rowClass = `rank-row rank-${rank}${isPending ? " is-pending" : ""}`;
+        return `<li class="${rowClass}"><span class="rank-number">${rank}.</span><span class="${teamClass}">${teamLabel}</span></li>`;
+      }
+    );
+    ranglisteFinalList.innerHTML = finalItems.join("");
+  }
+
+  // Untere Tabelle: reine Gruppenphasen-Rangliste (gespielt/Punkte/Tore).
+  if (ranglisteTableBody) {
+    const rows = getSortedStandings(selectedRanglisteCategory).map(
+      ({ code, team, pts, gf, ga, played }, idx) => {
+        const teamLabel = team
+          ? escapeHtml(team.name)
+          : (code ? escapeHtml(code) : `<span class="team-placeholder">–</span>`);
+        return `<tr><td>${idx + 1}</td><td>${teamLabel}</td><td>${played}</td><td>${pts}</td><td>${gf}</td><td>${ga}</td><td>${ratioText(gf, ga)}</td></tr>`;
+      }
+    );
+    ranglisteTableBody.innerHTML = rows.join("");
+  }
 }
 
 function updateRanglisteVisibility() {
