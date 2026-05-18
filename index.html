@@ -511,26 +511,18 @@
         /* Schedule filter on Spielplan panel */
         .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
 
-        /* Mobile: Overscroll-Bounce am unteren (und oberen) Rand
-           unterdrücken.
-           Auf Chrome Android erzeugt der "Rubber-Band"-Effekt beim
-           Halten + Wischen nach oben einen leeren Bereich unter dem
-           Dokument. Dieser Bereich wird vom Browser nicht mit dem
-           body-Hintergrund gefüllt, sondern zeigt die Hintergrundfarbe
-           des html-Elements – früher war das die weisse Standardfarbe,
-           was als weisser Balken erschien, der erst nach dem Loslassen
-           verschwand.
-           `overscroll-behavior-y: none` deaktiviert diesen Effekt
-           komplett. Zusätzlich greift die weiter oben gesetzte dunkle
-           Hintergrundfarbe auf html als Sicherheitsnetz, falls die
-           Engine den Overscroll trotzdem anzeigt (z. B. iOS Safari) –
-           dann ist der Bereich wenigstens dunkel statt weiss.
-           `overscroll-behavior-x` bleibt unverändert, damit horizontale
-           Tabellen-Scrolls (.table-scroll) sich normal verhalten. */
-        html, body {
-          overscroll-behavior-y: none;
-          overscroll-behavior-x: auto;
-        }
+        /* Hinweis: Früher stand hier zusätzlich
+           `overscroll-behavior-y: none` auf html/body, um den
+           Rubber-Band-Effekt am unteren Rand komplett zu unterdrücken.
+           In Kombination mit `overflow-x: hidden` auf html *und* body
+           hat das auf Chromium-Android jedoch das vertikale Scrollen
+           der Seite blockiert (siehe User-Bericht).
+           Da der eigentliche Auslöser für den weissen Balken (das
+           hellgrundige html-Element) bereits durch das oben gesetzte
+           `background-color: var(--bg)` auf html behoben ist, reicht
+           das aus: ein eventuell sichtbarer Overscroll-Bounce-Bereich
+           ist nun dunkel statt weiss. Wir verzichten daher bewusst
+           auf overscroll-behavior, um das Scrollen nicht zu brechen. */
 
         /* Mobile-Scrollbalken ausblenden.
            Auf Touch-Geräten zeigen Browser (insbesondere Chromium/Android,
