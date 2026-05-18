@@ -495,6 +495,30 @@
 
         /* Schedule filter on Spielplan panel */
         .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
+
+        /* Mobile-Scrollbalken ausblenden.
+           Auf Touch-Geräten zeigen Browser (insbesondere Chromium/Android,
+           teilweise iOS) während des Scrollens einen halbtransparenten,
+           hellen Overlay-Scrollbalken an. Auf unserem dunklen Hintergrund
+           wirkt das wie ein hässlicher weisser Streifen. Da der Nutzer auf
+           Touch ohnehin keinen sichtbaren Scrollbalken benötigt, wird er
+           hier komplett ausgeblendet – sowohl vertikal (Seite) als auch
+           horizontal (z. B. Spielplan-Tabelle). `scrollbar-gutter: stable`
+           wird gleichzeitig deaktiviert, weil es sonst zusätzlich Platz
+           für einen Balken reserviert, der nie sichtbar sein soll. */
+        html { scrollbar-gutter: auto; }
+        html, body, .table-scroll {
+          scrollbar-width: none;          /* Firefox */
+          -ms-overflow-style: none;       /* alte Edge / IE */
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar,
+        .table-scroll::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+          background: transparent;
+          display: none;                  /* Chromium / WebKit / Android */
+        }
       }
     </style>
   </head>
