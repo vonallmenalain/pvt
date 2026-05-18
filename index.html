@@ -172,6 +172,53 @@
       .team-empty { color: var(--muted); font-size: 0.92rem; }
 
       .tile-panel { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
+
+      /* Schlussrangliste: prominente, grössere Anzeige pro Rang */
+      .final-ranking {
+        list-style: none;
+        padding: 0;
+        margin: 0.85rem 0 1.5rem;
+        display: grid;
+        gap: 0.4rem;
+      }
+      .final-ranking .rank-row {
+        display: grid;
+        grid-template-columns: 2.4rem 1fr;
+        align-items: baseline;
+        gap: 0.75rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: 0.55rem;
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 1.15rem;
+      }
+      .final-ranking .rank-row.is-pending {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .final-ranking .rank-number {
+        font-weight: 800;
+        font-size: 1.25rem;
+        color: var(--muted);
+        text-align: right;
+      }
+      .final-ranking .rank-row.rank-1 .rank-number { color: #ffd28a; }
+      .final-ranking .rank-row.rank-2 .rank-number { color: #e0e0e0; }
+      .final-ranking .rank-row.rank-3 .rank-number { color: #d7a37b; }
+      .final-ranking .rank-team {
+        font-weight: 700;
+        color: var(--text);
+        overflow-wrap: anywhere;
+      }
+      .final-ranking .rank-team.is-pending {
+        font-weight: 500;
+        font-style: italic;
+        color: rgba(245, 245, 245, 0.5);
+      }
+      .rangliste-subtitle {
+        margin: 1.5rem 0 0.35rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text);
+      }
       .team-dashboard { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
       .result-input { width: 3.5rem; padding: 0.2rem 0.3rem; border-radius: 0.3rem; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.2); color: var(--text); -moz-appearance: textfield; appearance: textfield; }
       .result-input::-webkit-outer-spin-button,
@@ -390,6 +437,9 @@
         .schedule-table tr.row-phase-placement td { background: #eceff1 !important; }
         .cat-chip, .phase-chip, .net-switch, .team-code { border: 1px solid #999; color: #000 !important; background: #fff !important; }
         .team-link, .team-placeholder { color: #000 !important; }
+        .final-ranking .rank-row { background: #fff !important; border: 1px solid #ccc; }
+        .final-ranking .rank-number, .final-ranking .rank-team { color: #000 !important; }
+        .final-ranking .rank-team.is-pending { color: #555 !important; }
       }
 
       /* ── Mobile (≤ 600 px) ───────────────────────────── */
@@ -654,8 +704,14 @@
             <option value="youth">Jugendliche</option>
           </select>
         </div>
+
+        <ol class="final-ranking" id="rangliste-final-list" aria-label="Schlussrangliste pro Rang">
+          <li>Noch keine Teams für diese Kategorie erfasst.</li>
+        </ol>
+
+        <h3 class="rangliste-subtitle">Rangliste nach Gruppenphase</h3>
         <div class="table-scroll">
-          <table class="schedule-table" aria-label="Schlussrangliste">
+          <table class="schedule-table" aria-label="Rangliste nach Gruppenphase">
             <thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead>
             <tbody id="rangliste-table-body"><tr><td colspan="7">Noch keine Teams für diese Kategorie erfasst.</td></tr></tbody>
           </table>
