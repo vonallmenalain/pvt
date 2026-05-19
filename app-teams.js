@@ -546,12 +546,11 @@ function renderSchedule() {
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match, { editable: !!currentUser });
-    // Zeit ist in zwei Zellen aufgeteilt: die Start-Zeit (linke Zelle) bleibt
-    // beim horizontalen Scrollen sticky am linken Rand sichtbar, der Bereich
-    // "– endTime" scrollt mit dem Rest der Tabelle mit.
+    // Zeit als eine einzige Zelle ("12:00 – 12:10") – damit die Zeit-Spalte
+    // optisch exakt gleich aussieht wie der Rest der Tabelle (gleiche
+    // Hintergrund-/Header-Farben, gleiche Selektion, keine sticky-Sonderbehandlung).
     return `<tr class="${rowCls}">
-      <td class="col-time-start"><span class="time-start">${match.time}</span></td>
-      <td class="col-time-end"><span class="time-range">– ${match.endTime}</span></td>
+      <td class="col-time">${match.time} – ${match.endTime}</td>
       <td class="col-field">${escapeHtml(match.field)}</td>
       <td class="col-category">${phaseBadge}</td>
       <td class="col-game">
