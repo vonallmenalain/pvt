@@ -921,6 +921,15 @@ function renderOrganizationPanel() {
 function applyOrgColumnWidths() {
   if (!orgRows) return;
   if (!TOURNAMENT_SCHEDULE.length) return;
+  // Wenn das Org-Panel (oder ein Vorfahre) gerade ausgeblendet ist
+  // (display:none via [hidden]), liefert getBoundingClientRect() für
+  // Nachfahren konstant 0 zurück. Würden wir dann trotzdem messen, würden
+  // die CSS-Variablen --org-team-w / --org-zaehler-w auf den reinen Puffer-
+  // Wert (~2px) gesetzt und das Grid wäre nach dem Einblenden viel zu schmal,
+  // bis ein resize-Event eine Neumessung auslöst. Wir überspringen die
+  // Messung in diesem Fall, sodass die zuletzt gültigen Werte erhalten
+  // bleiben, und holen sie nach, sobald die Ansicht eingeblendet wird.
+  if (!orgRows.isConnected || orgRows.offsetParent === null) return;
 
   const probe = document.createElement("div");
   probe.className = "org-probe";
@@ -1271,6 +1280,12 @@ function setView(view, { updateHash = true } = {}) {
   orgViewBtn?.setAttribute("aria-expanded", String(showOrg));
   if (showRangliste) renderRangliste();
   if (showSchedule) renderSchedule();
+  // Beim erstmaligen Anzeigen des Org-Panels (oder nach erneutem Wechsel
+  // zurück) waren die Spaltenbreiten u.U. mit ausgeblendetem Panel berechnet
+  // worden – getBoundingClientRect() liefert dann 0 und das Grid kollabiert
+  // auf die Puffer-Breite. Jetzt, wo das Panel sichtbar ist, holen wir die
+  // Messung nach, damit gleich beim ersten Ausklappen alles korrekt sitzt.
+  if (showOrg) applyOrgColumnWidths();
   currentView = view;
   if (updateHash) commitNavigation();
 }
