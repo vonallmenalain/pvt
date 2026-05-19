@@ -234,7 +234,191 @@
         font-weight: 700;
         color: var(--text);
       }
+
+      /* ── Schlussrangliste: Kategorie-Buttons ────────────────────────
+         Drei Kacheln (Ambitioniert/Plausch/Jugend) ersetzen das alte
+         Dropdown. Auf Mobile als 3-Spalten-Grid statt 2-Spalten-Grid
+         (Override gegenüber .schedule-category-tiles), damit alle drei
+         Buttons in eine Reihe passen. */
+      @media (max-width: 600px) {
+        #rangliste-panel .schedule-category-tiles {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+      }
+
+      /* ── Schlussrangliste: Podest für die Top 3 ─────────────────────
+         Klassisches Podium-Layout: 2. links, 1. Mitte (am höchsten),
+         3. rechts. Farben Gold / Silber / Bronze. Funktioniert auf
+         Desktop (breiter, 3 nebeneinander) und auf Mobile (kompakter,
+         3 nebeneinander mit reduzierten Höhen/Schriftgrössen). */
+      .podium-wrap {
+        margin: 1rem 0 1.25rem;
+      }
+      .podium-wrap[hidden] { display: none; }
+      .podium {
+        display: grid;
+        grid-template-columns: 1fr 1.15fr 1fr;
+        gap: 0.6rem;
+        align-items: end;
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      .podium-spot {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.4rem;
+        text-align: center;
+      }
+      .podium-card {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 0.75rem 0.75rem 0 0;
+        padding: 0.7rem 0.6rem 0.6rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: none;
+      }
+      .podium-medal {
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.1rem;
+        color: #1a1a1a;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+        flex-shrink: 0;
+      }
+      .podium-team-name {
+        font-weight: 800;
+        color: var(--text);
+        font-size: 1rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+        margin: 0;
+      }
+      .podium-team-name.is-pending {
+        font-weight: 500;
+        font-style: italic;
+        color: rgba(245, 245, 245, 0.55);
+      }
+      .podium-base {
+        border-radius: 0 0 0.55rem 0.55rem;
+        padding: 0.6rem 0.4rem 0.65rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        color: #1a1a1a;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+        letter-spacing: 0.02em;
+        font-size: 1.3rem;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 6px rgba(0, 0, 0, 0.35);
+      }
+      /* Reihenfolge: 2 – 1 – 3 (visuell), in DOM-Reihenfolge platzieren. */
+      .podium-spot.is-rank-2 { order: 1; }
+      .podium-spot.is-rank-1 { order: 2; }
+      .podium-spot.is-rank-3 { order: 3; }
+      /* Sockel-Höhen: 1 am höchsten, 2 mittel, 3 am tiefsten. */
+      .podium-spot.is-rank-1 .podium-base { height: 5.5rem; }
+      .podium-spot.is-rank-2 .podium-base { height: 4.2rem; }
+      .podium-spot.is-rank-3 .podium-base { height: 3.2rem; }
+      /* Gold */
+      .podium-spot.is-rank-1 .podium-medal {
+        background: radial-gradient(circle at 35% 30%, #fff2b3, #f6c84a 55%, #b8860b);
+      }
+      .podium-spot.is-rank-1 .podium-base {
+        background: linear-gradient(180deg, #f6c84a 0%, #c9941a 100%);
+      }
+      .podium-spot.is-rank-1 .podium-card {
+        background: linear-gradient(180deg, rgba(246, 200, 74, 0.18), rgba(246, 200, 74, 0.06));
+        border-color: rgba(246, 200, 74, 0.55);
+      }
+      /* Silber */
+      .podium-spot.is-rank-2 .podium-medal {
+        background: radial-gradient(circle at 35% 30%, #ffffff, #d0d0d8 55%, #8b8b94);
+      }
+      .podium-spot.is-rank-2 .podium-base {
+        background: linear-gradient(180deg, #d8d8df 0%, #9a9aa3 100%);
+      }
+      .podium-spot.is-rank-2 .podium-card {
+        background: linear-gradient(180deg, rgba(216, 216, 223, 0.18), rgba(216, 216, 223, 0.05));
+        border-color: rgba(216, 216, 223, 0.5);
+      }
+      /* Bronze */
+      .podium-spot.is-rank-3 .podium-medal {
+        background: radial-gradient(circle at 35% 30%, #ffd9b3, #cd7f32 55%, #6e3f12);
+      }
+      .podium-spot.is-rank-3 .podium-base {
+        background: linear-gradient(180deg, #cd7f32 0%, #8a4e16 100%);
+      }
+      .podium-spot.is-rank-3 .podium-card {
+        background: linear-gradient(180deg, rgba(205, 127, 50, 0.20), rgba(205, 127, 50, 0.06));
+        border-color: rgba(205, 127, 50, 0.55);
+      }
+      /* Pending-Zustand (Rang noch nicht entschieden): Sockel/Medaille
+         abgedunkelt, damit das Podium nicht „falsche Sieger" suggeriert. */
+      .podium-spot.is-pending .podium-card {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .podium-spot.is-pending .podium-medal {
+        background: rgba(255, 255, 255, 0.12);
+        color: rgba(245, 245, 245, 0.7);
+        text-shadow: none;
+        box-shadow: none;
+      }
+      .podium-spot.is-pending .podium-base {
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(245, 245, 245, 0.5);
+        text-shadow: none;
+        box-shadow: none;
+      }
+      @media (max-width: 600px) {
+        .podium {
+          gap: 0.35rem;
+        }
+        .podium-medal {
+          width: 1.9rem;
+          height: 1.9rem;
+          font-size: 0.95rem;
+        }
+        .podium-team-name {
+          font-size: 0.85rem;
+        }
+        .podium-card {
+          padding: 0.55rem 0.35rem 0.45rem;
+          gap: 0.25rem;
+        }
+        .podium-base {
+          font-size: 1.05rem;
+          padding: 0.45rem 0.3rem 0.5rem;
+        }
+        .podium-spot.is-rank-1 .podium-base { height: 4.2rem; }
+        .podium-spot.is-rank-2 .podium-base { height: 3.2rem; }
+        .podium-spot.is-rank-3 .podium-base { height: 2.4rem; }
+      }
       .team-dashboard { background: rgba(255, 255, 255, 0.03); border-radius: 1rem; padding: 1rem; }
+      /* Dashboard-Untertitel ("Gruppentabelle", "Eigene Spiele") näher an
+         die zugehörige Tabelle rücken: deutlich weniger Abstand nach unten,
+         oben etwas Luft zur vorigen Sektion. */
+      .team-dashboard h4.dashboard-subtitle {
+        margin: 1.1rem 0 0.2rem;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      /* Die Tabelle selbst soll keinen zusätzlichen oberen Abstand mehr
+         erzeugen (der kommt nun bewusst nur vom Untertitel). */
+      .team-dashboard .dashboard-subtitle + .table-scroll .schedule-table {
+        margin-top: 0;
+      }
       .result-input { width: 3.5rem; padding: 0.2rem 0.3rem; border-radius: 0.3rem; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.2); color: var(--text); -moz-appearance: textfield; appearance: textfield; }
       .result-input::-webkit-outer-spin-button,
       .result-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -504,32 +688,47 @@
       .org-score { justify-self: center; white-space: nowrap; text-align: center; }
 
       /* ── Spielplan: einheitliche Schriftart ──────────────────────────
-         Im Spielplan-Tab soll die gesamte Tabelle visuell ruhig sein:
-         keine fetten Texte, einheitliche Schriftgrösse, ein einziger
-         Schriftschnitt. Outcome-Hervorhebungen (Sieger/Verlierer/
-         Selektion) werden nur über Farbe transportiert, nicht über
-         Schriftgewicht. Platzhaltertexte ("Rang 3 vs Rang 4") dürfen
-         kursiv bleiben, müssen aber in normaler weisser Schrift
-         angezeigt werden – nicht abgedunkelt. */
+         Im Spielplan-Tab (und in der Dashboard-Tabelle "Eigene Spiele",
+         die das gleiche Layout übernimmt) soll die gesamte Tabelle
+         visuell ruhig sein: keine fetten Texte, einheitliche
+         Schriftgrösse, ein einziger Schriftschnitt. Outcome-
+         Hervorhebungen (Sieger/Verlierer/Selektion) werden nur über
+         Farbe transportiert, nicht über Schriftgewicht. Platzhalter-
+         texte ("Rang 3 vs Rang 4") dürfen kursiv bleiben, müssen aber
+         in normaler weisser Schrift angezeigt werden – nicht
+         abgedunkelt. */
       #schedule-panel .schedule-table,
       #schedule-panel .schedule-table th,
       #schedule-panel .schedule-table td,
       #schedule-panel .schedule-table .team-link,
       #schedule-panel .schedule-table .team-placeholder,
       #schedule-panel .schedule-table .phase-chip,
-      #schedule-panel .schedule-table .schedule-result {
+      #schedule-panel .schedule-table .schedule-result,
+      #dashboard-panel .schedule-table,
+      #dashboard-panel .schedule-table th,
+      #dashboard-panel .schedule-table td,
+      #dashboard-panel .schedule-table .team-link,
+      #dashboard-panel .schedule-table .team-placeholder,
+      #dashboard-panel .schedule-table .phase-chip,
+      #dashboard-panel .schedule-table .schedule-result {
         font-weight: 400;
         font-size: 0.92rem;
         font-family: inherit;
       }
-      #schedule-panel .schedule-table .team-link.is-winner { font-weight: 400; }
-      #schedule-panel .schedule-table .team-link.is-loser  { font-weight: 400; }
-      #schedule-panel .schedule-table .team-link.is-draw   { font-weight: 400; }
-      #schedule-panel .schedule-table .team-link.is-selected-team { font-weight: 400; }
+      #schedule-panel .schedule-table .team-link.is-winner,
+      #dashboard-panel .schedule-table .team-link.is-winner { font-weight: 400; }
+      #schedule-panel .schedule-table .team-link.is-loser,
+      #dashboard-panel .schedule-table .team-link.is-loser  { font-weight: 400; }
+      #schedule-panel .schedule-table .team-link.is-draw,
+      #dashboard-panel .schedule-table .team-link.is-draw   { font-weight: 400; }
+      #schedule-panel .schedule-table .team-link.is-selected-team,
+      #dashboard-panel .schedule-table .team-link.is-selected-team { font-weight: 400; }
       /* Platzhalter (z.B. "Rang 3 vs Rang 4") – kursiv, aber in normalem Weiss
          statt grau, damit sie gut lesbar bleiben. */
       #schedule-panel .schedule-table .team-placeholder,
-      #schedule-panel .schedule-table .team-placeholder.is-dynamic {
+      #schedule-panel .schedule-table .team-placeholder.is-dynamic,
+      #dashboard-panel .schedule-table .team-placeholder,
+      #dashboard-panel .schedule-table .team-placeholder.is-dynamic {
         color: var(--text);
         font-style: italic;
         font-weight: 400;
@@ -548,7 +747,14 @@
         #schedule-panel .schedule-table .team-link,
         #schedule-panel .schedule-table .team-placeholder,
         #schedule-panel .schedule-table .phase-chip,
-        #schedule-panel .schedule-table .schedule-result {
+        #schedule-panel .schedule-table .schedule-result,
+        #dashboard-panel .schedule-table,
+        #dashboard-panel .schedule-table th,
+        #dashboard-panel .schedule-table td,
+        #dashboard-panel .schedule-table .team-link,
+        #dashboard-panel .schedule-table .team-placeholder,
+        #dashboard-panel .schedule-table .phase-chip,
+        #dashboard-panel .schedule-table .schedule-result {
           font-size: 0.82rem;
         }
         #schedule-panel .schedule-standings-toggle { font-size: 0.85rem; }
@@ -572,7 +778,11 @@
       #schedule-panel .schedule-table th.col-time-start,
       #schedule-panel .schedule-table td.col-time-start,
       #schedule-panel .schedule-table th.col-time-end,
-      #schedule-panel .schedule-table td.col-time-end {
+      #schedule-panel .schedule-table td.col-time-end,
+      #dashboard-panel .schedule-table th.col-time-start,
+      #dashboard-panel .schedule-table td.col-time-start,
+      #dashboard-panel .schedule-table th.col-time-end,
+      #dashboard-panel .schedule-table td.col-time-end {
         white-space: nowrap;
         /* Beide Zeit-Spalten auf Inhaltsbreite schrumpfen, damit die Spalten
            nicht durch die Tabelle gestreckt werden und der Bindestrich
@@ -585,18 +795,24 @@
          Rand seiner Zelle. Der Bindestrich erscheint trotz zweier getrennter
          Tabellenzellen mittig zwischen den beiden Zeiten. */
       #schedule-panel .schedule-table th.col-time-start,
-      #schedule-panel .schedule-table td.col-time-start {
+      #schedule-panel .schedule-table td.col-time-start,
+      #dashboard-panel .schedule-table th.col-time-start,
+      #dashboard-panel .schedule-table td.col-time-start {
         padding-right: 0;
         text-align: right;
       }
       #schedule-panel .schedule-table th.col-time-end,
-      #schedule-panel .schedule-table td.col-time-end {
+      #schedule-panel .schedule-table td.col-time-end,
+      #dashboard-panel .schedule-table th.col-time-end,
+      #dashboard-panel .schedule-table td.col-time-end {
         padding-left: 0.25rem;
         text-align: left;
       }
       /* Sticky-Verhalten + Body-Hintergrund-Replikat für die Start-Zeit. */
       #schedule-panel .schedule-table th.col-time-start,
-      #schedule-panel .schedule-table td.col-time-start {
+      #schedule-panel .schedule-table td.col-time-start,
+      #dashboard-panel .schedule-table th.col-time-start,
+      #dashboard-panel .schedule-table td.col-time-start {
         position: sticky;
         left: 0;
         z-index: 1;
@@ -626,17 +842,20 @@
           linear-gradient(180deg, #050610 0%, #0a0c1c 35%, #0c1030 100%);
         background-attachment: scroll, scroll, fixed, fixed, fixed, fixed, fixed, fixed, fixed;
       }
-      #schedule-panel .schedule-table th.col-time-start {
+      #schedule-panel .schedule-table th.col-time-start,
+      #dashboard-panel .schedule-table th.col-time-start {
         z-index: 2;
         /* Header-Tint exakt gleich wie alle anderen th (rgba 8% Weiss). */
         --col-time-row-tint: rgba(255, 255, 255, 0.08);
       }
-      #schedule-panel .schedule-table tbody tr:nth-child(even) td.col-time-start {
+      #schedule-panel .schedule-table tbody tr:nth-child(even) td.col-time-start,
+      #dashboard-panel .schedule-table tbody tr:nth-child(even) td.col-time-start {
         /* Gerade Zeile: zusätzlicher 3% Weiss-Tint – exakt gleich wie alle
            anderen geraden Zellen. */
         --col-time-row-tint: rgba(255, 255, 255, 0.03);
       }
-      #schedule-panel .schedule-table tr.is-selected-row td.col-time-start {
+      #schedule-panel .schedule-table tr.is-selected-row td.col-time-start,
+      #dashboard-panel .schedule-table tr.is-selected-row td.col-time-start {
         /* Selektierte Zeile: identischer Indigo-Tint wie auf den übrigen
            Zellen der selektierten Zeile. */
         --col-time-row-tint: rgba(var(--pvt-indigo), 0.18);
@@ -648,10 +867,12 @@
          linksbündig, Gast-Team rechtsbündig. So passt möglichst viel auf
          einen Bildschirm. */
       @media (max-width: 600px) {
-        #schedule-panel .schedule-table td.col-game {
+        #schedule-panel .schedule-table td.col-game,
+        #dashboard-panel .schedule-table td.col-game {
           min-width: 0;
         }
-        #schedule-panel .schedule-table .col-game-score {
+        #schedule-panel .schedule-table .col-game-score,
+        #dashboard-panel .schedule-table .col-game-score {
           min-width: 0;
           padding: 0 0.25rem;
         }
@@ -661,12 +882,16 @@
            Schutzlücke, bevor "– 12:10" und der Rest der Zeile dahinter
            durchgleiten (statt direkt an der Zahl zu kleben). */
         #schedule-panel .schedule-table th.col-time-start,
-        #schedule-panel .schedule-table td.col-time-start {
+        #schedule-panel .schedule-table td.col-time-start,
+        #dashboard-panel .schedule-table th.col-time-start,
+        #dashboard-panel .schedule-table td.col-time-start {
           text-align: left;
           padding-right: 0.5rem;
         }
         #schedule-panel .schedule-table th.col-time-end,
-        #schedule-panel .schedule-table td.col-time-end {
+        #schedule-panel .schedule-table td.col-time-end,
+        #dashboard-panel .schedule-table th.col-time-end,
+        #dashboard-panel .schedule-table td.col-time-end {
           padding-left: 0.15rem;
         }
       }
@@ -677,8 +902,28 @@
         .bg-stage-glow, .bg-orb, .view-toggle, .auth-trigger-wrap,
         .hero-row .auth-trigger-wrap, .schedule-filters, .schedule-legend,
         .schedule-category-tiles,
+        .rangliste-category-tiles,
         .schedule-standings,
         button, .team-delete, .auth-modal { display: none !important; }
+        /* Podest im Druck reduziert: nur die drei Ränge als Liste, ohne
+           Sockel/Medaillen-Hintergrundfarbe. */
+        .podium { display: block; max-width: 100%; }
+        .podium-spot { order: initial !important; margin-bottom: 0.2cm; }
+        .podium-card, .podium-base {
+          background: none !important;
+          color: #000 !important;
+          border: 1px solid #999 !important;
+          box-shadow: none !important;
+          text-shadow: none !important;
+          height: auto !important;
+          padding: 0.1cm 0.2cm !important;
+        }
+        .podium-medal {
+          background: none !important;
+          color: #000 !important;
+          box-shadow: none !important;
+          border: 1px solid #999;
+        }
         .wrap { max-width: 100%; padding: 0.5cm; }
         .hero { background: none; color: #000; padding: 0 0 0.5cm; }
         .hero h1, .hero-subtitle { color: #000; }
@@ -691,7 +936,11 @@
         #schedule-panel .schedule-table th.col-time-start,
         #schedule-panel .schedule-table td.col-time-start,
         #schedule-panel .schedule-table th.col-time-end,
-        #schedule-panel .schedule-table td.col-time-end {
+        #schedule-panel .schedule-table td.col-time-end,
+        #dashboard-panel .schedule-table th.col-time-start,
+        #dashboard-panel .schedule-table td.col-time-start,
+        #dashboard-panel .schedule-table th.col-time-end,
+        #dashboard-panel .schedule-table td.col-time-end {
           position: static !important;
           background-color: transparent !important;
           background-image: none !important;
@@ -994,26 +1243,28 @@
         </div>
         <h3 id="dashboard-team-title">Team-Dashboard</h3>
         <p id="dashboard-team-info">Wähle ein Team aus, um Spiele und Tabelle zu sehen.</p>
-        <h4>Gruppentabelle</h4>
+        <h4 class="dashboard-subtitle">Gruppentabelle</h4>
         <div class="table-scroll">
           <table class="schedule-table"><thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead><tbody id="dashboard-group-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody></table>
         </div>
-        <h4>Eigene Spiele</h4>
+        <h4 class="dashboard-subtitle">Eigene Spiele</h4>
         <div class="table-scroll">
-          <table class="schedule-table"><thead><tr><th>Phase</th><th>Zeit</th><th>Feld</th><th>Spiel</th></tr></thead><tbody id="dashboard-match-table"><tr><td colspan="4">Noch kein Team ausgewählt.</td></tr></tbody></table>
+          <table class="schedule-table" aria-label="Eigene Spiele">
+            <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
+            <tbody id="dashboard-match-table"><tr><td colspan="5">Noch kein Team ausgewählt.</td></tr></tbody>
+          </table>
         </div>
       </section>
 
       <section class="content-panel tile-panel" id="rangliste-panel" aria-label="Schlussrangliste" hidden>
         <h2 id="rangliste-title">Schlussrangliste</h2>
-        <div class="schedule-filter">
-          <label for="rangliste-category-filter">Kategorie</label>
-          <select id="rangliste-category-filter">
-            <option value="adult_ambitious">Erwachsene Ambitioniert</option>
-            <option value="adult_fun">Erwachsene Plausch</option>
-            <option value="youth">Jugendliche</option>
-          </select>
+        <div class="schedule-category-tiles rangliste-category-tiles" role="group" aria-label="Kategorie wählen">
+          <button type="button" class="cat-tile" data-rangliste-category="adult_ambitious" aria-pressed="false">Ambitioniert</button>
+          <button type="button" class="cat-tile" data-rangliste-category="adult_fun" aria-pressed="false">Plausch</button>
+          <button type="button" class="cat-tile" data-rangliste-category="youth" aria-pressed="false">Jugend</button>
         </div>
+
+        <div class="podium-wrap" id="rangliste-podium" aria-label="Podest Top 3"></div>
 
         <ol class="final-ranking" id="rangliste-final-list" aria-label="Schlussrangliste pro Rang">
           <li>Noch keine Teams für diese Kategorie erfasst.</li>
