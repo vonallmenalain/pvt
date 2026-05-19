@@ -536,7 +536,7 @@ function renderSchedule() {
   const focus = captureResultInputFocus();
   const matches = scheduleMatchesFiltered();
   if (!matches.length) {
-    scheduleTableBody.innerHTML = '<tr><td colspan="4">Keine Spiele für die gewählten Filter.</td></tr>';
+    scheduleTableBody.innerHTML = '<tr><td colspan="5">Keine Spiele für die gewählten Filter.</td></tr>';
     restoreResultInputFocus(focus);
     return;
   }
@@ -546,9 +546,12 @@ function renderSchedule() {
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match, { editable: !!currentUser });
-    const timeCell = `<span class="time-start">${match.time}</span><span class="time-range"> – ${match.endTime}</span>`;
+    // Zeit ist in zwei Zellen aufgeteilt: die Start-Zeit (linke Zelle) bleibt
+    // beim horizontalen Scrollen sticky am linken Rand sichtbar, der Bereich
+    // "– endTime" scrollt mit dem Rest der Tabelle mit.
     return `<tr class="${rowCls}">
-      <td class="col-time">${timeCell}</td>
+      <td class="col-time-start"><span class="time-start">${match.time}</span></td>
+      <td class="col-time-end"><span class="time-range">– ${match.endTime}</span></td>
       <td class="col-field">${escapeHtml(match.field)}</td>
       <td class="col-category">${phaseBadge}</td>
       <td class="col-game">
