@@ -29,7 +29,8 @@ const ranglisteViewBtn = document.getElementById("show-rangliste");
 const ranglistePanel = document.getElementById("rangliste-panel");
 const ranglisteTableBody = document.getElementById("rangliste-table-body");
 const ranglisteFinalList = document.getElementById("rangliste-final-list");
-const ranglisteCategoryFilter = document.getElementById("rangliste-category-filter");
+const ranglisteCategoryTiles = document.querySelectorAll(".rangliste-category-tiles .cat-tile");
+const ranglistePodiumWrap = document.getElementById("rangliste-podium");
 
 const teamLists = {
   youth: document.getElementById("teams-list-youth"),
@@ -613,7 +614,7 @@ function renderDashboardEmptyState() {
   dashboardTitle.textContent = "Team-Dashboard";
   dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
   dashboardGroupTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
-  dashboardMatchTable.innerHTML = '<tr><td colspan="4">Noch kein Team ausgewählt.</td></tr>';
+  dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
 }
 
 function renderGroupStandings(category, selectedCode) {
@@ -687,19 +688,35 @@ function renderTeamDashboard(teamId) {
   const matches = getMatchesForTeam(selectedTeam);
   if (!matches.length) {
     if (!code) {
-      dashboardMatchTable.innerHTML = '<tr><td colspan="4">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
+      dashboardMatchTable.innerHTML = '<tr><td colspan="5">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
     } else {
-      dashboardMatchTable.innerHTML = '<tr><td colspan="4">Keine Spiele gefunden.</td></tr>';
+      dashboardMatchTable.innerHTML = '<tr><td colspan="5">Keine Spiele gefunden.</td></tr>';
     }
     return;
   }
 
+  // Layout 1:1 wie im Spielplan: zwei Zeit-Zellen (Start sticky, Ende
+  // scrollt mit), Feld nur als Zahl ("1"/"2"/"3") ohne "Feld "-Prefix,
+  // Phase als farbiges Chip mit Kategorie-Kürzel, Spiel als Inner-Grid
+  // mit Heim links / Resultat zentriert / Gast rechts.
   dashboardMatchTable.innerHTML = matches.map((match) => {
+    const phaseBadge = phaseChipHtml(match);
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match);
-    const phaseLabel = match.phase;
-    return `<tr><td>${escapeHtml(phaseLabel)}</td><td class="col-time">${match.time}</td><td>Feld ${match.field}</td><td class="col-game"><div class="col-game-inner"><span class="col-game-home">${homeCell}</span><span class="col-game-score">${scoreCell}</span><span class="col-game-away">${awayCell}</span></div></td></tr>`;
+    return `<tr>
+      <td class="col-time-start">${match.time}</td>
+      <td class="col-time-end">– ${match.endTime}</td>
+      <td class="col-field">${escapeHtml(match.field)}</td>
+      <td class="col-category">${phaseBadge}</td>
+      <td class="col-game">
+        <div class="col-game-inner">
+          <span class="col-game-home">${homeCell}</span>
+          <span class="col-game-score">${scoreCell}</span>
+          <span class="col-game-away">${awayCell}</span>
+        </div>
+      </td>
+    </tr>`;
   }).join("");
 }
 
@@ -1084,7 +1101,7 @@ function applyState(state, { updateHash = false } = {}) {
   setInfosSection(currentInfosSection, { updateHash: false });
 
   syncScheduleTilesUI();
-  if (ranglisteCategoryFilter) ranglisteCategoryFilter.value = selectedRanglisteCategory;
+  syncRanglisteTilesUI();
   if (dashboardTeamSelect) dashboardTeamSelect.value = selectedTeamId || "";
 
   renderSchedule();
@@ -1132,6 +1149,51 @@ applyState(initial, { updateHash: false });
 history.replaceState(getCurrentState(), "", buildHash(getCurrentState()));
 
 // ── Schlussrangliste ────────────────────────────────────────────────────────
+function syncRanglisteTilesUI() {
+  ranglisteCategoryTiles.forEach((tile) => {
+    const cat = tile.getAttribute("data-rangliste-category");
+    const active = cat === selectedRanglisteCategory;
+    tile.classList.toggle("is-active", active);
+    tile.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function renderPodium(finalRanking) {
+  if (!ranglistePodiumWrap) return;
+  const top3 = finalRanking.slice(0, 3);
+  if (!top3.length) {
+    ranglistePodiumWrap.innerHTML = "";
+    ranglistePodiumWrap.hidden = true;
+    return;
+  }
+  ranglistePodiumWrap.hidden = false;
+  const byRank = new Map(top3.map((entry) => [entry.rank, entry]));
+  // Render in DOM-Reihenfolge 1-2-3; CSS sortiert visuell 2-1-3 via `order`.
+  const html = ['<div class="podium">'];
+  for (const rank of [1, 2, 3]) {
+    const entry = byRank.get(rank);
+    const isPending = !entry || !entry.definitive;
+    const teamLabel = !isPending && entry?.team
+      ? escapeHtml(entry.team.name)
+      : !isPending && entry?.code
+        ? escapeHtml(entry.code)
+        : "noch offen";
+    const nameClass = isPending ? "podium-team-name is-pending" : "podium-team-name";
+    const spotClass = `podium-spot is-rank-${rank}${isPending ? " is-pending" : ""}`;
+    html.push(
+      `<div class="${spotClass}">
+        <div class="podium-card">
+          <span class="podium-medal" aria-hidden="true">${rank}</span>
+          <p class="${nameClass}">${teamLabel}</p>
+        </div>
+        <div class="podium-base" aria-label="Rang ${rank}">${rank}</div>
+      </div>`
+    );
+  }
+  html.push("</div>");
+  ranglistePodiumWrap.innerHTML = html.join("");
+}
+
 function renderRangliste() {
   if (!ranglisteTableBody && !ranglisteFinalList) return;
   const codes = CATEGORY_CODES[selectedRanglisteCategory] || [];
@@ -1143,27 +1205,39 @@ function renderRangliste() {
     if (ranglisteTableBody) {
       ranglisteTableBody.innerHTML = '<tr><td colspan="7">Keine Daten verfügbar.</td></tr>';
     }
+    if (ranglistePodiumWrap) {
+      ranglistePodiumWrap.innerHTML = "";
+      ranglistePodiumWrap.hidden = true;
+    }
     return;
   }
 
-  // Schlussrangliste oben: pro Rang ein Eintrag. Noch nicht definitive Ränge
-  // werden als „noch offen" angezeigt, statt vorläufige Gruppenphasen-Plätze
-  // als endgültige Platzierung zu suggerieren.
+  const finalRanking = getFinalRanking(selectedRanglisteCategory);
+  renderPodium(finalRanking);
+
+  // Liste unter dem Podest: nur Ränge 4+. Die ersten drei Plätze stehen
+  // bereits prominent im Podest und müssen darunter nicht wiederholt
+  // werden. Noch nicht definitive Ränge werden als „noch offen" angezeigt.
   if (ranglisteFinalList) {
-    const finalItems = getFinalRanking(selectedRanglisteCategory).map(
-      ({ rank, code, team, definitive }) => {
-        const isPending = !definitive;
-        const teamLabel = !isPending && team
-          ? escapeHtml(team.name)
-          : !isPending && code
-            ? escapeHtml(code)
-            : "noch offen";
-        const teamClass = isPending ? "rank-team is-pending" : "rank-team";
-        const rowClass = `rank-row rank-${rank}${isPending ? " is-pending" : ""}`;
-        return `<li class="${rowClass}"><span class="rank-number">${rank}.</span><span class="${teamClass}">${teamLabel}</span></li>`;
-      }
-    );
-    ranglisteFinalList.innerHTML = finalItems.join("");
+    const remaining = finalRanking.filter(({ rank }) => rank > 3);
+    if (!remaining.length) {
+      ranglisteFinalList.innerHTML = "";
+    } else {
+      const finalItems = remaining.map(
+        ({ rank, code, team, definitive }) => {
+          const isPending = !definitive;
+          const teamLabel = !isPending && team
+            ? escapeHtml(team.name)
+            : !isPending && code
+              ? escapeHtml(code)
+              : "noch offen";
+          const teamClass = isPending ? "rank-team is-pending" : "rank-team";
+          const rowClass = `rank-row rank-${rank}${isPending ? " is-pending" : ""}`;
+          return `<li class="${rowClass}"><span class="rank-number">${rank}.</span><span class="${teamClass}">${teamLabel}</span></li>`;
+        }
+      );
+      ranglisteFinalList.innerHTML = finalItems.join("");
+    }
   }
 
   // Untere Tabelle: reine Gruppenphasen-Rangliste (gespielt/Punkte/Tore).
@@ -1186,13 +1260,22 @@ function updateRanglisteVisibility() {
   if (!isAuth && !ranglistePublished && ranglistePanel && !ranglistePanel.hidden) setView("infos");
   if (ranglistePublishBtn) ranglistePublishBtn.hidden = !(isAuth && !ranglistePublished);
   if (ranglisteUnpublishBtn) ranglisteUnpublishBtn.hidden = !(isAuth && ranglistePublished);
-  if (ranglistePublishedNote) ranglistePublishedNote.hidden = !ranglistePublished;
+  // Hinweis "Diese Rangliste ist öffentlich sichtbar." nur für Admin
+  // (eingeloggte Nutzer) sichtbar, und dort nur wenn tatsächlich
+  // veröffentlicht. Für alle anderen Besucher (nicht angemeldet)
+  // bleibt der Hinweis ausgeblendet.
+  if (ranglistePublishedNote) ranglistePublishedNote.hidden = !(isAuth && ranglistePublished);
 }
 
-ranglisteCategoryFilter?.addEventListener("change", (e) => {
-  selectedRanglisteCategory = e.target.value;
-  renderRangliste();
-  commitNavigation();
+ranglisteCategoryTiles.forEach((tile) => {
+  tile.addEventListener("click", () => {
+    const cat = tile.getAttribute("data-rangliste-category");
+    if (!cat) return;
+    selectedRanglisteCategory = cat;
+    syncRanglisteTilesUI();
+    renderRangliste();
+    commitNavigation();
+  });
 });
 
 ranglistePublishBtn?.addEventListener("click", async () => {
