@@ -530,6 +530,21 @@ function zaehlerCellHtml(match) {
   return `<span class="team-placeholder schedule-zaehler-team">${escapeHtml(displayName)}</span>`;
 }
 
+// Analog zu zaehlerCellHtml, aber mit Org-Panel-Klassen (kleinere/grauere
+// Schrift, rechtsbündig in der eigenen Spalte rechts neben den Teams).
+function orgZaehlerHtml(match) {
+  const z = getZaehlerForMatch(match);
+  if (z.kind === "org") {
+    return `<span class="org-zaehler-org">Turnierorganisation</span>`;
+  }
+  const teamId = refTeamId(z.ref, z.category);
+  const displayName = refDisplayName(z.ref, z.category);
+  if (teamId) {
+    return `<button type="button" class="team-link org-zaehler-team" data-team-select="${teamId}">${escapeHtml(displayName)}</button>`;
+  }
+  return `<span class="team-placeholder org-zaehler-team">${escapeHtml(displayName)}</span>`;
+}
+
 // Liefert alle Spiele, bei denen das angegebene Team gemäss Zähler-Regel
 // für das Zählen / Abgeben des Resultatzettels zuständig ist. Ein Team
 // gilt nur dann als Zähler, wenn die Zähler-Referenz schon konkret auf
@@ -873,13 +888,15 @@ function renderOrganizationPanel() {
       const phaseInfo = match.phaseKind === "group" ? "" : ` <em class="org-phase">(${escapeHtml(match.phase)})</em>`;
       const inputs = hasBoth
         ? `<input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="home" value="${escapeHtml(String(score.home))}"> : <input type="number" min="0" class="result-input org-input" data-result-match="${match.id}" data-side="away" value="${escapeHtml(String(score.away))}">`
-        : `<span class="org-pending">noch nicht aufgelöst</span>`;
+        : `<span class="org-pending" title="Paarung noch nicht aufgelöst">–</span>`;
+      const zaehler = orgZaehlerHtml(match);
       return `<div class="org-match">
         <span class="org-field">Feld ${match.field}</span>
         <span class="org-cat">${categoryChipHtml(match.category)}</span>
         <span class="org-team">${escapeHtml(homeName)}</span>
         <span class="org-score">${inputs}</span>
         <span class="org-team org-team-away">${escapeHtml(awayName)}</span>
+        ${zaehler}
         ${phaseInfo}
       </div>`;
     }).join("");
@@ -888,12 +905,76 @@ function renderOrganizationPanel() {
     const arrow = isOpen ? "▴" : "▾";
     return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}"><span>${slot.time}</span><span>${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
   }).join("");
+
+  // Spaltenbreiten (--org-team-w / --org-zaehler-w) berechnen, damit alle
+  // Kacheln dasselbe Raster verwenden und die Punkte-Eingabefelder vertikal
+  // sauber untereinander stehen. Die Breite richtet sich nach dem längsten
+  // tatsächlich angezeigten Teamnamen bzw. Zähler-Text.
+  applyOrgColumnWidths();
+
   restoreResultInputFocus(focus);
+}
+
+// Misst die Pixel-Breite der längsten Teamnamen und Zähler-Texte und setzt
+// damit die CSS-Variablen, die das Org-Grid antreiben. Ergebnis: jede Kachel
+// ist nur so breit wie nötig, alle Kacheln sind aber gleich breit.
+function applyOrgColumnWidths() {
+  if (!orgRows) return;
+  if (!TOURNAMENT_SCHEDULE.length) return;
+
+  const probe = document.createElement("div");
+  probe.className = "org-probe";
+  orgRows.appendChild(probe);
+
+  const measureHtml = (html) => {
+    probe.innerHTML = html;
+    const el = probe.firstElementChild || probe;
+    return el.getBoundingClientRect().width;
+  };
+
+  let maxTeam = 0;
+  let maxZaehler = measureHtml(`<span class="org-zaehler-org">Turnierorganisation</span>`);
+  for (const match of TOURNAMENT_SCHEDULE) {
+    const h = refDisplayName(match.home, match.category);
+    const a = refDisplayName(match.away, match.category);
+    maxTeam = Math.max(
+      maxTeam,
+      measureHtml(`<span class="org-team">${escapeHtml(h)}</span>`),
+      measureHtml(`<span class="org-team">${escapeHtml(a)}</span>`),
+    );
+    const z = getZaehlerForMatch(match);
+    if (z.kind === "team") {
+      const zname = refDisplayName(z.ref, z.category);
+      const teamId = refTeamId(z.ref, z.category);
+      const html = teamId
+        ? `<button type="button" class="team-link org-zaehler-team">${escapeHtml(zname)}</button>`
+        : `<span class="team-placeholder org-zaehler-team">${escapeHtml(zname)}</span>`;
+      maxZaehler = Math.max(maxZaehler, measureHtml(html));
+    }
+  }
+
+  orgRows.removeChild(probe);
+
+  // Kleiner Puffer gegen Subpixel-Rundungen / Italic-Overhang.
+  const teamPx = Math.ceil(maxTeam) + 2;
+  const zaehlerPx = Math.ceil(maxZaehler) + 2;
+  orgRows.style.setProperty("--org-team-w", `${teamPx}px`);
+  orgRows.style.setProperty("--org-zaehler-w", `${zaehlerPx}px`);
 }
 
 scheduleStandingsToggle?.addEventListener("click", () => {
   scheduleStandingsOpen = !scheduleStandingsOpen;
   renderScheduleStandings();
+});
+
+// Schriftgrösse des Org-Panels kann sich beim Wechsel zwischen Desktop und
+// Mobile ändern (Media-Query). Damit die Spaltenbreiten in solchen Fällen
+// nachgeführt werden, messen wir nach jedem (entprellten) Resize neu.
+let orgResizeTimer = null;
+window.addEventListener("resize", () => {
+  if (!orgRows) return;
+  clearTimeout(orgResizeTimer);
+  orgResizeTimer = setTimeout(applyOrgColumnWidths, 120);
 });
 
 document.addEventListener("click", (event) => {
