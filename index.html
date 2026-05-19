@@ -243,7 +243,7 @@
       .schedule-table { width: 100%; border-collapse: collapse; margin-top: 0.85rem; font-size: 0.92rem; }
       .schedule-table th, .schedule-table td { padding: 0.45rem 0.55rem; text-align: left; vertical-align: top; }
       .schedule-table td.col-time { white-space: nowrap; }
-      .schedule-table th { background: rgba(255, 255, 255, 0.08); font-weight: 700; }
+      .schedule-table th { background: rgba(255, 255, 255, 0.08); font-weight: 800; }
       .schedule-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
       .team-link { background: transparent; color: var(--text); border: none; padding: 0; font-weight: 600; font-size: inherit; cursor: pointer; text-decoration: none; }
       .team-link:hover { text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.85); }
@@ -335,32 +335,32 @@
       .schedule-legend { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; margin: 0.4rem 0 0.6rem; font-size: 0.78rem; color: var(--muted); align-items: center; }
       .schedule-legend .legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
 
-      /* Kategorie-Picker (4 Kacheln) im Spielplan */
-      .schedule-picker-label { margin: 0.15rem 0 0.5rem; font-size: 0.95rem; color: var(--muted); }
+      /* Kategorie-Picker (4 Kacheln) im Spielplan – optisch identisch zur
+         oberen Hauptnavigation (.view-toggle / .view-btn). */
       .schedule-category-tiles {
-        display: grid; grid-template-columns: repeat(4, 1fr);
-        gap: 0.55rem; margin: 0 0 0.9rem;
+        margin: 0 0 0.9rem;
+        display: flex;
+        gap: 0.65rem;
+        flex-wrap: wrap;
       }
-      /* Kategorie-Picker: alle 4 Knöpfe haben dieselbe neutrale Farbe.
-         Die aktive Auswahl wird über einen kräftigeren Rahmen / Highlight
-         hervorgehoben — nicht über die Farbe. */
       .cat-tile {
-        font-family: inherit; font-weight: 600; font-size: 0.9rem;
-        padding: 0.6rem 0.45rem; border-radius: 0.55rem;
-        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.07);
+        color: var(--text);
+        border: none;
+        border-radius: 0.6rem;
+        padding: 0.65rem 0.9rem;
+        font-family: inherit;
+        font-weight: 700;
         cursor: pointer;
-        text-align: center; line-height: 1.2;
-        color: #e0e0e0;
-        background: rgba(255, 255, 255, 0.08);
-        transition: transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        line-height: 1.2;
+        transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
       }
       .cat-tile:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
       .cat-tile:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.55); outline-offset: 2px; }
       .cat-tile.is-active {
-        background: rgba(255, 255, 255, 0.22);
+        background: linear-gradient(120deg, rgba(40,53,147,0.92), rgba(20,20,40,0.95));
         color: #ffffff;
-        border-color: #ffffff;
-        box-shadow: 0 0 0 2px #ffffff inset, 0 2px 8px rgba(0, 0, 0, 0.35);
+        border: none;
       }
 
       /* Spielplan: einklappbare Gruppentabelle oberhalb der Spiele */
@@ -432,7 +432,7 @@
       /* Phasen-Chips (Final-Stufen) */
       .phase-chip {
         display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.3rem;
-        font-size: 0.72rem; font-weight: 700; margin-left: 0.25rem;
+        font-size: 0.72rem; font-weight: 700;
         background: rgba(255, 255, 255, 0.08); color: var(--text);
       }
       .phase-quali     { background: rgba(255, 235, 59, 0.18); color: #fff59d; }
@@ -676,7 +676,7 @@
         body { background: #fff; color: #000; }
         .bg-stage-glow, .bg-orb, .view-toggle, .auth-trigger-wrap,
         .hero-row .auth-trigger-wrap, .schedule-filters, .schedule-legend,
-        .schedule-category-tiles, .schedule-picker-label,
+        .schedule-category-tiles,
         .schedule-standings,
         button, .team-delete, .auth-modal { display: none !important; }
         .wrap { max-width: 100%; padding: 0.5cm; }
@@ -758,16 +758,18 @@
         /* Schedule filter on Spielplan panel */
         .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
 
-        /* Kategorie-Kacheln: auch auf Mobile in einer Reihe mit 4 Spalten */
-        .schedule-category-tiles { grid-template-columns: repeat(4, 1fr); gap: 0.35rem; }
-        .cat-tile {
-          padding: 0.5rem 0.2rem;
-          font-size: 0.72rem;
-          letter-spacing: -0.01em;
-          word-break: break-word;
-          hyphens: auto;
+        /* Kategorie-Kacheln auf Mobile: gleiches 2×2-Grid-Layout
+           wie die obere Navigation (.view-toggle). */
+        .schedule-category-tiles {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.5rem;
         }
-        .schedule-picker-label { font-size: 0.85rem; }
+        .cat-tile {
+          text-align: center;
+          padding: 0.6rem 0.4rem;
+          font-size: 0.92rem;
+        }
 
         /* Hinweis: Früher stand hier zusätzlich
            `overscroll-behavior-y: none` auf html/body, um den
@@ -942,8 +944,7 @@
 
       <section class="content-panel tile-panel" id="schedule-panel" aria-label="Spielplan" hidden>
           <h2 id="schedule-title">Spielplan</h2>
-          <p class="schedule-picker-label" id="schedule-picker-label">Wähle die Kategorie</p>
-          <div class="schedule-category-tiles" role="group" aria-labelledby="schedule-picker-label">
+          <div class="schedule-category-tiles" role="group" aria-label="Kategorie wählen">
             <button type="button" class="cat-tile" data-category-filter="adult_ambitious" aria-pressed="false">Ambitioniert</button>
             <button type="button" class="cat-tile" data-category-filter="adult_fun" aria-pressed="false">Plausch</button>
             <button type="button" class="cat-tile" data-category-filter="youth" aria-pressed="false">Jugend</button>
