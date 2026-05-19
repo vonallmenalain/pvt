@@ -341,22 +341,27 @@
         display: grid; grid-template-columns: repeat(4, 1fr);
         gap: 0.55rem; margin: 0 0 0.9rem;
       }
+      /* Kategorie-Picker: alle 4 Knöpfe haben dieselbe neutrale Farbe.
+         Die aktive Auswahl wird über einen kräftigeren Rahmen / Highlight
+         hervorgehoben — nicht über die Farbe. */
       .cat-tile {
-        font-family: inherit; font-weight: 700; font-size: 0.9rem;
+        font-family: inherit; font-weight: 600; font-size: 0.9rem;
         padding: 0.6rem 0.45rem; border-radius: 0.55rem;
-        border: 1px solid currentColor; cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        cursor: pointer;
         text-align: center; line-height: 1.2;
-        background: rgba(255, 255, 255, 0.04);
+        color: #e0e0e0;
+        background: rgba(255, 255, 255, 0.08);
         transition: transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
       }
       .cat-tile:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
       .cat-tile:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.55); outline-offset: 2px; }
       .cat-tile.is-active {
-        box-shadow: 0 0 0 2px currentColor inset, 0 2px 8px rgba(0, 0, 0, 0.35);
-        filter: brightness(1.1);
+        background: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+        border-color: #ffffff;
+        box-shadow: 0 0 0 2px #ffffff inset, 0 2px 8px rgba(0, 0, 0, 0.35);
       }
-      .cat-tile-all { color: #e0e0e0; border-color: rgba(255, 255, 255, 0.55); background: rgba(255, 255, 255, 0.08); }
-      .cat-tile-all.is-active { background: rgba(255, 255, 255, 0.18); }
 
       /* Spielplan: einklappbare Gruppentabelle oberhalb der Spiele */
       .schedule-standings {
@@ -432,13 +437,18 @@
       }
       .phase-quali     { background: rgba(255, 235, 59, 0.18); color: #fff59d; }
       .phase-semifinal { background: rgba(255, 145, 0, 0.20);  color: #ffcc80; }
-      .phase-placement { background: rgba(176, 190, 197, 0.20); color: #cfd8dc; }
-      .phase-final     { background: rgba(229, 57, 53, 0.22);  color: #ffab91; font-weight: 800; }
+      /* Spiel um Platz X: Dunkelorange – etwas dunkler/röter als Halbfinal,
+         klar unterscheidbar von Finale (Rot). */
+      .phase-placement { background: rgba(191, 54, 12, 0.28);  color: #ff8a65; }
+      .phase-final     { background: rgba(229, 57, 53, 0.22);  color: #ffab91; }
 
-      /* Zeilen nach Kategorie leicht einfärben */
-      .schedule-table tr.row-cat-adult_ambitious td { background: rgba(255, 167, 38, 0.08) !important; }
-      .schedule-table tr.row-cat-adult_fun       td { background: rgba(102, 187, 106, 0.08) !important; }
-      .schedule-table tr.row-cat-youth           td { background: rgba(92, 107, 192, 0.10) !important; }
+      /* Hinweis: Früher hatten Spielplan-Zeilen eine kategorie-spezifische
+         Hintergrundfarbe (Ambitioniert orange, Plausch grün, Jugend indigo).
+         Auf Wunsch wurde das entfernt – alle Zeilen erscheinen nun einheitlich,
+         die normale Zebra-Streifung der Tabelle bleibt erhalten. Die
+         CSS-Klasse `row-cat-…` wird im JS noch gesetzt, ohne sichtbare
+         Wirkung – das schadet nicht und erlaubt evtl. künftiges Ein-/
+         Ausblenden ohne JS-Anpassung. */
 
       /* Netzhöhen-Wechsel-Hinweis */
       .net-switch {
@@ -494,6 +504,62 @@
       .org-phase { color: var(--muted); justify-self: start; grid-column: 3 / -1; font-size: 0.82rem; font-style: italic; }
       .org-score { justify-self: center; white-space: nowrap; text-align: center; }
 
+      /* ── Spielplan: einheitliche Schriftart ──────────────────────────
+         Im Spielplan-Tab soll die gesamte Tabelle visuell ruhig sein:
+         keine fetten Texte, einheitliche Schriftgrösse, ein einziger
+         Schriftschnitt. Outcome-Hervorhebungen (Sieger/Verlierer/
+         Selektion) werden nur über Farbe transportiert, nicht über
+         Schriftgewicht. Platzhaltertexte ("Rang 3 vs Rang 4") dürfen
+         kursiv bleiben, müssen aber in normaler weisser Schrift
+         angezeigt werden – nicht abgedunkelt. */
+      #schedule-panel .schedule-table,
+      #schedule-panel .schedule-table th,
+      #schedule-panel .schedule-table td,
+      #schedule-panel .schedule-table .team-link,
+      #schedule-panel .schedule-table .team-placeholder,
+      #schedule-panel .schedule-table .phase-chip,
+      #schedule-panel .schedule-table .schedule-result,
+      #schedule-panel .schedule-table .time-range,
+      #schedule-panel .schedule-table .time-start {
+        font-weight: 400;
+        font-size: 0.92rem;
+        font-family: inherit;
+      }
+      #schedule-panel .schedule-table .time-range { color: var(--muted); }
+      #schedule-panel .schedule-table .team-link.is-winner { font-weight: 400; }
+      #schedule-panel .schedule-table .team-link.is-loser  { font-weight: 400; }
+      #schedule-panel .schedule-table .team-link.is-draw   { font-weight: 400; }
+      #schedule-panel .schedule-table .team-link.is-selected-team { font-weight: 400; }
+      /* Platzhalter (z.B. "Rang 3 vs Rang 4") – kursiv, aber in normalem Weiss
+         statt grau, damit sie gut lesbar bleiben. */
+      #schedule-panel .schedule-table .team-placeholder,
+      #schedule-panel .schedule-table .team-placeholder.is-dynamic {
+        color: var(--text);
+        font-style: italic;
+        font-weight: 400;
+      }
+      /* Auch der einklappbare Gruppentabellen-Header und der Toggle sollen
+         dieselbe ruhige Typo nutzen wie der Rest des Spielplans. */
+      #schedule-panel .schedule-standings-toggle {
+        font-weight: 400;
+        font-size: 0.92rem;
+      }
+      /* Mobile: gleiche Reduktion auf einheitliche Grösse. */
+      @media (max-width: 600px) {
+        #schedule-panel .schedule-table,
+        #schedule-panel .schedule-table th,
+        #schedule-panel .schedule-table td,
+        #schedule-panel .schedule-table .team-link,
+        #schedule-panel .schedule-table .team-placeholder,
+        #schedule-panel .schedule-table .phase-chip,
+        #schedule-panel .schedule-table .schedule-result,
+        #schedule-panel .schedule-table .time-range,
+        #schedule-panel .schedule-table .time-start {
+          font-size: 0.82rem;
+        }
+        #schedule-panel .schedule-standings-toggle { font-size: 0.85rem; }
+      }
+
       /* Druckansicht */
       @media print {
         body { background: #fff; color: #000; }
@@ -509,9 +575,7 @@
         .schedule-table { font-size: 9pt; }
         .schedule-table th { background: #ddd !important; color: #000 !important; }
         .schedule-table td { color: #000 !important; }
-        .schedule-table tr.row-cat-adult_ambitious td { background: #fff3e0 !important; }
-        .schedule-table tr.row-cat-adult_fun td { background: #e8f5e9 !important; }
-        .schedule-table tr.row-cat-youth td { background: #e8eaf6 !important; }
+        /* Zeilen-Einfärbung pro Kategorie wurde entfernt – auch im Druck. */
         .cat-chip, .phase-chip, .net-switch, .team-code { border: 1px solid #999; color: #000 !important; background: #fff !important; }
         .team-link, .team-placeholder { color: #000 !important; }
         .final-ranking .rank-row { background: #fff !important; border: 1px solid #ccc; }
@@ -759,10 +823,10 @@
           <h2 id="schedule-title">Spielplan</h2>
           <p class="schedule-picker-label" id="schedule-picker-label">Wähle die Kategorie</p>
           <div class="schedule-category-tiles" role="group" aria-labelledby="schedule-picker-label">
-            <button type="button" class="cat-tile cat-tile-all is-active" data-category-filter="all" aria-pressed="true">Alle</button>
-            <button type="button" class="cat-tile cat-adult_ambitious" data-category-filter="adult_ambitious" aria-pressed="false">Ambitioniert</button>
-            <button type="button" class="cat-tile cat-adult_fun" data-category-filter="adult_fun" aria-pressed="false">Plausch</button>
-            <button type="button" class="cat-tile cat-youth" data-category-filter="youth" aria-pressed="false">Jugend</button>
+            <button type="button" class="cat-tile" data-category-filter="adult_ambitious" aria-pressed="false">Ambitioniert</button>
+            <button type="button" class="cat-tile" data-category-filter="adult_fun" aria-pressed="false">Plausch</button>
+            <button type="button" class="cat-tile" data-category-filter="youth" aria-pressed="false">Jugend</button>
+            <button type="button" class="cat-tile is-active" data-category-filter="all" aria-pressed="true">Alle</button>
           </div>
           <div class="schedule-standings" id="schedule-standings" hidden>
             <button type="button" class="schedule-standings-toggle" id="schedule-standings-toggle" aria-expanded="false" aria-controls="schedule-standings-body">

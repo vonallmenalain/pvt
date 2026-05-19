@@ -17,6 +17,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_SHORT_LABELS,
   CATEGORY_CODES,
+  CATEGORY_PREFIX,
   CODE_TO_CATEGORY,
 } from "./tournament-schedule.js";
 
@@ -430,9 +431,16 @@ function refreshTeamCodeOptions() {
 teamCategorySelect?.addEventListener("change", () => refreshTeamCodeOptions());
 
 // ── Spielplan-Rendering ──────────────────────────────────────────────────────
+// Phasenbezeichnung im Spielplan inkl. Kategorie-Kürzel (A/P/J),
+// z.B. "A - RoundRobin", "P - Halbfinal 1", "J - Finale".
+function phaseLabelWithPrefix(match) {
+  const prefix = CATEGORY_PREFIX[match.category];
+  return prefix ? `${prefix} - ${match.phase}` : match.phase;
+}
+
 function phaseChipHtml(match) {
   const kind = match.phaseKind;
-  return `<span class="phase-chip phase-${kind}">${escapeHtml(match.phase)}</span>`;
+  return `<span class="phase-chip phase-${kind}">${escapeHtml(phaseLabelWithPrefix(match))}</span>`;
 }
 
 function categoryChipHtml(category, { clickable = true } = {}) {

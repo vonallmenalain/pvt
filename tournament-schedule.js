@@ -27,6 +27,14 @@ export const CATEGORY_SHORT_LABELS = {
   youth: "Jugend",
 };
 
+// Kürzel je Kategorie (A/P/J) – wird im Spielplan vor den Phasennamen
+// gesetzt, z.B. "A - RoundRobin" oder "J - Finale".
+export const CATEGORY_PREFIX = {
+  adult_ambitious: "A",
+  adult_fun: "P",
+  youth: "J",
+};
+
 export const CATEGORY_COLORS = {
   adult_ambitious: { bg: "rgba(255, 167, 38, 0.18)", border: "#ffa726", text: "#ffd28a" },
   adult_fun:       { bg: "rgba(102, 187, 106, 0.18)", border: "#66bb6a", text: "#aee0b0" },
@@ -47,7 +55,7 @@ export const CODE_TO_CATEGORY = Object.entries(CATEGORY_CODES).reduce((acc, [cat
 }, {});
 
 export const PHASE_KINDS = {
-  group: "Gruppe",
+  group: "RoundRobin",
   quali: "Zwischenrunde",
   semifinal: "Halbfinal",
   placement: "Platzierung",
@@ -112,7 +120,7 @@ const SCHEDULE_AMBI = [
   ["a-g15", "14:48", "A4", "A5"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "1", category: "adult_ambitious",
-  phase: "Gruppe", phaseKind: "group",
+  phase: "RoundRobin", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
@@ -179,7 +187,7 @@ const SCHEDULE_PLAUSCH = [
   ["p-g12", "15:48", "P2", "P3"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "2", category: "adult_fun",
-  phase: "Gruppe", phaseKind: "group",
+  phase: "RoundRobin", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
@@ -234,7 +242,7 @@ const SCHEDULE_YOUTH_F3 = [
   ["j-g20", "15:48", "J1", "J2"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "3", category: "youth",
-  phase: "Gruppe", phaseKind: "group",
+  phase: "RoundRobin", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
@@ -252,7 +260,7 @@ const SCHEDULE_YOUTH_F2 = [
   ["j-g28", "15:36", "J6", "J8"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "2", category: "youth",
-  phase: "Gruppe", phaseKind: "group",
+  phase: "RoundRobin", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
