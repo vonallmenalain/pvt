@@ -554,6 +554,41 @@
         #schedule-panel .schedule-standings-toggle { font-size: 0.85rem; }
       }
 
+      /* ── Spielplan: Zeit-Spalte sticky beim horizontalen Scrollen ─────
+         Die Zeit bleibt beim Scrollen am linken Rand sichtbar. Optisch
+         soll sie aber exakt wie die anderen Zellen aussehen – inklusive
+         der abwechselnden Zeilenfärbung, des Header-Tints und der
+         Selektions-Färbung. Sticky-Zellen brauchen einen opaken
+         Hintergrund (damit darunter durchscrollende Inhalte verdeckt
+         werden); deshalb legen wir auf einen opaken Basis-Ton (≈ Farbe
+         hinter dem Panel) genau dieselben rgba-Tints, die der Rest der
+         Tabelle als Hintergrund nutzt. Resultat: kein visueller
+         Unterschied zur restlichen Zeile. */
+      #schedule-panel .schedule-table th.col-time,
+      #schedule-panel .schedule-table td.col-time {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        /* Opaker Fallback ≈ Panel-Hintergrund (body #0a0c1c + 3% white
+           Panel-Tint, plus etwas Indigo aus den Hintergrund-Gradienten). */
+        background-color: #11132a;
+      }
+      #schedule-panel .schedule-table th.col-time {
+        /* Header-Tint exakt gleich wie andere th's (rgba 8% Weiss). */
+        background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
+        z-index: 2;
+      }
+      #schedule-panel .schedule-table tbody tr:nth-child(even) td.col-time {
+        /* Gerade Zeile: zusätzlicher 3%-Weiss-Tint wie alle anderen
+           geraden Zellen. */
+        background-image: linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03));
+      }
+      #schedule-panel .schedule-table tr.is-selected-row td.col-time {
+        /* Selektierte Zeile: derselbe Indigo-Tint wie auf den anderen
+           Zellen der selektierten Zeile. */
+        background-image: linear-gradient(rgba(var(--pvt-indigo), 0.18), rgba(var(--pvt-indigo), 0.18));
+      }
+
       /* ── Spielplan: Spalte "Spiel" so schmal wie möglich ──────────────
          Auf Mobile soll die "Spiel"-Spalte nur so breit sein wie der
          längste Teamname (kein Umbruch), Resultat zentriert, Heim-Team
@@ -584,6 +619,14 @@
         .schedule-table { font-size: 9pt; }
         .schedule-table th { background: #ddd !important; color: #000 !important; }
         .schedule-table td { color: #000 !important; }
+        /* Im Druck keine sticky Zeit-Zelle und keine eingefärbten Layer –
+           die Zeit-Spalte läuft als normale Tabellenzelle mit. */
+        #schedule-panel .schedule-table th.col-time,
+        #schedule-panel .schedule-table td.col-time {
+          position: static !important;
+          background-color: transparent !important;
+          background-image: none !important;
+        }
         /* Zeilen-Einfärbung pro Kategorie wurde entfernt – auch im Druck. */
         .cat-chip, .phase-chip, .net-switch, .team-code { border: 1px solid #999; color: #000 !important; background: #fff !important; }
         .team-link, .team-placeholder { color: #000 !important; }
