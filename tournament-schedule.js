@@ -172,19 +172,26 @@ const SCHEDULE_AMBI_FINALS = [
 // ── Feld 2: Erwachsene Plausch + Jugend-Blöcke ───────────────────────────────
 // 12 Vorrundenspiele Plausch (Doppel-Round-Robin) auf Feld 2,
 // dazu Halbfinals, Spiel um Platz 3 und Finale auf Feld 2.
+//
+// Block-Struktur Feld 2:
+//   12:00–13:00  Plausch 1. Round-Robin komplett (6 Spiele)
+//   13:12–13:48  1. Juniorenblock (4 Spiele)
+//   14:00–15:00  Plausch 2. Round-Robin komplett (6 Spiele)
+//   15:12–15:48  2. Juniorenblock (4 Spiele)
+//   16:00–16:45  Plausch-Finalrunde
 const SCHEDULE_PLAUSCH = [
-  ["p-g01", "12:00", "P3", "P4"],
-  ["p-g02", "12:12", "P1", "P2"],
-  ["p-g03", "12:24", "P2", "P4"],
-  ["p-g04", "12:36", "P2", "P3"],
+  ["p-g01", "12:00", "P1", "P2"],
+  ["p-g02", "12:12", "P3", "P4"],
+  ["p-g03", "12:24", "P1", "P3"],
+  ["p-g04", "12:36", "P2", "P4"],
   ["p-g05", "12:48", "P1", "P4"],
-  ["p-g06", "13:48", "P1", "P4"],
-  ["p-g07", "14:00", "P1", "P3"],
-  ["p-g08", "14:12", "P1", "P2"],
-  ["p-g09", "14:24", "P3", "P4"],
+  ["p-g06", "13:00", "P2", "P3"],
+  ["p-g07", "14:00", "P1", "P2"],
+  ["p-g08", "14:12", "P3", "P4"],
+  ["p-g09", "14:24", "P1", "P3"],
   ["p-g10", "14:36", "P2", "P4"],
-  ["p-g11", "14:48", "P1", "P3"],
-  ["p-g12", "15:48", "P2", "P3"],
+  ["p-g11", "14:48", "P2", "P3"],
+  ["p-g12", "15:00", "P1", "P4"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "2", category: "adult_fun",
   phase: "RoundRobin", phaseKind: "group",
@@ -219,27 +226,29 @@ const SCHEDULE_PLAUSCH_FINALS = [
 // Spiel um Platz 7, Platz 5, Platz 3 und Finale auf Feld 3.
 
 // Feld 3 (immer Jugend-Netzhöhe) – 20 Vorrundenspiele:
+// Die ersten vier Junioren-Spiele decken alle 8 Teams ab
+// (J1–J2, J3–J4, J5–J6, J7–J8), danach komplettes Round-Robin.
 const SCHEDULE_YOUTH_F3 = [
-  ["j-g01", "12:00", "J7", "J8"],
-  ["j-g02", "12:12", "J4", "J6"],
-  ["j-g03", "12:24", "J2", "J5"],
-  ["j-g04", "12:36", "J3", "J8"],
-  ["j-g05", "12:48", "J1", "J7"],
-  ["j-g06", "13:00", "J4", "J5"],
-  ["j-g07", "13:12", "J1", "J8"],
-  ["j-g08", "13:24", "J4", "J7"],
-  ["j-g09", "13:36", "J2", "J4"],
-  ["j-g10", "13:48", "J1", "J6"],
-  ["j-g11", "14:00", "J3", "J5"],
-  ["j-g12", "14:12", "J2", "J7"],
-  ["j-g13", "14:24", "J4", "J8"],
-  ["j-g14", "14:36", "J1", "J3"],
-  ["j-g15", "14:48", "J5", "J6"],
-  ["j-g16", "15:00", "J2", "J3"],
-  ["j-g17", "15:12", "J2", "J8"],
+  ["j-g01", "12:00", "J1", "J2"],
+  ["j-g02", "12:12", "J3", "J4"],
+  ["j-g03", "12:24", "J5", "J6"],
+  ["j-g04", "12:36", "J7", "J8"],
+  ["j-g05", "12:48", "J1", "J4"],
+  ["j-g06", "13:00", "J2", "J3"],
+  ["j-g07", "13:12", "J5", "J7"],
+  ["j-g08", "13:24", "J1", "J3"],
+  ["j-g09", "13:36", "J4", "J7"],
+  ["j-g10", "13:48", "J2", "J7"],
+  ["j-g11", "14:00", "J1", "J8"],
+  ["j-g12", "14:12", "J4", "J6"],
+  ["j-g13", "14:24", "J2", "J5"],
+  ["j-g14", "14:36", "J3", "J7"],
+  ["j-g15", "14:48", "J1", "J6"],
+  ["j-g16", "15:00", "J2", "J8"],
+  ["j-g17", "15:12", "J6", "J7"],
   ["j-g18", "15:24", "J1", "J5"],
-  ["j-g19", "15:36", "J3", "J4"],
-  ["j-g20", "15:48", "J1", "J2"],
+  ["j-g19", "15:36", "J6", "J8"],
+  ["j-g20", "15:48", "J1", "J7"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "3", category: "youth",
   phase: "RoundRobin", phaseKind: "group",
@@ -247,17 +256,17 @@ const SCHEDULE_YOUTH_F3 = [
 }));
 
 // Feld 2 Jugend-Blöcke (Netzhöhen-Wechsel nötig) – 8 Vorrundenspiele in zwei Blöcken:
-//   Block 1: 13:00–13:36 (4 Spiele, neu inkl. J6 – J7 um 13:36)
-//   Block 2: 15:00–15:36 (4 Spiele)
+//   Block 1: 13:12–13:48 (4 Spiele)
+//   Block 2: 15:12–15:48 (4 Spiele)
 const SCHEDULE_YOUTH_F2 = [
-  ["j-g21", "13:00", "J2", "J6"],
-  ["j-g22", "13:12", "J3", "J6"],
-  ["j-g23", "13:24", "J5", "J8"],
-  ["j-g24", "13:36", "J6", "J7"],
-  ["j-g25", "15:00", "J5", "J7"],
-  ["j-g26", "15:12", "J1", "J4"],
-  ["j-g27", "15:24", "J3", "J7"],
-  ["j-g28", "15:36", "J6", "J8"],
+  ["j-g21", "13:12", "J4", "J8"],
+  ["j-g22", "13:24", "J2", "J6"],
+  ["j-g23", "13:36", "J5", "J8"],
+  ["j-g24", "13:48", "J3", "J6"],
+  ["j-g25", "15:12", "J4", "J5"],
+  ["j-g26", "15:24", "J3", "J8"],
+  ["j-g27", "15:36", "J2", "J4"],
+  ["j-g28", "15:48", "J3", "J5"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "2", category: "youth",
   phase: "RoundRobin", phaseKind: "group",
