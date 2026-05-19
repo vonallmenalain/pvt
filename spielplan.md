@@ -32,18 +32,18 @@ Vor folgenden Blöcken muss das Netz auf Feld 2 umgestellt werden:
 
 | Block | Zeit | Netzhöhe |
 |-------|------|----------|
-| Plausch | 12:00–12:48 | Erwachsene |
-| Jugend (4 Spiele) | 13:00–13:36 | Jugend |
-| Plausch | 13:48–14:48 | Erwachsene |
-| Jugend (4 Spiele) | 15:00–15:36 | Jugend |
-| Plausch (inkl. Halbfinals, Spiel um Platz 3, Finale) | 15:48–16:45 | Erwachsene |
+| Plausch 1. Round-Robin | 12:00–13:00 | Erwachsene |
+| 1. Juniorenblock (4 Spiele) | 13:12–13:48 | Jugend |
+| Plausch 2. Round-Robin | 14:00–15:00 | Erwachsene |
+| 2. Juniorenblock (4 Spiele) | 15:12–15:48 | Jugend |
+| Plausch-Finalrunde (Halbfinals, Spiel um Platz 3, Finale) | 16:00–16:45 | Erwachsene |
 
 Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 
-1. Vor 13:00 – Erwachsene → Jugend
-2. Vor 13:48 – Jugend → Erwachsene
-3. Vor 15:00 – Erwachsene → Jugend
-4. Vor 15:48 – Jugend → Erwachsene
+1. Vor 13:12 – Erwachsene → Jugend
+2. Vor 14:00 – Jugend → Erwachsene
+3. Vor 15:12 – Erwachsene → Jugend
+4. Vor 16:00 – Jugend → Erwachsene
 
 ## Kategorien & Modus
 
@@ -61,7 +61,8 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 
 ### Erwachsene Plausch – Feld 2 (4 Teams: P1–P4)
 
-- Vorrunde: Doppel-Round-Robin (12 Spiele) auf Feld 2
+- 1. Round-Robin (6 Spiele): 12:00–13:00 auf Feld 2
+- 2. Round-Robin (6 Spiele): 14:00–15:00 auf Feld 2
 - Halbfinal 1 (Rang 1 vs Rang 4) – 16:00 auf Feld 2
 - Halbfinal 2 (Rang 2 vs Rang 3) – 16:15 auf Feld 2
 - Spiel um Platz 3 – 16:30 auf Feld 2
@@ -70,7 +71,7 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 
 ### Jugendliche – Feld 2/3 (8 Teams: J1–J8)
 
-- Vorrunde: Volles Round-Robin (28 Spiele, 20 auf Feld 3 und 8 auf Feld 2)
+- Vorrunde: Volles Round-Robin (28 Spiele, 20 auf Feld 3 und 8 auf Feld 2 in zwei Blöcken: 13:12–13:48 und 15:12–15:48)
 - Spiel um Platz 7: Rang 7 vs Rang 8 – 16:00 auf Feld 3
 - Spiel um Platz 5: Rang 5 vs Rang 6 – 16:15 auf Feld 3
 - Spiel um Platz 3: Rang 3 vs Rang 4 – 16:30 auf Feld 3
