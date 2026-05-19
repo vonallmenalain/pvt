@@ -554,39 +554,72 @@
         #schedule-panel .schedule-standings-toggle { font-size: 0.85rem; }
       }
 
-      /* ── Spielplan: Zeit-Spalte sticky beim horizontalen Scrollen ─────
-         Die Zeit bleibt beim Scrollen am linken Rand sichtbar. Optisch
-         soll sie aber exakt wie die anderen Zellen aussehen – inklusive
-         der abwechselnden Zeilenfärbung, des Header-Tints und der
-         Selektions-Färbung. Sticky-Zellen brauchen einen opaken
-         Hintergrund (damit darunter durchscrollende Inhalte verdeckt
-         werden); deshalb legen wir auf einen opaken Basis-Ton (≈ Farbe
-         hinter dem Panel) genau dieselben rgba-Tints, die der Rest der
-         Tabelle als Hintergrund nutzt. Resultat: kein visueller
-         Unterschied zur restlichen Zeile. */
-      #schedule-panel .schedule-table th.col-time,
-      #schedule-panel .schedule-table td.col-time {
+      /* ── Spielplan: Zeit-Spalte aufgeteilt + nur Start-Zeit sticky ────
+         Die Spalte "Zeit" ist in zwei Zellen geteilt:
+           • col-time-start  →  z. B. "12:00"  – sticky am linken Rand
+           • col-time-end    →  z. B. "– 12:10" – scrollt mit dem Rest mit
+         Die übrige Zeile (Feld, Phase, Spiel) hat keinen eigenen
+         Hintergrund – sie zeigt einfach den Body-Hintergrund (Gradients +
+         Panel-/Zeilen-Tint) durch. Damit die sticky Start-Zeit visuell
+         exakt gleich aussieht wie der Rest der Zeile (gleiche Farbe,
+         gleiche Transparenz – kein "dunkler Block"), repliziert sie den
+         Body-Hintergrund per `background-attachment: fixed`: dieselben
+         Gradients, an dieselbe Viewport-Position genagelt, plus die
+         identischen Panel-/Zeilen-/Header-Tints darüber. So liefert die
+         sticky-Zelle an jeder Bildschirmposition exakt denselben Pixel-
+         Wert wie eine normale, transparente Zelle daneben – im Stand-
+         und im Scroll-Zustand. */
+      #schedule-panel .schedule-table th.col-time-start,
+      #schedule-panel .schedule-table td.col-time-start,
+      #schedule-panel .schedule-table th.col-time-end,
+      #schedule-panel .schedule-table td.col-time-end {
+        white-space: nowrap;
+      }
+      /* Start-Zeit eng an die End-Zeit anschmiegen, End-Zeit mit kleiner
+         Lücke davor – sieht aus wie ein Leerzeichen. */
+      #schedule-panel .schedule-table th.col-time-start,
+      #schedule-panel .schedule-table td.col-time-start {
+        padding-right: 0;
+      }
+      #schedule-panel .schedule-table th.col-time-end,
+      #schedule-panel .schedule-table td.col-time-end {
+        padding-left: 0.25rem;
+      }
+      /* Sticky-Verhalten + Body-Hintergrund-Replikat für die Start-Zeit. */
+      #schedule-panel .schedule-table th.col-time-start,
+      #schedule-panel .schedule-table td.col-time-start {
         position: sticky;
         left: 0;
         z-index: 1;
-        /* Opaker Fallback ≈ Panel-Hintergrund (body #0a0c1c + 3% white
-           Panel-Tint, plus etwas Indigo aus den Hintergrund-Gradienten). */
-        background-color: #11132a;
+        background-color: var(--bg);
+        background-image:
+          /* Tint je Zustand (Header / gerade Zeile / Selektion) – per Var. */
+          linear-gradient(var(--col-time-row-tint, transparent), var(--col-time-row-tint, transparent)),
+          /* Panel-Tint (3% Weiss), exakt wie .schedule { background: rgba(255,255,255,0.03) }. */
+          linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03)),
+          /* Identische Body-Gradients – fixed-attached, damit sie deckungs-
+             gleich mit dem Body hinter der Tabelle laufen. */
+          radial-gradient(ellipse 90% 70% at 50% 110%, rgba(var(--pvt-indigo), 0.45) 0%, transparent 65%),
+          radial-gradient(ellipse 70% 50% at 50% 80%,  rgba(var(--pvt-indigo), 0.28) 0%, transparent 55%),
+          radial-gradient(ellipse 60% 40% at 20% 0%,   rgba(var(--pvt-indigo-light), 0.10) 0%, transparent 50%),
+          radial-gradient(ellipse 60% 40% at 80% 0%,   rgba(var(--pvt-indigo), 0.20) 0%, transparent 50%),
+          linear-gradient(180deg, #050610 0%, #0a0c1c 35%, #0c1030 100%);
+        background-attachment: scroll, scroll, fixed, fixed, fixed, fixed, fixed;
       }
-      #schedule-panel .schedule-table th.col-time {
-        /* Header-Tint exakt gleich wie andere th's (rgba 8% Weiss). */
-        background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
+      #schedule-panel .schedule-table th.col-time-start {
         z-index: 2;
+        /* Header-Tint exakt gleich wie alle anderen th (rgba 8% Weiss). */
+        --col-time-row-tint: rgba(255, 255, 255, 0.08);
       }
-      #schedule-panel .schedule-table tbody tr:nth-child(even) td.col-time {
-        /* Gerade Zeile: zusätzlicher 3%-Weiss-Tint wie alle anderen
-           geraden Zellen. */
-        background-image: linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03));
+      #schedule-panel .schedule-table tbody tr:nth-child(even) td.col-time-start {
+        /* Gerade Zeile: zusätzlicher 3% Weiss-Tint – exakt gleich wie alle
+           anderen geraden Zellen. */
+        --col-time-row-tint: rgba(255, 255, 255, 0.03);
       }
-      #schedule-panel .schedule-table tr.is-selected-row td.col-time {
-        /* Selektierte Zeile: derselbe Indigo-Tint wie auf den anderen
+      #schedule-panel .schedule-table tr.is-selected-row td.col-time-start {
+        /* Selektierte Zeile: identischer Indigo-Tint wie auf den übrigen
            Zellen der selektierten Zeile. */
-        background-image: linear-gradient(rgba(var(--pvt-indigo), 0.18), rgba(var(--pvt-indigo), 0.18));
+        --col-time-row-tint: rgba(var(--pvt-indigo), 0.18);
       }
 
       /* ── Spielplan: Spalte "Spiel" so schmal wie möglich ──────────────
@@ -620,9 +653,11 @@
         .schedule-table th { background: #ddd !important; color: #000 !important; }
         .schedule-table td { color: #000 !important; }
         /* Im Druck keine sticky Zeit-Zelle und keine eingefärbten Layer –
-           die Zeit-Spalte läuft als normale Tabellenzelle mit. */
-        #schedule-panel .schedule-table th.col-time,
-        #schedule-panel .schedule-table td.col-time {
+           beide Zeit-Zellen laufen als normale Tabellenzellen mit. */
+        #schedule-panel .schedule-table th.col-time-start,
+        #schedule-panel .schedule-table td.col-time-start,
+        #schedule-panel .schedule-table th.col-time-end,
+        #schedule-panel .schedule-table td.col-time-end {
           position: static !important;
           background-color: transparent !important;
           background-image: none !important;
@@ -896,7 +931,7 @@
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
-              <thead><tr><th>Zeit</th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
+              <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
               <tbody id="schedule-table-body"><tr><td colspan="5">Spielplan wird geladen…</td></tr></tbody>
             </table>
           </div>
