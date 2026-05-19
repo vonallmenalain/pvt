@@ -574,16 +574,25 @@
       #schedule-panel .schedule-table th.col-time-end,
       #schedule-panel .schedule-table td.col-time-end {
         white-space: nowrap;
+        /* Beide Zeit-Spalten auf Inhaltsbreite schrumpfen, damit die Spalten
+           nicht durch die Tabelle gestreckt werden und der Bindestrich
+           optisch zwischen Start- und End-Zeit sitzt (statt einer breiten
+           Lücke). Den Rest der Tabelle bekommen die anderen Spalten. */
+        width: 1%;
       }
-      /* Start-Zeit eng an die End-Zeit anschmiegen, End-Zeit mit kleiner
-         Lücke davor – sieht aus wie ein Leerzeichen. */
+      /* Start-Zeit rechtsbündig in ihrer engen Spalte, End-Zeit linksbündig –
+         so klebt "12:00" am rechten Rand seiner Zelle und "– 12:10" am linken
+         Rand seiner Zelle. Der Bindestrich erscheint trotz zweier getrennter
+         Tabellenzellen mittig zwischen den beiden Zeiten. */
       #schedule-panel .schedule-table th.col-time-start,
       #schedule-panel .schedule-table td.col-time-start {
         padding-right: 0;
+        text-align: right;
       }
       #schedule-panel .schedule-table th.col-time-end,
       #schedule-panel .schedule-table td.col-time-end {
         padding-left: 0.25rem;
+        text-align: left;
       }
       /* Sticky-Verhalten + Body-Hintergrund-Replikat für die Start-Zeit. */
       #schedule-panel .schedule-table th.col-time-start,
@@ -597,6 +606,17 @@
           linear-gradient(var(--col-time-row-tint, transparent), var(--col-time-row-tint, transparent)),
           /* Panel-Tint (3% Weiss), exakt wie .schedule { background: rgba(255,255,255,0.03) }. */
           linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03)),
+          /* Approximation der zusätzlichen Lichtbeiträge, die der Body via
+             separate fixed pseudo-Elemente (.bg-orb.o1 und
+             .bg-stage-glow::before) mit mix-blend-mode:screen am linken
+             Viewport-Rand beisteuert. Ohne diese würde die sticky-Zelle
+             leicht dunkler wirken als der Rest der Zeile – insbesondere am
+             linken Rand auf Mobile, wo der orb fast direkt hinter der
+             Zeit-Spalte sitzt. Beide Layer sind fixed-attached, damit sie
+             unabhängig vom Tabellen-Scroll an derselben Bildschirmposition
+             bleiben. */
+          radial-gradient(ellipse 220px 320px at 0% 22vh, rgba(var(--pvt-indigo-light), 0.14) 0%, transparent 70%),
+          radial-gradient(ellipse 50% 70% at -5% 0%, rgba(var(--pvt-indigo-light), 0.08) 0%, transparent 75%),
           /* Identische Body-Gradients – fixed-attached, damit sie deckungs-
              gleich mit dem Body hinter der Tabelle laufen. */
           radial-gradient(ellipse 90% 70% at 50% 110%, rgba(var(--pvt-indigo), 0.45) 0%, transparent 65%),
@@ -604,7 +624,7 @@
           radial-gradient(ellipse 60% 40% at 20% 0%,   rgba(var(--pvt-indigo-light), 0.10) 0%, transparent 50%),
           radial-gradient(ellipse 60% 40% at 80% 0%,   rgba(var(--pvt-indigo), 0.20) 0%, transparent 50%),
           linear-gradient(180deg, #050610 0%, #0a0c1c 35%, #0c1030 100%);
-        background-attachment: scroll, scroll, fixed, fixed, fixed, fixed, fixed;
+        background-attachment: scroll, scroll, fixed, fixed, fixed, fixed, fixed, fixed, fixed;
       }
       #schedule-panel .schedule-table th.col-time-start {
         z-index: 2;
@@ -634,6 +654,20 @@
         #schedule-panel .schedule-table .col-game-score {
           min-width: 0;
           padding: 0 0.25rem;
+        }
+        /* Auf Mobile bekommt die sticky Start-Zeit links-Ausrichtung plus
+           etwas Padding nach rechts – so steht beim horizontalen Scrollen
+           die fixierte "12:00" sauber am linken Rand mit einer kleinen
+           Schutzlücke, bevor "– 12:10" und der Rest der Zeile dahinter
+           durchgleiten (statt direkt an der Zahl zu kleben). */
+        #schedule-panel .schedule-table th.col-time-start,
+        #schedule-panel .schedule-table td.col-time-start {
+          text-align: left;
+          padding-right: 0.5rem;
+        }
+        #schedule-panel .schedule-table th.col-time-end,
+        #schedule-panel .schedule-table td.col-time-end {
+          padding-left: 0.15rem;
         }
       }
 
