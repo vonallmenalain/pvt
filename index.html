@@ -645,7 +645,22 @@
       .schedule-table .col-time { white-space: nowrap; }
       .schedule-table .col-field { white-space: nowrap; }
       .schedule-table .col-category { white-space: nowrap; }
+      .schedule-table .col-zaehler { white-space: nowrap; }
       .schedule-result-empty { color: rgba(245,245,245,0.5); }
+
+      /* Zähler-Spalte: Resultatverantwortung. Standardmässig ist das
+         erstgenannte Team aus dem vorherigen Spiel auf dem Feld als
+         Zähler eingetragen ("Heim des Vorgängerspiels"). Beim ersten
+         Spiel auf dem Feld – und in der Finalrunde, wenn dieses Team
+         im aktuellen Spiel selber spielt – steht "Turnierorganisation". */
+      .schedule-zaehler-org {
+        font-style: italic;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .schedule-zaehler-team {
+        white-space: nowrap;
+      }
 
       /* Netzhöhen-Hinweise unter Infos */
       .net-height-list { margin: 0.3rem 0 0; padding-left: 1.2rem; }
@@ -1181,8 +1196,8 @@
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
-              <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
-              <tbody id="schedule-table-body"><tr><td colspan="5">Spielplan wird geladen…</td></tr></tbody>
+              <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th><th class="col-zaehler">Zähler</th></tr></thead>
+              <tbody id="schedule-table-body"><tr><td colspan="6">Spielplan wird geladen…</td></tr></tbody>
             </table>
           </div>
       </section>
