@@ -560,6 +560,88 @@
         #schedule-panel .schedule-standings-toggle { font-size: 0.85rem; }
       }
 
+      /* ── Spielplan: Zeit-Spalte aufgeteilt + sticky beim horizontalen
+         Scrollen ────────────────────────────────────────────────────────
+         Damit man im Spielplan auch beim Rechts-Scrollen jederzeit die
+         Startzeit eines Spiels ablesen kann, ist die "Zeit"-Spalte in zwei
+         Zellen geteilt:
+           • col-time-start  →  z. B. "12:00"  – bleibt am linken Rand sticky
+           • col-time-end    →  z. B. "– 12:10" – scrollt mit dem Rest mit
+         Auch der Spaltentitel "Zeit" (th.col-time-start) ist sticky, damit er
+         beim Scrollen immer sichtbar bleibt.
+         Wichtig: die sticky-Zellen brauchen einen opaken Hintergrund, sonst
+         scheinen die darunter-scrollenden Inhalte durch. */
+      #schedule-panel .schedule-table th.col-time-start,
+      #schedule-panel .schedule-table td.col-time-start,
+      #schedule-panel .schedule-table th.col-time-end,
+      #schedule-panel .schedule-table td.col-time-end {
+        white-space: nowrap;
+      }
+      #schedule-panel .schedule-table th.col-time-start,
+      #schedule-panel .schedule-table td.col-time-start {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        /* solide Farbe ≈ Panel-Hintergrund, damit darunter-scrollende Zellen
+           sauber verdeckt werden. */
+        background-color: #11132a;
+        /* eng an die End-Zeit angeschmiegt */
+        padding-right: 0.25rem;
+      }
+      #schedule-panel .schedule-table th.col-time-start {
+        /* Header muss über den Body-Zellen liegen */
+        z-index: 3;
+        background-color: #1d2040;
+      }
+      #schedule-panel .schedule-table td.col-time-end,
+      #schedule-panel .schedule-table th.col-time-end {
+        padding-left: 0.1rem;
+      }
+      #schedule-panel .schedule-table td.col-time-end .time-range {
+        color: var(--muted);
+        font-size: 0.9em;
+      }
+      /* Dezente Trennlinie rechts von der sticky-Zelle, damit sie beim
+         Scrollen visuell vom mitscrollenden Inhalt abgesetzt ist. */
+      #schedule-panel .schedule-table td.col-time-start {
+        box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
+      }
+      #schedule-panel .schedule-table tr.is-selected-row td.col-time-start {
+        /* selektierte Zeilen behalten ihre Indigo-Tönung, auch in der sticky
+           Zelle – die Zelle muss aber weiterhin opak sein. */
+        background-color: #1d2148;
+        /* Selektions-Akzent (3-Pixel Balken links) wieder anzeigen, plus
+           Trennlinie rechts. */
+        box-shadow: inset 3px 0 0 rgba(var(--pvt-indigo-light), 0.9),
+                    inset -1px 0 0 rgba(255, 255, 255, 0.05);
+      }
+
+      /* ── Spielplan: Spalte "Spiel" so schmal wie möglich ──────────────
+         Auf Mobile soll die "Spiel"-Spalte nur so breit sein wie der
+         längste Teamname (kein Umbruch), Resultat zentriert, Heim-Team
+         linksbündig, Gast-Team rechtsbündig. So passt möglichst viel auf
+         einen Bildschirm. */
+      @media (max-width: 600px) {
+        #schedule-panel .schedule-table td.col-game {
+          min-width: 0;
+        }
+        #schedule-panel .schedule-table .col-game-score {
+          min-width: 0;
+          padding: 0 0.25rem;
+        }
+        /* Zeit-Spalten extra-kompakt auf Mobile */
+        #schedule-panel .schedule-table td.col-time-start,
+        #schedule-panel .schedule-table th.col-time-start {
+          padding-left: 0.4rem;
+          padding-right: 0.2rem;
+        }
+        #schedule-panel .schedule-table td.col-time-end,
+        #schedule-panel .schedule-table th.col-time-end {
+          padding-left: 0.05rem;
+          padding-right: 0.3rem;
+        }
+      }
+
       /* Druckansicht */
       @media print {
         body { background: #fff; color: #000; }
@@ -575,6 +657,13 @@
         .schedule-table { font-size: 9pt; }
         .schedule-table th { background: #ddd !important; color: #000 !important; }
         .schedule-table td { color: #000 !important; }
+        /* Im Druck keine sticky-Zellen: alles soll als normale Tabelle laufen. */
+        #schedule-panel .schedule-table th.col-time-start,
+        #schedule-panel .schedule-table td.col-time-start {
+          position: static !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
         /* Zeilen-Einfärbung pro Kategorie wurde entfernt – auch im Druck. */
         .cat-chip, .phase-chip, .net-switch, .team-code { border: 1px solid #999; color: #000 !important; background: #fff !important; }
         .team-link, .team-placeholder { color: #000 !important; }
@@ -844,8 +933,8 @@
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
-              <thead><tr><th>Zeit</th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
-              <tbody id="schedule-table-body"><tr><td colspan="4">Spielplan wird geladen…</td></tr></tbody>
+              <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
+              <tbody id="schedule-table-body"><tr><td colspan="5">Spielplan wird geladen…</td></tr></tbody>
             </table>
           </div>
       </section>
