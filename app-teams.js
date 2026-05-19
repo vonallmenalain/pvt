@@ -1183,7 +1183,6 @@ function renderPodium(finalRanking) {
     html.push(
       `<div class="${spotClass}">
         <div class="podium-card">
-          <span class="podium-medal" aria-hidden="true">${rank}</span>
           <p class="${nameClass}">${teamLabel}</p>
         </div>
         <div class="podium-base" aria-label="Rang ${rank}">${rank}</div>
