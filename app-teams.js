@@ -469,6 +469,66 @@ function teamCellHtml(ref, category, matchId, side) {
   return `<span class="team-placeholder${isPlaceholder ? " is-dynamic" : ""}">${escapeHtml(displayName)}</span>`;
 }
 
+// Prüft, ob zwei Match-Referenzen dasselbe Team meinen. Vergleich erfolgt
+// (1) über aufgelöste Team-IDs, falls beide Refs schon einer konkreten Mannschaft
+//     zugeordnet sind, sonst (2) über aufgelöste Spielcodes (z.B. "A2") und
+// schliesslich (3) strukturell – gleicher Code, gleicher Rang oder gleiche
+// winnerOf/loserOf-Quelle gelten als identisches Team.
+function refsAreSameTeam(refA, refB, categoryA, categoryB) {
+  if (!refA || !refB) return false;
+  const idA = refTeamId(refA, categoryA);
+  const idB = refTeamId(refB, categoryB);
+  if (idA && idB) return idA === idB;
+  const codeA = refTeamCode(refA, categoryA);
+  const codeB = refTeamCode(refB, categoryB);
+  if (codeA && codeB) return codeA === codeB;
+  if (refA.code && refB.code) return refA.code === refB.code;
+  if (refA.rank && refB.rank) {
+    return refA.rank === refB.rank && categoryA === categoryB;
+  }
+  if (refA.winnerOf && refB.winnerOf) return refA.winnerOf === refB.winnerOf;
+  if (refA.loserOf && refB.loserOf) return refA.loserOf === refB.loserOf;
+  return false;
+}
+
+// Bestimmt die Resultatverantwortung ("Zähler") für ein Match.
+//   • Standardmässig: das erstgenannte Team aus dem unmittelbar vorherigen
+//     Spiel auf demselben Feld (Heim des Vorgängers).
+//   • Beim allerersten Spiel auf einem Feld: "Turnierorganisation".
+//   • Wenn dieses Team im aktuellen Spiel selbst mitspielt (Heim oder Gast) –
+//     was vor allem in der Finalrunde durch winnerOf/loserOf/Rang-Verweise
+//     vorkommen kann –: ebenfalls "Turnierorganisation".
+function getZaehlerForMatch(match) {
+  const sameField = TOURNAMENT_SCHEDULE
+    .filter((m) => m.field === match.field)
+    .sort((a, b) => a.time.localeCompare(b.time));
+  const idx = sameField.findIndex((m) => m.id === match.id);
+  if (idx <= 0) {
+    return { kind: "org" };
+  }
+  const prev = sameField[idx - 1];
+  const playsCurrent =
+    refsAreSameTeam(prev.home, match.home, prev.category, match.category) ||
+    refsAreSameTeam(prev.home, match.away, prev.category, match.category);
+  if (playsCurrent) {
+    return { kind: "org" };
+  }
+  return { kind: "team", ref: prev.home, category: prev.category };
+}
+
+function zaehlerCellHtml(match) {
+  const z = getZaehlerForMatch(match);
+  if (z.kind === "org") {
+    return `<span class="schedule-zaehler-org">Turnierorganisation</span>`;
+  }
+  const teamId = refTeamId(z.ref, z.category);
+  const displayName = refDisplayName(z.ref, z.category);
+  if (teamId) {
+    return `<button type="button" class="team-link schedule-zaehler-team" data-team-select="${teamId}">${escapeHtml(displayName)}</button>`;
+  }
+  return `<span class="team-placeholder schedule-zaehler-team">${escapeHtml(displayName)}</span>`;
+}
+
 
 function scoreCellHtml(match, { editable = false } = {}) {
   const score = resultMap[match.id] || { home: "", away: "" };
@@ -537,7 +597,7 @@ function renderSchedule() {
   const focus = captureResultInputFocus();
   const matches = scheduleMatchesFiltered();
   if (!matches.length) {
-    scheduleTableBody.innerHTML = '<tr><td colspan="5">Keine Spiele für die gewählten Filter.</td></tr>';
+    scheduleTableBody.innerHTML = '<tr><td colspan="6">Keine Spiele für die gewählten Filter.</td></tr>';
     restoreResultInputFocus(focus);
     return;
   }
@@ -547,9 +607,14 @@ function renderSchedule() {
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match, { editable: !!currentUser });
+    const zaehlerCell = zaehlerCellHtml(match);
     // Zeit ist in zwei Zellen aufgeteilt: nur die Start-Zeit (linke Zelle)
     // bleibt beim horizontalen Scrollen am linken Rand sticky; die End-Zeit
     // (z. B. "– 12:10") scrollt ganz normal mit dem Rest der Zeile mit.
+    // Die Spalte "Zähler" steht ganz rechts und nennt das Team, das beim
+    // aktuellen Spiel zählt und den Resultatzettel abgibt (Heim des
+    // vorherigen Spiels auf dem Feld – beim 1. Spiel und wenn das Team
+    // selbst mitspielt: "Turnierorganisation").
     return `<tr class="${rowCls}">
       <td class="col-time-start">${match.time}</td>
       <td class="col-time-end">– ${match.endTime}</td>
@@ -562,6 +627,7 @@ function renderSchedule() {
           <span class="col-game-away">${awayCell}</span>
         </div>
       </td>
+      <td class="col-zaehler">${zaehlerCell}</td>
     </tr>`;
   }).join("");
   restoreResultInputFocus(focus);
