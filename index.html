@@ -662,6 +662,85 @@
         white-space: nowrap;
       }
 
+      /* ── Dashboard: Zählerdienst-Zeilen + Badge + Legende ──────────────
+         Im Dashboard zeigt die Tabelle "Eigene Spiele & Zählerdienst"
+         zwei Arten von Spielen:
+           • Eigene Spiele – das ausgewählte Team spielt mit (normale Zeile,
+             Zähler-Spalte leer mit "–").
+           • Zählerdienst – das Team zählt das Spiel und gibt den
+             Resultatzettel ab (Zeile gelblich getönt, links eine 3 px
+             breite Akzentleiste in Bernstein, in der Zähler-Spalte rechts
+             ein "Zähler"-Badge).
+         Damit lassen sich beide Pflichten klar voneinander unterscheiden,
+         ohne dass aus zwei Tabellen zwei separate Listen werden. */
+      #dashboard-panel .schedule-table tr.is-zaehler-row td {
+        background: rgba(255, 184, 77, 0.09);
+        color: rgba(245, 245, 245, 0.78);
+      }
+      #dashboard-panel .schedule-table tr.is-zaehler-row td:first-child {
+        box-shadow: inset 3px 0 0 rgba(255, 184, 77, 0.85);
+      }
+      /* Sticky Start-Zeit-Zelle: gleicher Bernstein-Tint wie der Rest der
+         Zeile, damit die fixierte erste Spalte beim Horizontal-Scrollen
+         nicht aus der Zählerdienst-Färbung herausfällt. `tbody` im
+         Selektor sorgt für gleiche/höhere Spezifität wie der bestehende
+         even-row-Tint und gewinnt damit auf geraden Zeilen. */
+      #dashboard-panel .schedule-table tbody tr.is-zaehler-row td.col-time-start {
+        --col-time-row-tint: rgba(255, 184, 77, 0.12);
+      }
+      .zaehler-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        background: rgba(255, 184, 77, 0.18);
+        color: #ffcd80;
+        border: 1px solid rgba(255, 184, 77, 0.5);
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .zaehler-badge-dot {
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 50%;
+        background: #ffb84d;
+        box-shadow: 0 0 0 2px rgba(255, 184, 77, 0.18);
+      }
+      .zaehler-cell-empty {
+        color: rgba(245, 245, 245, 0.35);
+      }
+      .dashboard-zaehler-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 1rem;
+        margin: 0.25rem 0 0.55rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .dashboard-zaehler-legend .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .legend-swatch {
+        display: inline-block;
+        width: 0.85rem;
+        height: 0.85rem;
+        border-radius: 0.2rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .legend-swatch-player {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .legend-swatch-zaehler {
+        background: rgba(255, 184, 77, 0.2);
+        border-color: rgba(255, 184, 77, 0.55);
+        box-shadow: inset 3px 0 0 rgba(255, 184, 77, 0.95);
+      }
+
       /* Netzhöhen-Hinweise unter Infos */
       .net-height-list { margin: 0.3rem 0 0; padding-left: 1.2rem; }
       .net-height-list li { font-size: 0.9rem; margin-bottom: 0.2rem; }
@@ -1228,11 +1307,15 @@
         <div class="table-scroll">
           <table class="schedule-table"><thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead><tbody id="dashboard-group-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody></table>
         </div>
-        <h4 class="dashboard-subtitle">Eigene Spiele</h4>
+        <h4 class="dashboard-subtitle">Eigene Spiele &amp; Zählerdienst</h4>
+        <p class="dashboard-zaehler-legend" aria-label="Legende">
+          <span class="legend-item"><span class="legend-swatch legend-swatch-player" aria-hidden="true"></span>Eigene Spiele&nbsp;– du spielst</span>
+          <span class="legend-item"><span class="legend-swatch legend-swatch-zaehler" aria-hidden="true"></span>Zählerdienst&nbsp;– du zählst &amp; gibst den Resultatzettel ab</span>
+        </p>
         <div class="table-scroll">
-          <table class="schedule-table" aria-label="Eigene Spiele">
-            <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
-            <tbody id="dashboard-match-table"><tr><td colspan="5">Noch kein Team ausgewählt.</td></tr></tbody>
+          <table class="schedule-table" aria-label="Eigene Spiele und Zählerdienst">
+            <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th><th class="col-zaehler">Zähler</th></tr></thead>
+            <tbody id="dashboard-match-table"><tr><td colspan="6">Noch kein Team ausgewählt.</td></tr></tbody>
           </table>
         </div>
       </section>
