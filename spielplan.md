@@ -50,10 +50,12 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 ### Erwachsene Ambitioniert – Feld 1 (6 Teams: A1–A6)
 
 - Gruppe: Round-Robin (15 Spiele, 12:00–14:48)
-- Zwischenrunde: Q1 (Rang 3 vs 6), Q2 (Rang 4 vs 5), Top (Rang 1 vs 2)
-- Halbfinal 1: Sieger Top vs Sieger Q2
-- Halbfinal 2: Verlierer Top vs Sieger Q1
-- Spiel um Platz 5: Verlierer Q1 vs Verlierer Q2 (16:00, Feld 1)
+- Zwischenrunde 1 (Rang 1 vs 2) – 15:00 auf Feld 1
+- Zwischenrunde 2 (Rang 3 vs 6) – 15:12 auf Feld 1
+- Zwischenrunde 3 (Rang 4 vs 5) – 15:24 auf Feld 1
+- Halbfinal 1: Sieger Zwischenrunde 1 vs Sieger Zwischenrunde 3
+- Halbfinal 2: Verlierer Zwischenrunde 1 vs Sieger Zwischenrunde 2
+- Spiel um Platz 5: Verlierer Zwischenrunde 2 vs Verlierer Zwischenrunde 3 (16:00, Feld 1)
 - 16:15 auf Feld 1: Puffer / Finalvorbereitung / Einspielen (kein offizielles Spiel)
 - Spiel um Platz 3: Verlierer Halbfinal 1 vs Verlierer Halbfinal 2 (16:30, Feld 1)
 - Finale: Sieger Halbfinal 1 vs Sieger Halbfinal 2 (16:45, Feld 1)

@@ -126,19 +126,19 @@ const SCHEDULE_AMBI = [
 
 const SCHEDULE_AMBI_FINALS = [
   makeEntry({
-    id: "a-q1", time: "15:00", field: "1", category: "adult_ambitious",
-    phase: "Zwischenrunde", phaseKind: "quali",
+    id: "a-qtop", time: "15:00", field: "1", category: "adult_ambitious",
+    phase: "Zwischenrunde 1", phaseKind: "quali",
+    home: { rank: 1 }, away: { rank: 2 },
+  }),
+  makeEntry({
+    id: "a-q1", time: "15:12", field: "1", category: "adult_ambitious",
+    phase: "Zwischenrunde 2", phaseKind: "quali",
     home: { rank: 3 }, away: { rank: 6 },
   }),
   makeEntry({
-    id: "a-q2", time: "15:12", field: "1", category: "adult_ambitious",
-    phase: "Zwischenrunde", phaseKind: "quali",
+    id: "a-q2", time: "15:24", field: "1", category: "adult_ambitious",
+    phase: "Zwischenrunde 3", phaseKind: "quali",
     home: { rank: 4 }, away: { rank: 5 },
-  }),
-  makeEntry({
-    id: "a-qtop", time: "15:24", field: "1", category: "adult_ambitious",
-    phase: "Zwischenrunde", phaseKind: "quali",
-    home: { rank: 1 }, away: { rank: 2 },
   }),
   makeEntry({
     id: "a-quali1", time: "15:36", field: "1", category: "adult_ambitious",
