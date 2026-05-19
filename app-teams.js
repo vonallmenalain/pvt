@@ -52,6 +52,7 @@ const dashboardTitle = document.getElementById("dashboard-team-title");
 const dashboardInfo = document.getElementById("dashboard-team-info");
 const dashboardGroupTable = document.getElementById("dashboard-group-table");
 const dashboardMatchTable = document.getElementById("dashboard-match-table");
+const dashboardZaehlerTable = document.getElementById("dashboard-zaehler-table");
 
 const scheduleCategoryTiles = document.querySelectorAll(".schedule-category-tiles .cat-tile");
 const scheduleTableBody = document.getElementById("schedule-table-body");
@@ -699,7 +700,10 @@ function renderDashboardEmptyState() {
   dashboardTitle.textContent = "Team-Dashboard";
   dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
   dashboardGroupTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
-  dashboardMatchTable.innerHTML = '<tr><td colspan="6">Noch kein Team ausgewählt.</td></tr>';
+  dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
+  if (dashboardZaehlerTable) {
+    dashboardZaehlerTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
+  }
 }
 
 function renderGroupStandings(category, selectedCode) {
@@ -770,47 +774,32 @@ function renderTeamDashboard(teamId) {
 
   renderGroupStandings(category, code);
 
-  // Eigene Spiele (Team spielt selbst mit) und Zählerdienst-Spiele
-  // (Team ist gemäss Zähler-Regel für das Zählen verantwortlich) werden
-  // in derselben Tabelle zusammengeführt und nach Spielzeit sortiert.
-  // Beide Typen sind über die Spalte "Zähler" rechts und über eine
-  // klar abgesetzte Zeilenfarbe / -markierung unterscheidbar.
+  // Im Dashboard erscheinen zwei getrennte Tabellen:
+  //   • "Eigene Spiele"  – das ausgewählte Team spielt selbst mit.
+  //   • "Zählerdienst"   – das Team zählt das Spiel und gibt den
+  //                        Resultatzettel ab (gemäss Zähler-Regel).
+  // Beide Tabellen haben dasselbe Layout wie der Spielplan: zwei
+  // Zeit-Zellen (Start sticky, Ende scrollt mit), Feld als Zahl,
+  // Phase als farbiges Chip, Spiel als Inner-Grid mit Heim/Score/Gast.
+  // Eine eigene "Zähler"-Spalte ist nicht mehr nötig: jede Tabelle
+  // erklärt sich durch ihre Überschrift.
   const playerMatches = getMatchesForTeam(selectedTeam);
-  const zaehlerMatches = getZaehlerMatchesForTeam(selectedTeam);
+  const allZaehlerMatches = getZaehlerMatchesForTeam(selectedTeam);
   const playerIds = new Set(playerMatches.map((m) => m.id));
-  const entries = [
-    ...playerMatches.map((match) => ({ match, mode: "player" })),
-    ...zaehlerMatches
-      .filter((m) => !playerIds.has(m.id))
-      .map((match) => ({ match, mode: "zaehler" })),
-  ].sort((a, b) => a.match.time.localeCompare(b.match.time));
+  // Spiele, in denen das Team selbst mitspielt UND zählen müsste, gehören
+  // ausschliesslich in "Eigene Spiele". In der Zählerdienst-Liste tauchen
+  // sie nicht zusätzlich auf – die Zähler-Verantwortung fällt in solchen
+  // Fällen ohnehin an die Turnierorganisation (siehe getZaehlerForMatch).
+  const zaehlerMatches = allZaehlerMatches
+    .filter((m) => !playerIds.has(m.id))
+    .sort((a, b) => a.time.localeCompare(b.time));
 
-  if (!entries.length) {
-    if (!code) {
-      dashboardMatchTable.innerHTML = '<tr><td colspan="6">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
-    } else {
-      dashboardMatchTable.innerHTML = '<tr><td colspan="6">Keine Spiele gefunden.</td></tr>';
-    }
-    return;
-  }
-
-  // Layout 1:1 wie im Spielplan: zwei Zeit-Zellen (Start sticky, Ende
-  // scrollt mit), Feld nur als Zahl ("1"/"2"/"3") ohne "Feld "-Prefix,
-  // Phase als farbiges Chip mit Kategorie-Kürzel, Spiel als Inner-Grid
-  // mit Heim links / Resultat zentriert / Gast rechts. Ganz rechts die
-  // neue Spalte "Zähler": leer für eigene Spiele, "Zähler"-Badge für
-  // Zählerdienst-Spiele. Zählerdienst-Zeilen erhalten zusätzlich die
-  // Klasse `is-zaehler-row` für die optische Abgrenzung.
-  dashboardMatchTable.innerHTML = entries.map(({ match, mode }) => {
+  const renderRow = (match) => {
     const phaseBadge = phaseChipHtml(match);
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match);
-    const rowCls = mode === "zaehler" ? "is-zaehler-row" : "";
-    const zaehlerCell = mode === "zaehler"
-      ? `<span class="zaehler-badge" title="Du zählst dieses Spiel und gibst den Resultatzettel ab"><span class="zaehler-badge-dot" aria-hidden="true"></span>Zähler</span>`
-      : `<span class="zaehler-cell-empty" aria-hidden="true">–</span>`;
-    return `<tr${rowCls ? ` class="${rowCls}"` : ""}>
+    return `<tr>
       <td class="col-time-start">${match.time}</td>
       <td class="col-time-end">– ${match.endTime}</td>
       <td class="col-field">${escapeHtml(match.field)}</td>
@@ -822,9 +811,24 @@ function renderTeamDashboard(teamId) {
           <span class="col-game-away">${awayCell}</span>
         </div>
       </td>
-      <td class="col-zaehler">${zaehlerCell}</td>
     </tr>`;
-  }).join("");
+  };
+
+  if (playerMatches.length) {
+    dashboardMatchTable.innerHTML = playerMatches.map(renderRow).join("");
+  } else if (!code) {
+    dashboardMatchTable.innerHTML = '<tr><td colspan="5">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
+  } else {
+    dashboardMatchTable.innerHTML = '<tr><td colspan="5">Keine eigenen Spiele gefunden.</td></tr>';
+  }
+
+  if (dashboardZaehlerTable) {
+    if (zaehlerMatches.length) {
+      dashboardZaehlerTable.innerHTML = zaehlerMatches.map(renderRow).join("");
+    } else {
+      dashboardZaehlerTable.innerHTML = '<tr><td colspan="5">Kein Zählerdienst für dieses Team.</td></tr>';
+    }
+  }
 }
 
 function renderDashboardTeamOptions() {
