@@ -562,58 +562,69 @@
 
       /* ── Spielplan: Zeit-Spalte aufgeteilt + sticky beim horizontalen
          Scrollen ────────────────────────────────────────────────────────
-         Damit man im Spielplan auch beim Rechts-Scrollen jederzeit die
-         Startzeit eines Spiels ablesen kann, ist die "Zeit"-Spalte in zwei
-         Zellen geteilt:
+         Die "Zeit"-Spalte ist technisch in zwei Zellen geteilt, soll aber
+         im Standardzustand wie eine einzige Spalte aussehen:
            • col-time-start  →  z. B. "12:00"  – bleibt am linken Rand sticky
            • col-time-end    →  z. B. "– 12:10" – scrollt mit dem Rest mit
-         Auch der Spaltentitel "Zeit" (th.col-time-start) ist sticky, damit er
-         beim Scrollen immer sichtbar bleibt.
-         Wichtig: die sticky-Zellen brauchen einen opaken Hintergrund, sonst
-         scheinen die darunter-scrollenden Inhalte durch. */
+         Damit der Übergang nahtlos wirkt, bekommen beide Zellen dieselben
+         Hintergründe (auch für gerade Zeilen, Header und selektierte Zeile)
+         und der Text in beiden Zellen ist identisch gross und farbig. Die
+         Start-Zelle ist so schmal wie möglich (kein Right-Padding); die
+         kleine Lücke zwischen "12:00" und "– 12:10" entsteht aus dem Left-
+         Padding der End-Zelle und entspricht etwa einem Leerzeichen.
+         Erst beim horizontalen Scrollen sieht man den Unterschied: dann
+         scrollt col-time-end mit dem übrigen Inhalt nach links unter
+         col-time-start hindurch – der opake Hintergrund der sticky Start-
+         Zelle verdeckt diesen Inhalt sauber. */
       #schedule-panel .schedule-table th.col-time-start,
       #schedule-panel .schedule-table td.col-time-start,
       #schedule-panel .schedule-table th.col-time-end,
       #schedule-panel .schedule-table td.col-time-end {
         white-space: nowrap;
+        /* solide Farbe ≈ Panel-Hintergrund, damit unter der sticky Zelle
+           durchscrollende Inhalte sauber verdeckt werden – und beide Zeit-
+           Zellen wie eine einzige Zelle aussehen. */
+        background-color: #11132a;
+      }
+      #schedule-panel .schedule-table th.col-time-start,
+      #schedule-panel .schedule-table th.col-time-end {
+        background-color: #1d2040;
       }
       #schedule-panel .schedule-table th.col-time-start,
       #schedule-panel .schedule-table td.col-time-start {
         position: sticky;
         left: 0;
         z-index: 2;
-        /* solide Farbe ≈ Panel-Hintergrund, damit darunter-scrollende Zellen
-           sauber verdeckt werden. */
-        background-color: #11132a;
-        /* eng an die End-Zeit angeschmiegt */
-        padding-right: 0.25rem;
+        /* Start-Zeit so schmal wie möglich – kein Right-Padding, damit
+           "12:00" direkt an der Grenze zur End-Zelle sitzt. */
+        padding-right: 0;
       }
       #schedule-panel .schedule-table th.col-time-start {
-        /* Header muss über den Body-Zellen liegen */
+        /* Header muss über den Body-Zellen liegen. */
         z-index: 3;
-        background-color: #1d2040;
       }
       #schedule-panel .schedule-table td.col-time-end,
       #schedule-panel .schedule-table th.col-time-end {
-        padding-left: 0.1rem;
+        /* Schmale Lücke zwischen "12:00" und "– 12:10" – entspricht
+           ungefähr einem Leerzeichen, damit beide Zellen wie eine einzige
+           wirken. */
+        padding-left: 0.35rem;
       }
       #schedule-panel .schedule-table td.col-time-end .time-range {
-        color: var(--muted);
-        font-size: 0.9em;
+        /* End-Zeit erbt Farbe und Schriftgrösse von der Zelle, damit sie
+           identisch zur Start-Zeit aussieht (kein muted, kein Schrumpfen). */
+        color: inherit;
+        font-size: inherit;
       }
-      /* Dezente Trennlinie rechts von der sticky-Zelle, damit sie beim
-         Scrollen visuell vom mitscrollenden Inhalt abgesetzt ist. */
-      #schedule-panel .schedule-table td.col-time-start {
-        box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
+      #schedule-panel .schedule-table tr.is-selected-row td.col-time-start,
+      #schedule-panel .schedule-table tr.is-selected-row td.col-time-end {
+        /* Selektierte Zeile: beide Zeit-Zellen bekommen dieselbe opake
+           Indigo-Tönung, damit sie weiterhin wie eine einzige Zelle wirken. */
+        background-color: #1d2148;
       }
       #schedule-panel .schedule-table tr.is-selected-row td.col-time-start {
-        /* selektierte Zeilen behalten ihre Indigo-Tönung, auch in der sticky
-           Zelle – die Zelle muss aber weiterhin opak sein. */
-        background-color: #1d2148;
-        /* Selektions-Akzent (3-Pixel Balken links) wieder anzeigen, plus
-           Trennlinie rechts. */
-        box-shadow: inset 3px 0 0 rgba(var(--pvt-indigo-light), 0.9),
-                    inset -1px 0 0 rgba(255, 255, 255, 0.05);
+        /* Selektions-Akzent (3-Pixel Balken links) wieder anzeigen. */
+        box-shadow: inset 3px 0 0 rgba(var(--pvt-indigo-light), 0.9);
       }
 
       /* ── Spielplan: Spalte "Spiel" so schmal wie möglich ──────────────
@@ -629,15 +640,18 @@
           min-width: 0;
           padding: 0 0.25rem;
         }
-        /* Zeit-Spalten extra-kompakt auf Mobile */
+        /* Zeit-Spalten extra-kompakt auf Mobile – Start-Zelle weiterhin
+           ohne Right-Padding, damit beide Zellen wie eine einzige Spalte
+           wirken. Die Lücke zur End-Zelle (≈ ein Leerzeichen) bleibt
+           über padding-left an col-time-end erhalten. */
         #schedule-panel .schedule-table td.col-time-start,
         #schedule-panel .schedule-table th.col-time-start {
           padding-left: 0.4rem;
-          padding-right: 0.2rem;
+          padding-right: 0;
         }
         #schedule-panel .schedule-table td.col-time-end,
         #schedule-panel .schedule-table th.col-time-end {
-          padding-left: 0.05rem;
+          padding-left: 0.3rem;
           padding-right: 0.3rem;
         }
       }
@@ -657,9 +671,12 @@
         .schedule-table { font-size: 9pt; }
         .schedule-table th { background: #ddd !important; color: #000 !important; }
         .schedule-table td { color: #000 !important; }
-        /* Im Druck keine sticky-Zellen: alles soll als normale Tabelle laufen. */
+        /* Im Druck keine sticky-Zellen und keine eingefärbten Hintergründe –
+           beide Zeit-Zellen sollen als normale Tabellenzellen laufen. */
         #schedule-panel .schedule-table th.col-time-start,
-        #schedule-panel .schedule-table td.col-time-start {
+        #schedule-panel .schedule-table td.col-time-start,
+        #schedule-panel .schedule-table th.col-time-end,
+        #schedule-panel .schedule-table td.col-time-end {
           position: static !important;
           background: transparent !important;
           box-shadow: none !important;
