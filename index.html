@@ -488,7 +488,6 @@
 
       /* Spielplan-Tabelle: kleine Anpassungen */
       .schedule-table .col-time { white-space: nowrap; }
-      .schedule-table .col-time .time-range { color: var(--muted); font-size: 0.85em; }
       .schedule-table .col-field { white-space: nowrap; }
       .schedule-table .col-category { white-space: nowrap; }
       .schedule-result-empty { color: rgba(245,245,245,0.5); }
@@ -518,14 +517,11 @@
       #schedule-panel .schedule-table .team-link,
       #schedule-panel .schedule-table .team-placeholder,
       #schedule-panel .schedule-table .phase-chip,
-      #schedule-panel .schedule-table .schedule-result,
-      #schedule-panel .schedule-table .time-range,
-      #schedule-panel .schedule-table .time-start {
+      #schedule-panel .schedule-table .schedule-result {
         font-weight: 400;
         font-size: 0.92rem;
         font-family: inherit;
       }
-      #schedule-panel .schedule-table .time-range { color: var(--muted); }
       #schedule-panel .schedule-table .team-link.is-winner { font-weight: 400; }
       #schedule-panel .schedule-table .team-link.is-loser  { font-weight: 400; }
       #schedule-panel .schedule-table .team-link.is-draw   { font-weight: 400; }
@@ -552,79 +548,45 @@
         #schedule-panel .schedule-table .team-link,
         #schedule-panel .schedule-table .team-placeholder,
         #schedule-panel .schedule-table .phase-chip,
-        #schedule-panel .schedule-table .schedule-result,
-        #schedule-panel .schedule-table .time-range,
-        #schedule-panel .schedule-table .time-start {
+        #schedule-panel .schedule-table .schedule-result {
           font-size: 0.82rem;
         }
         #schedule-panel .schedule-standings-toggle { font-size: 0.85rem; }
       }
 
-      /* ── Spielplan: Zeit-Spalte aufgeteilt + sticky beim horizontalen
-         Scrollen ────────────────────────────────────────────────────────
-         Die "Zeit"-Spalte ist technisch in zwei Zellen geteilt, soll aber
-         im Standardzustand wie eine einzige Spalte aussehen:
-           • col-time-start  →  z. B. "12:00"  – bleibt am linken Rand sticky
-           • col-time-end    →  z. B. "– 12:10" – scrollt mit dem Rest mit
-         Damit der Übergang nahtlos wirkt, bekommen beide Zellen dieselben
-         Hintergründe (auch für gerade Zeilen, Header und selektierte Zeile)
-         und der Text in beiden Zellen ist identisch gross und farbig. Die
-         Start-Zelle ist so schmal wie möglich (kein Right-Padding); die
-         kleine Lücke zwischen "12:00" und "– 12:10" entsteht aus dem Left-
-         Padding der End-Zelle und entspricht etwa einem Leerzeichen.
-         Erst beim horizontalen Scrollen sieht man den Unterschied: dann
-         scrollt col-time-end mit dem übrigen Inhalt nach links unter
-         col-time-start hindurch – der opake Hintergrund der sticky Start-
-         Zelle verdeckt diesen Inhalt sauber. */
-      #schedule-panel .schedule-table th.col-time-start,
-      #schedule-panel .schedule-table td.col-time-start,
-      #schedule-panel .schedule-table th.col-time-end,
-      #schedule-panel .schedule-table td.col-time-end {
-        white-space: nowrap;
-        /* solide Farbe ≈ Panel-Hintergrund, damit unter der sticky Zelle
-           durchscrollende Inhalte sauber verdeckt werden – und beide Zeit-
-           Zellen wie eine einzige Zelle aussehen. */
-        background-color: #11132a;
-      }
-      #schedule-panel .schedule-table th.col-time-start,
-      #schedule-panel .schedule-table th.col-time-end {
-        background-color: #1d2040;
-      }
-      #schedule-panel .schedule-table th.col-time-start,
-      #schedule-panel .schedule-table td.col-time-start {
+      /* ── Spielplan: Zeit-Spalte sticky beim horizontalen Scrollen ─────
+         Die Zeit bleibt beim Scrollen am linken Rand sichtbar. Optisch
+         soll sie aber exakt wie die anderen Zellen aussehen – inklusive
+         der abwechselnden Zeilenfärbung, des Header-Tints und der
+         Selektions-Färbung. Sticky-Zellen brauchen einen opaken
+         Hintergrund (damit darunter durchscrollende Inhalte verdeckt
+         werden); deshalb legen wir auf einen opaken Basis-Ton (≈ Farbe
+         hinter dem Panel) genau dieselben rgba-Tints, die der Rest der
+         Tabelle als Hintergrund nutzt. Resultat: kein visueller
+         Unterschied zur restlichen Zeile. */
+      #schedule-panel .schedule-table th.col-time,
+      #schedule-panel .schedule-table td.col-time {
         position: sticky;
         left: 0;
+        z-index: 1;
+        /* Opaker Fallback ≈ Panel-Hintergrund (body #0a0c1c + 3% white
+           Panel-Tint, plus etwas Indigo aus den Hintergrund-Gradienten). */
+        background-color: #11132a;
+      }
+      #schedule-panel .schedule-table th.col-time {
+        /* Header-Tint exakt gleich wie andere th's (rgba 8% Weiss). */
+        background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
         z-index: 2;
-        /* Start-Zeit so schmal wie möglich – kein Right-Padding, damit
-           "12:00" direkt an der Grenze zur End-Zelle sitzt. */
-        padding-right: 0;
       }
-      #schedule-panel .schedule-table th.col-time-start {
-        /* Header muss über den Body-Zellen liegen. */
-        z-index: 3;
+      #schedule-panel .schedule-table tbody tr:nth-child(even) td.col-time {
+        /* Gerade Zeile: zusätzlicher 3%-Weiss-Tint wie alle anderen
+           geraden Zellen. */
+        background-image: linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03));
       }
-      #schedule-panel .schedule-table td.col-time-end,
-      #schedule-panel .schedule-table th.col-time-end {
-        /* Schmale Lücke zwischen "12:00" und "– 12:10" – entspricht
-           ungefähr einem Leerzeichen, damit beide Zellen wie eine einzige
-           wirken. */
-        padding-left: 0.35rem;
-      }
-      #schedule-panel .schedule-table td.col-time-end .time-range {
-        /* End-Zeit erbt Farbe und Schriftgrösse von der Zelle, damit sie
-           identisch zur Start-Zeit aussieht (kein muted, kein Schrumpfen). */
-        color: inherit;
-        font-size: inherit;
-      }
-      #schedule-panel .schedule-table tr.is-selected-row td.col-time-start,
-      #schedule-panel .schedule-table tr.is-selected-row td.col-time-end {
-        /* Selektierte Zeile: beide Zeit-Zellen bekommen dieselbe opake
-           Indigo-Tönung, damit sie weiterhin wie eine einzige Zelle wirken. */
-        background-color: #1d2148;
-      }
-      #schedule-panel .schedule-table tr.is-selected-row td.col-time-start {
-        /* Selektions-Akzent (3-Pixel Balken links) wieder anzeigen. */
-        box-shadow: inset 3px 0 0 rgba(var(--pvt-indigo-light), 0.9);
+      #schedule-panel .schedule-table tr.is-selected-row td.col-time {
+        /* Selektierte Zeile: derselbe Indigo-Tint wie auf den anderen
+           Zellen der selektierten Zeile. */
+        background-image: linear-gradient(rgba(var(--pvt-indigo), 0.18), rgba(var(--pvt-indigo), 0.18));
       }
 
       /* ── Spielplan: Spalte "Spiel" so schmal wie möglich ──────────────
@@ -639,20 +601,6 @@
         #schedule-panel .schedule-table .col-game-score {
           min-width: 0;
           padding: 0 0.25rem;
-        }
-        /* Zeit-Spalten extra-kompakt auf Mobile – Start-Zelle weiterhin
-           ohne Right-Padding, damit beide Zellen wie eine einzige Spalte
-           wirken. Die Lücke zur End-Zelle (≈ ein Leerzeichen) bleibt
-           über padding-left an col-time-end erhalten. */
-        #schedule-panel .schedule-table td.col-time-start,
-        #schedule-panel .schedule-table th.col-time-start {
-          padding-left: 0.4rem;
-          padding-right: 0;
-        }
-        #schedule-panel .schedule-table td.col-time-end,
-        #schedule-panel .schedule-table th.col-time-end {
-          padding-left: 0.3rem;
-          padding-right: 0.3rem;
         }
       }
 
@@ -671,15 +619,13 @@
         .schedule-table { font-size: 9pt; }
         .schedule-table th { background: #ddd !important; color: #000 !important; }
         .schedule-table td { color: #000 !important; }
-        /* Im Druck keine sticky-Zellen und keine eingefärbten Hintergründe –
-           beide Zeit-Zellen sollen als normale Tabellenzellen laufen. */
-        #schedule-panel .schedule-table th.col-time-start,
-        #schedule-panel .schedule-table td.col-time-start,
-        #schedule-panel .schedule-table th.col-time-end,
-        #schedule-panel .schedule-table td.col-time-end {
+        /* Im Druck keine sticky Zeit-Zelle und keine eingefärbten Layer –
+           die Zeit-Spalte läuft als normale Tabellenzelle mit. */
+        #schedule-panel .schedule-table th.col-time,
+        #schedule-panel .schedule-table td.col-time {
           position: static !important;
-          background: transparent !important;
-          box-shadow: none !important;
+          background-color: transparent !important;
+          background-image: none !important;
         }
         /* Zeilen-Einfärbung pro Kategorie wurde entfernt – auch im Druck. */
         .cat-chip, .phase-chip, .net-switch, .team-code { border: 1px solid #999; color: #000 !important; background: #fff !important; }
@@ -950,7 +896,7 @@
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
-              <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
+              <thead><tr><th>Zeit</th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
               <tbody id="schedule-table-body"><tr><td colspan="5">Spielplan wird geladen…</td></tr></tbody>
             </table>
           </div>
