@@ -529,6 +529,25 @@ function zaehlerCellHtml(match) {
   return `<span class="team-placeholder schedule-zaehler-team">${escapeHtml(displayName)}</span>`;
 }
 
+// Liefert alle Spiele, bei denen das angegebene Team gemäss Zähler-Regel
+// für das Zählen / Abgeben des Resultatzettels zuständig ist. Ein Team
+// gilt nur dann als Zähler, wenn die Zähler-Referenz schon konkret auf
+// dieses Team aufgelöst werden kann (über `refTeamId`). Spiele mit noch
+// unaufgelöstem Vorgänger (z. B. "Sieger Halbfinal 1") werden erst
+// sichtbar, sobald die Auflösung möglich ist – analog zur Spielplan-
+// Anzeige der Zähler-Spalte.
+function getZaehlerMatchesForTeam(team) {
+  if (!team || !team.id) return [];
+  const out = [];
+  for (const match of TOURNAMENT_SCHEDULE) {
+    const z = getZaehlerForMatch(match);
+    if (z.kind !== "team") continue;
+    const id = refTeamId(z.ref, z.category);
+    if (id === team.id) out.push(match);
+  }
+  return out;
+}
+
 
 function scoreCellHtml(match, { editable = false } = {}) {
   const score = resultMap[match.id] || { home: "", away: "" };
@@ -680,7 +699,7 @@ function renderDashboardEmptyState() {
   dashboardTitle.textContent = "Team-Dashboard";
   dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
   dashboardGroupTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
-  dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
+  dashboardMatchTable.innerHTML = '<tr><td colspan="6">Noch kein Team ausgewählt.</td></tr>';
 }
 
 function renderGroupStandings(category, selectedCode) {
@@ -751,12 +770,26 @@ function renderTeamDashboard(teamId) {
 
   renderGroupStandings(category, code);
 
-  const matches = getMatchesForTeam(selectedTeam);
-  if (!matches.length) {
+  // Eigene Spiele (Team spielt selbst mit) und Zählerdienst-Spiele
+  // (Team ist gemäss Zähler-Regel für das Zählen verantwortlich) werden
+  // in derselben Tabelle zusammengeführt und nach Spielzeit sortiert.
+  // Beide Typen sind über die Spalte "Zähler" rechts und über eine
+  // klar abgesetzte Zeilenfarbe / -markierung unterscheidbar.
+  const playerMatches = getMatchesForTeam(selectedTeam);
+  const zaehlerMatches = getZaehlerMatchesForTeam(selectedTeam);
+  const playerIds = new Set(playerMatches.map((m) => m.id));
+  const entries = [
+    ...playerMatches.map((match) => ({ match, mode: "player" })),
+    ...zaehlerMatches
+      .filter((m) => !playerIds.has(m.id))
+      .map((match) => ({ match, mode: "zaehler" })),
+  ].sort((a, b) => a.match.time.localeCompare(b.match.time));
+
+  if (!entries.length) {
     if (!code) {
-      dashboardMatchTable.innerHTML = '<tr><td colspan="5">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
+      dashboardMatchTable.innerHTML = '<tr><td colspan="6">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
     } else {
-      dashboardMatchTable.innerHTML = '<tr><td colspan="5">Keine Spiele gefunden.</td></tr>';
+      dashboardMatchTable.innerHTML = '<tr><td colspan="6">Keine Spiele gefunden.</td></tr>';
     }
     return;
   }
@@ -764,13 +797,20 @@ function renderTeamDashboard(teamId) {
   // Layout 1:1 wie im Spielplan: zwei Zeit-Zellen (Start sticky, Ende
   // scrollt mit), Feld nur als Zahl ("1"/"2"/"3") ohne "Feld "-Prefix,
   // Phase als farbiges Chip mit Kategorie-Kürzel, Spiel als Inner-Grid
-  // mit Heim links / Resultat zentriert / Gast rechts.
-  dashboardMatchTable.innerHTML = matches.map((match) => {
+  // mit Heim links / Resultat zentriert / Gast rechts. Ganz rechts die
+  // neue Spalte "Zähler": leer für eigene Spiele, "Zähler"-Badge für
+  // Zählerdienst-Spiele. Zählerdienst-Zeilen erhalten zusätzlich die
+  // Klasse `is-zaehler-row` für die optische Abgrenzung.
+  dashboardMatchTable.innerHTML = entries.map(({ match, mode }) => {
     const phaseBadge = phaseChipHtml(match);
     const homeCell = teamCellHtml(match.home, match.category, match.id, "home");
     const awayCell = teamCellHtml(match.away, match.category, match.id, "away");
     const scoreCell = scoreCellHtml(match);
-    return `<tr>
+    const rowCls = mode === "zaehler" ? "is-zaehler-row" : "";
+    const zaehlerCell = mode === "zaehler"
+      ? `<span class="zaehler-badge" title="Du zählst dieses Spiel und gibst den Resultatzettel ab"><span class="zaehler-badge-dot" aria-hidden="true"></span>Zähler</span>`
+      : `<span class="zaehler-cell-empty" aria-hidden="true">–</span>`;
+    return `<tr${rowCls ? ` class="${rowCls}"` : ""}>
       <td class="col-time-start">${match.time}</td>
       <td class="col-time-end">– ${match.endTime}</td>
       <td class="col-field">${escapeHtml(match.field)}</td>
@@ -782,6 +822,7 @@ function renderTeamDashboard(teamId) {
           <span class="col-game-away">${awayCell}</span>
         </div>
       </td>
+      <td class="col-zaehler">${zaehlerCell}</td>
     </tr>`;
   }).join("");
 }
