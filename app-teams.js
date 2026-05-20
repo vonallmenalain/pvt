@@ -10,6 +10,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
   TOURNAMENT_SCHEDULE,
@@ -45,6 +46,13 @@ const cancelBtn = document.getElementById("team-cancel");
 const errorEl = document.getElementById("team-error");
 const teamCategorySelect = document.getElementById("team-category");
 const teamCodeSelect = document.getElementById("team-code");
+
+const editModal = document.getElementById("team-edit-modal");
+const editForm = document.getElementById("team-edit-form");
+const editCancelBtn = document.getElementById("team-edit-cancel");
+const editErrorEl = document.getElementById("team-edit-error");
+const editCategorySelect = document.getElementById("team-edit-category");
+const editCodeSelect = document.getElementById("team-edit-code");
 
 const dashboardPanel = document.getElementById("dashboard-panel");
 const dashboardTeamSelect = document.getElementById("dashboard-team-select");
@@ -133,6 +141,40 @@ function closeModal() {
   modal.hidden = true;
   if (errorEl) errorEl.textContent = "";
   form?.reset();
+}
+
+function openEditModal(teamId) {
+  const team = allTeams.find((t) => t.id === teamId);
+  if (!team || !editForm) return;
+  if (editErrorEl) editErrorEl.textContent = "";
+  editForm.teamId.value = team.id;
+  editForm.teamName.value = team.name ?? "";
+  editForm.community.value = team.community ?? "";
+  editForm.manager.value = team.manager ?? "";
+  refreshEditTeamCodeOptions(team.category, team.code ?? "");
+  editForm.category.value = team.category ?? "youth";
+  editModal.hidden = false;
+  editForm.teamName?.focus();
+}
+
+function closeEditModal() {
+  if (editModal) editModal.hidden = true;
+  if (editErrorEl) editErrorEl.textContent = "";
+  editForm?.reset();
+}
+
+function refreshEditTeamCodeOptions(category, selectedCode) {
+  if (!editCodeSelect) return;
+  const codes = CATEGORY_CODES[category] ?? [];
+  const usedCodes = new Set(allTeams.map((t) => t.code).filter(Boolean));
+  editCodeSelect.innerHTML =
+    `<option value="">– kein Code –</option>` +
+    codes
+      .map((c) => {
+        const taken = usedCodes.has(c) && c !== selectedCode;
+        return `<option value="${c}" ${c === selectedCode ? "selected" : ""} ${taken ? "disabled" : ""}>${c}${taken ? " (vergeben)" : ""}</option>`;
+      })
+      .join("");
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────
@@ -679,14 +721,17 @@ function syncScheduleTilesUI() {
 
 // ── Teams-Tab ────────────────────────────────────────────────────────────────
 function renderTeamCard(team) {
-  const canDelete = Boolean(currentUser);
+  const isAdmin = Boolean(currentUser);
   return `<li class="team-card" data-team-select="${team.id}">
     <div class="team-card-content">
       <p class="team-name">${escapeHtml(team.name)}</p>
       <p class="team-meta">Gemeinde: ${escapeHtml(team.community)}</p>
       <p class="team-meta">Mannschaftsverantwortlich: ${escapeHtml(team.manager)}</p>
     </div>
-    ${canDelete ? `<button type="button" class="team-delete" data-team-id="${team.id}">Löschen</button>` : ""}
+    ${isAdmin ? `<div class="team-admin-actions">
+      <button type="button" class="team-edit" data-team-id="${team.id}">Bearbeiten</button>
+      <button type="button" class="team-delete" data-team-id="${team.id}">Löschen</button>
+    </div>` : ""}
   </li>`;
 }
 
@@ -1064,14 +1109,50 @@ form?.addEventListener("submit", async (event) => {
   }
 });
 
+editCancelBtn?.addEventListener("click", () => closeEditModal());
+
+editCategorySelect?.addEventListener("change", () => {
+  refreshEditTeamCodeOptions(editCategorySelect.value, "");
+});
+
+editForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentUser) return;
+  const teamId = editForm.teamId.value;
+  const name = editForm.teamName.value.trim();
+  const community = editForm.community.value.trim();
+  const manager = editForm.manager.value.trim();
+  const category = editForm.category.value;
+  const code = editCodeSelect?.value?.trim() || "";
+  if (!teamId || !name || !community || !manager || !category) {
+    if (editErrorEl) editErrorEl.textContent = "Bitte alle Pflichtfelder ausfüllen.";
+    return;
+  }
+  if (code && CODE_TO_CATEGORY[code] !== category) {
+    if (editErrorEl) editErrorEl.textContent = "Spielcode passt nicht zur Kategorie.";
+    return;
+  }
+  if (code && allTeams.some((t) => t.code === code && t.id !== teamId)) {
+    if (editErrorEl) editErrorEl.textContent = "Dieser Spielcode ist bereits vergeben.";
+    return;
+  }
+  const payload = { name, community, manager, category, code: code || null };
+  try {
+    await updateDoc(doc(db, "teams", teamId), payload);
+    closeEditModal();
+  } catch {
+    if (editErrorEl) editErrorEl.textContent = "Team konnte nicht gespeichert werden.";
+  }
+});
+
 // ── Firebase Auth + Snapshots ────────────────────────────────────────────────
 onAuthStateChanged(auth, (user) => {
   currentUser = user;
   if (createButton) createButton.hidden = !user;
   if (orgViewBtn) orgViewBtn.hidden = !user;
   if (!user && !orgPanel?.hidden) setView("infos");
-  if (!user) closeModal();
-  document.querySelectorAll(".team-delete").forEach((button) => { button.hidden = !user; });
+  if (!user) { closeModal(); closeEditModal(); }
+  document.querySelectorAll(".team-delete, .team-edit").forEach((button) => { button.hidden = !user; });
   if (selectedTeamId) renderTeamDashboard(selectedTeamId);
   renderSchedule();
   renderOrganizationPanel();
@@ -1092,20 +1173,30 @@ onSnapshot(collection(db, "resultate"), (snapshot) => {
   renderRangliste();
 });
 
-// ── Team-Klicks (Dashboard-Sprung) + Löschen ─────────────────────────────────
+// ── Team-Klicks (Dashboard-Sprung) + Bearbeiten + Löschen ────────────────────
 document.addEventListener("click", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
+
+  if (target.matches(".team-edit")) {
+    if (!currentUser) return;
+    const teamId = target.dataset.teamId;
+    if (teamId) openEditModal(teamId);
+    return;
+  }
+
+  if (target.matches(".team-delete")) {
+    if (!currentUser) return;
+    const teamId = target.dataset.teamId;
+    if (teamId) await deleteDoc(doc(db, "teams", teamId));
+    return;
+  }
+
   const teamCard = target.closest("[data-team-select]");
-  if (teamCard && !(target.matches(".team-delete"))) {
+  if (teamCard) {
     renderTeamDashboard(teamCard.getAttribute("data-team-select"));
     setView("dashboard");
   }
-  if (!target.matches(".team-delete")) return;
-  if (!currentUser) return;
-  const teamId = target.dataset.teamId;
-  if (!teamId) return;
-  await deleteDoc(doc(db, "teams", teamId));
 });
 
 // ── Kategorie-Klicks (Spielplan filtern) ─────────────────────────────────────

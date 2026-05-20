@@ -183,6 +183,8 @@
       .team-name { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.2; }
       .team-meta { margin: 0 0 0.25rem; font-size: 0.86rem; color: var(--muted); }
       .team-meta:last-child { margin-bottom: 0; }
+      .team-admin-actions { display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0; }
+      .team-edit { background: #2d5a9e; padding: 0.45rem 0.6rem; font-size: 0.82rem; }
       .team-delete { background: #a83c3c; padding: 0.45rem 0.6rem; font-size: 0.82rem; }
       .team-empty { color: var(--muted); font-size: 0.92rem; }
 
@@ -1189,6 +1191,22 @@
           <div class="auth-field" hidden><label for="team-code">Spielcode (Kürzel im Plan)</label><select id="team-code" name="code"><option value="">– kein Code –</option></select></div>
           <p class="auth-error" id="team-error" role="alert"></p>
           <div class="auth-actions"><button type="button" class="secondary" id="team-cancel">Abbrechen</button><button type="submit">Speichern</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="auth-modal" id="team-edit-modal" role="dialog" aria-modal="true" aria-labelledby="team-edit-title" hidden>
+      <div class="auth-dialog">
+        <h2 id="team-edit-title">Team bearbeiten</h2>
+        <form id="team-edit-form">
+          <input type="hidden" id="team-edit-id" name="teamId" />
+          <div class="auth-field"><label for="team-edit-name">Teamname</label><input id="team-edit-name" name="teamName" type="text" required /></div>
+          <div class="auth-field"><label for="team-edit-community">Gemeinde</label><input id="team-edit-community" name="community" type="text" required /></div>
+          <div class="auth-field"><label for="team-edit-manager">Mannschaftsverantwortlicher</label><input id="team-edit-manager" name="manager" type="text" required /></div>
+          <div class="auth-field"><label for="team-edit-category">Kategorie</label><select id="team-edit-category" name="category" required><option value="youth">Jugendliche</option><option value="adult_fun">Erwachsene Plausch</option><option value="adult_ambitious">Erwachsene Ambitioniert</option></select></div>
+          <div class="auth-field"><label for="team-edit-code">Spielcode (Kürzel im Plan)</label><select id="team-edit-code" name="code"><option value="">– kein Code –</option></select></div>
+          <p class="auth-error" id="team-edit-error" role="alert"></p>
+          <div class="auth-actions"><button type="button" class="secondary" id="team-edit-cancel">Abbrechen</button><button type="submit">Speichern</button></div>
         </form>
       </div>
     </div>
