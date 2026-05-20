@@ -20,6 +20,7 @@ import {
   CATEGORY_CODES,
   CATEGORY_PREFIX,
   CODE_TO_CATEGORY,
+  getField2NetSwitches,
 } from "./tournament-schedule.js";
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
@@ -938,6 +939,11 @@ function renderOrganizationPanel() {
     return { time, matches };
   });
 
+  // Field-2-Matches, vor denen die Netzhöhe gewechselt werden muss.
+  // Wenn ein Match in einem Zeitslot davon betroffen ist, wird die Startzeit
+  // dieses Slots rot markiert, damit klar ist: vorher Netz anpassen!
+  const netSwitches = getField2NetSwitches();
+
   orgRows.innerHTML = slots.map((slot, idx) => {
     const inner = slot.matches.map((match) => {
       const score = resultMap[match.id] || { home: "", away: "" };
@@ -964,7 +970,13 @@ function renderOrganizationPanel() {
     const isOpen = openOrgSlots.has(idx);
     const hiddenAttr = isOpen ? "" : " hidden";
     const arrow = isOpen ? "▴" : "▾";
-    return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}"><span>${slot.time}</span><span>${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
+    const netSwitchMatch = slot.matches.find((m) => netSwitches.has(m.id));
+    const needsNetSwitch = Boolean(netSwitchMatch);
+    const timeClass = needsNetSwitch ? "org-time-netswitch" : "";
+    const timeTitle = needsNetSwitch
+      ? ` title="Vor diesem Spiel muss die Netzhöhe auf Feld 2 auf ${netSwitchMatch.netHeight === "youth" ? "Jugend" : "Erwachsene"} angepasst werden."`
+      : "";
+    return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}"><span class="${timeClass}"${timeTitle}>${slot.time}</span><span>${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
   }).join("");
 
   // Spaltenbreiten (--org-team-w / --org-zaehler-w) berechnen, damit alle
