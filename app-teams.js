@@ -32,7 +32,6 @@ const ranglistePanel = document.getElementById("rangliste-panel");
 const ranglisteTableBody = document.getElementById("rangliste-table-body");
 const ranglisteFinalList = document.getElementById("rangliste-final-list");
 const ranglisteCategoryTiles = document.querySelectorAll(".rangliste-category-tiles .cat-tile");
-const ranglistePodiumWrap = document.getElementById("rangliste-podium");
 
 const teamLists = {
   youth: document.getElementById("teams-list-youth"),
@@ -1539,42 +1538,6 @@ function syncRanglisteTilesUI() {
   });
 }
 
-function renderPodium(finalRanking) {
-  if (!ranglistePodiumWrap) return;
-  const top3 = finalRanking.slice(0, 3);
-  if (!top3.length) {
-    ranglistePodiumWrap.innerHTML = "";
-    ranglistePodiumWrap.hidden = true;
-    return;
-  }
-  ranglistePodiumWrap.hidden = false;
-  const byRank = new Map(top3.map((entry) => [entry.rank, entry]));
-  // Render in DOM-Reihenfolge 1-2-3; CSS sortiert visuell 2-1-3 via `order`.
-  const html = ['<div class="podium">'];
-  for (const rank of [1, 2, 3]) {
-    const entry = byRank.get(rank);
-    const isPending = !entry || !entry.definitive;
-    const teamLabel = !isPending && entry?.team
-      ? escapeHtml(entry.team.name)
-      : !isPending && entry?.code
-        ? escapeHtml(entry.code)
-        : "noch offen";
-    const nameClass = isPending ? "podium-team-name is-pending" : "podium-team-name";
-    const spotClass = `podium-spot is-rank-${rank}${isPending ? " is-pending" : ""}`;
-    const titleAttr = isPending ? "" : ` title="${teamLabel}"`;
-    html.push(
-      `<div class="${spotClass}">
-        <div class="podium-card">
-          <p class="${nameClass}"${titleAttr}>${teamLabel}</p>
-        </div>
-        <div class="podium-base" aria-label="Rang ${rank}">${rank}</div>
-      </div>`
-    );
-  }
-  html.push("</div>");
-  ranglistePodiumWrap.innerHTML = html.join("");
-}
-
 function renderRangliste() {
   if (!ranglisteTableBody && !ranglisteFinalList) return;
   const codes = CATEGORY_CODES[selectedRanglisteCategory] || [];
@@ -1586,21 +1549,13 @@ function renderRangliste() {
     if (ranglisteTableBody) {
       ranglisteTableBody.innerHTML = '<tr><td colspan="7">Keine Daten verfügbar.</td></tr>';
     }
-    if (ranglistePodiumWrap) {
-      ranglistePodiumWrap.innerHTML = "";
-      ranglistePodiumWrap.hidden = true;
-    }
     return;
   }
 
   const finalRanking = getFinalRanking(selectedRanglisteCategory);
-  renderPodium(finalRanking);
 
-  // Liste unter dem Podest: nur Ränge 4+. Die ersten drei Plätze stehen
-  // bereits prominent im Podest und müssen darunter nicht wiederholt
-  // werden. Noch nicht definitive Ränge werden als „noch offen" angezeigt.
   if (ranglisteFinalList) {
-    const remaining = finalRanking.filter(({ rank }) => rank > 3);
+    const remaining = finalRanking;
     if (!remaining.length) {
       ranglisteFinalList.innerHTML = "";
     } else {
