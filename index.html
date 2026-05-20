@@ -286,14 +286,20 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-bottom: none;
         min-height: 3rem;
+        container-type: inline-size;
       }
       .podium-team-name {
         font-weight: 800;
         color: var(--text);
-        font-size: 1.15rem;
-        line-height: 1.2;
+        font-size: clamp(0.78rem, 4.5cqi, 1.05rem);
+        line-height: 1.25;
         overflow-wrap: anywhere;
+        word-break: break-word;
         margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
       }
       .podium-team-name.is-pending {
         font-weight: 500;
@@ -363,11 +369,8 @@
         .podium {
           gap: 0.35rem;
         }
-        .podium-team-name {
-          font-size: 1.15rem;
-        }
         .podium-card {
-          padding: 0.6rem 0.35rem 0.55rem;
+          padding: 0.55rem 0.4rem 0.5rem;
           gap: 0.2rem;
           min-height: 2.4rem;
         }
