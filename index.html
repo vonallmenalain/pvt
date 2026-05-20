@@ -509,6 +509,13 @@
       .infos-section { background: rgba(255, 255, 255, 0.06); border-radius: 0.85rem; padding: 1rem; }
       .infos-section[hidden] { display: none; }
 
+      .teams-subnav { margin: 0.65rem 0 1rem; display: flex; gap: 0.65rem; flex-wrap: wrap; }
+      .teams-sub-btn { background: rgba(255, 255, 255, 0.07); color: var(--text); border: none; font-size: 0.92rem; padding: 0.65rem 0.9rem; border-radius: 0.6rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: filter 0.15s ease, background 0.15s ease; }
+      .teams-sub-btn:hover { filter: brightness(1.15); }
+      .teams-sub-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.55); outline-offset: 2px; }
+      .teams-sub-btn.is-active { background: linear-gradient(120deg, rgba(40,53,147,0.92), rgba(20,20,40,0.95)); color: #ffffff; border: none; }
+      .team-category[hidden] { display: none; }
+
       .auth-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.55); }
       .auth-modal[hidden] { display: none; }
       .auth-dialog { width: 100%; max-width: 360px; background: var(--card); border-radius: 0.75rem; padding: 1.25rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
@@ -1070,6 +1077,8 @@
         .infos-list dd { font-size: 0.9rem; }
 
         /* Teams: single-column grid, stack header */
+        .teams-subnav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; }
+        .teams-sub-btn { text-align: center; padding: 0.55rem 0.25rem; font-size: 0.82rem; }
         .teams-grid { grid-template-columns: 1fr; }
         .teams-header { flex-direction: column; align-items: flex-start; }
 
@@ -1101,17 +1110,16 @@
         /* Schedule filter on Spielplan panel */
         .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
 
-        /* Kategorie-Kacheln auf Mobile: gleiches 2×2-Grid-Layout
-           wie die obere Navigation (.view-toggle). */
+        /* Kategorie-Kacheln auf Mobile: 4 Spalten so dass alle auf einer Zeile passen */
         .schedule-category-tiles {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 0.5rem;
         }
         .cat-tile {
           text-align: center;
-          padding: 0.6rem 0.4rem;
-          font-size: 0.92rem;
+          padding: 0.6rem 0.25rem;
+          font-size: 0.82rem;
         }
 
         /* Hinweis: Früher stand hier zusätzlich
@@ -1286,9 +1294,9 @@
       <section class="content-panel tile-panel" id="schedule-panel" aria-label="Spielplan" hidden>
           <h2 id="schedule-title">Spielplan</h2>
           <div class="schedule-category-tiles" role="group" aria-label="Kategorie wählen">
-            <button type="button" class="cat-tile" data-category-filter="adult_ambitious" aria-pressed="false">Ambitioniert</button>
-            <button type="button" class="cat-tile" data-category-filter="adult_fun" aria-pressed="false">Plausch</button>
             <button type="button" class="cat-tile" data-category-filter="youth" aria-pressed="false">Jugend</button>
+            <button type="button" class="cat-tile" data-category-filter="adult_fun" aria-pressed="false">Plausch</button>
+            <button type="button" class="cat-tile" data-category-filter="adult_ambitious" aria-pressed="false">Ambitioniert</button>
             <button type="button" class="cat-tile is-active" data-category-filter="all" aria-pressed="true">Alle</button>
           </div>
           <div class="schedule-standings" id="schedule-standings" hidden>
@@ -1318,10 +1326,15 @@
           <h2 id="teams-title">Teams</h2>
           <button type="button" id="team-create-trigger" hidden>Team erfassen</button>
         </div>
+        <div class="teams-subnav" role="group" aria-label="Team-Kategorie wählen">
+          <button type="button" class="teams-sub-btn is-active" data-teams-category="youth" aria-pressed="true">Jugendliche</button>
+          <button type="button" class="teams-sub-btn" data-teams-category="adult_fun" aria-pressed="false">Plausch</button>
+          <button type="button" class="teams-sub-btn" data-teams-category="adult_ambitious" aria-pressed="false">Ambitioniert</button>
+        </div>
         <div class="teams-grid">
-          <article class="team-category"><h3>Jugendliche</h3><ul class="team-list" id="teams-list-youth"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
-          <article class="team-category"><h3>Erwachsene Plausch</h3><ul class="team-list" id="teams-list-adult-fun"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
-          <article class="team-category"><h3>Erwachsene Ambitioniert</h3><ul class="team-list" id="teams-list-adult-ambitious"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
+          <article class="team-category" id="teams-category-youth"><h3>Jugendliche</h3><ul class="team-list" id="teams-list-youth"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
+          <article class="team-category" id="teams-category-adult-fun" hidden><h3>Plausch</h3><ul class="team-list" id="teams-list-adult-fun"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
+          <article class="team-category" id="teams-category-adult-ambitious" hidden><h3>Ambitioniert</h3><ul class="team-list" id="teams-list-adult-ambitious"><li class="team-empty">Noch keine Teams erfasst.</li></ul></article>
         </div>
       </section>
 
@@ -1358,9 +1371,9 @@
       <section class="content-panel tile-panel" id="rangliste-panel" aria-label="Schlussrangliste" hidden>
         <h2 id="rangliste-title">Schlussrangliste</h2>
         <div class="schedule-category-tiles rangliste-category-tiles" role="group" aria-label="Kategorie wählen">
-          <button type="button" class="cat-tile" data-rangliste-category="adult_ambitious" aria-pressed="false">Ambitioniert</button>
-          <button type="button" class="cat-tile" data-rangliste-category="adult_fun" aria-pressed="false">Plausch</button>
           <button type="button" class="cat-tile" data-rangliste-category="youth" aria-pressed="false">Jugend</button>
+          <button type="button" class="cat-tile" data-rangliste-category="adult_fun" aria-pressed="false">Plausch</button>
+          <button type="button" class="cat-tile" data-rangliste-category="adult_ambitious" aria-pressed="false">Ambitioniert</button>
         </div>
 
         <div class="podium-wrap" id="rangliste-podium" aria-label="Podest Top 3"></div>
