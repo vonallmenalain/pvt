@@ -402,7 +402,7 @@
       .schedule-table td.col-time { white-space: nowrap; }
       .schedule-table th { background: rgba(255, 255, 255, 0.08); font-weight: 800; }
       .schedule-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
-      .team-link { background: transparent; color: var(--text); border: none; padding: 0; font-weight: 600; font-size: inherit; cursor: pointer; text-decoration: none; }
+      .team-link { background: transparent; color: var(--text); border: none; padding: 0; font-weight: 600; font-size: inherit; cursor: pointer; text-decoration: none; white-space: nowrap; }
       .team-link:hover { text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.85); }
       /* Match outcome cues — desaturated, theme-matched. Winner gently glows in
          sage-mint; loser fades back via reduced opacity (no red); draw stays
@@ -428,11 +428,13 @@
       .schedule-table tr.is-selected-row td:first-child { box-shadow: inset 3px 0 0 rgba(var(--pvt-indigo-light), 0.9); }
       .schedule-result { white-space: nowrap; font-weight: 700; padding: 0 0.3rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; }
       .schedule-result .result-input { width: 3rem; }
-      .schedule-table td.col-game { min-width: 320px; }
-      .col-game-inner { display: flex; align-items: center; gap: 0.25rem; }
-      .col-game-home { flex: 1; text-align: left; }
-      .col-game-score { flex-shrink: 0; min-width: 6.5rem; text-align: center; }
-      .col-game-away { flex: 1; text-align: right; }
+      /* Heimteam, Resultat und Gastteam sind drei separate Tabellenspalten.
+         Der Browser berechnet die Spaltenbreiten nach dem längsten Inhalt
+         (white-space: nowrap auf team-link / team-placeholder), so dass das
+         Resultat in allen Zeilen an derselben horizontalen Position steht. */
+      .col-game-home { text-align: left; white-space: nowrap; }
+      .col-game-score { text-align: center; white-space: nowrap; padding-left: 0.5rem; padding-right: 0.5rem; }
+      .col-game-away { text-align: right; white-space: nowrap; }
       .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
       /* Turnierorganisation: jede Kachel (Zeitslot) wird auf die minimale
@@ -682,7 +684,7 @@
         margin-right: 0.3rem;
       }
       .team-placeholder {
-        font-style: italic; color: rgba(245, 245, 245, 0.55); font-weight: 500;
+        font-style: italic; color: rgba(245, 245, 245, 0.55); font-weight: 500; white-space: nowrap;
       }
       .team-placeholder.is-dynamic { color: rgba(197, 202, 233, 0.85); }
       .team-card-code {
@@ -963,21 +965,7 @@
         --col-time-row-tint: rgba(var(--pvt-indigo), 0.18);
       }
 
-      /* ── Spielplan: Spalte "Spiel" so schmal wie möglich ──────────────
-         Auf Mobile soll die "Spiel"-Spalte nur so breit sein wie der
-         längste Teamname (kein Umbruch), Resultat zentriert, Heim-Team
-         linksbündig, Gast-Team rechtsbündig. So passt möglichst viel auf
-         einen Bildschirm. */
       @media (max-width: 600px) {
-        #schedule-panel .schedule-table td.col-game,
-        #dashboard-panel .schedule-table td.col-game {
-          min-width: 0;
-        }
-        #schedule-panel .schedule-table .col-game-score,
-        #dashboard-panel .schedule-table .col-game-score {
-          min-width: 0;
-          padding: 0 0.25rem;
-        }
         /* Auf Mobile bekommt die sticky Start-Zeit links-Ausrichtung plus
            etwas Padding nach rechts – so steht beim horizontalen Scrollen
            die fixierte "12:00" sauber am linken Rand mit einer kleinen
@@ -1070,9 +1058,6 @@
         .schedule-table th,
         .schedule-table td { padding: 0.35rem 0.4rem; }
 
-        /* Game column: keep horizontal layout, let table scroll sideways */
-        .schedule-table td.col-game { min-width: 260px; white-space: nowrap; }
-
         /* Infos: 3-column subnav + single-column definition list */
         .infos-subnav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; }
         .infos-sub-btn { text-align: center; padding: 0.55rem 0.25rem; font-size: 0.82rem; }
@@ -1106,7 +1091,6 @@
         .org-zaehler-team,
         .team-link.org-zaehler-team { font-size: 0.78rem; }
         .org-input { width: 2.5rem; }
-        .col-game-score { min-width: 5.5rem; }
 
         /* Modals: full-width on small screens */
         .auth-dialog { padding: 1rem 0.85rem; }
@@ -1336,8 +1320,8 @@
           </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
-              <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th><th class="col-zaehler">Zähler</th></tr></thead>
-              <tbody id="schedule-table-body"><tr><td colspan="6">Spielplan wird geladen…</td></tr></tbody>
+              <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th class="col-game-home"></th><th class="col-game-score">Spiel</th><th class="col-game-away"></th><th class="col-zaehler">Zähler</th></tr></thead>
+              <tbody id="schedule-table-body"><tr><td colspan="8">Spielplan wird geladen…</td></tr></tbody>
             </table>
           </div>
       </section>
@@ -1376,15 +1360,15 @@
         <h4 class="dashboard-subtitle">Eigene Spiele</h4>
         <div class="table-scroll">
           <table class="schedule-table" aria-label="Eigene Spiele">
-            <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
-            <tbody id="dashboard-match-table"><tr><td colspan="5">Noch kein Team ausgewählt.</td></tr></tbody>
+            <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th class="col-game-home"></th><th class="col-game-score">Spiel</th><th class="col-game-away"></th></tr></thead>
+            <tbody id="dashboard-match-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody>
           </table>
         </div>
         <h4 class="dashboard-subtitle">Zählen</h4>
         <div class="table-scroll">
           <table class="schedule-table" aria-label="Zählen">
-            <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th>Spiel</th></tr></thead>
-            <tbody id="dashboard-zaehler-table"><tr><td colspan="5">Noch kein Team ausgewählt.</td></tr></tbody>
+            <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th class="col-game-home"></th><th class="col-game-score">Spiel</th><th class="col-game-away"></th></tr></thead>
+            <tbody id="dashboard-zaehler-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody>
           </table>
         </div>
       </section>
