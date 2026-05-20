@@ -729,7 +729,7 @@ function renderTeamCard(team) {
     <div class="team-card-content">
       <p class="team-name">${escapeHtml(team.name)}</p>
       <p class="team-meta">Gemeinde: ${escapeHtml(team.community)}</p>
-      <p class="team-meta">Mannschaftsverantwortlich: ${escapeHtml(team.manager)}</p>
+      <p class="team-meta">Teamverantwortlich: ${escapeHtml(team.manager)}</p>
     </div>
     ${isAdmin ? `<div class="team-admin-actions">
       <button type="button" class="team-edit" data-team-id="${team.id}">Bearbeiten</button>
