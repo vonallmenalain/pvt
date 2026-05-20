@@ -527,6 +527,7 @@
       .auth-field input, .auth-field select { width: 100%; padding: 0.55rem 0.65rem; border-radius: 0.45rem; border: none; background: rgba(0, 0, 0, 0.25); color: var(--text); font-size: 0.9375rem; }
       .auth-field input:focus, .auth-field select:focus { outline: 2px solid rgba(40, 53, 147, 0.85); }
       .auth-error { min-height: 1.25rem; font-size: 0.8125rem; color: #e57373; margin-bottom: 0.65rem; }
+      .auth-info { font-size: 0.8125rem; color: #ffb74d; background: rgba(255, 183, 77, 0.1); border-left: 3px solid #ffb74d; border-radius: 0.25rem; padding: 0.45rem 0.6rem; margin-bottom: 0.65rem; }
       .auth-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem; }
       .auth-actions .secondary { background: transparent; color: var(--muted); font-weight: 600; border: none; }
       .auth-actions .secondary:hover { color: var(--text); }
@@ -1205,6 +1206,7 @@
           <div class="auth-field"><label for="team-edit-manager">Mannschaftsverantwortlicher</label><input id="team-edit-manager" name="manager" type="text" required /></div>
           <div class="auth-field"><label for="team-edit-category">Kategorie</label><select id="team-edit-category" name="category" required><option value="youth">Jugendliche</option><option value="adult_fun">Erwachsene Plausch</option><option value="adult_ambitious">Erwachsene Ambitioniert</option></select></div>
           <div class="auth-field"><label for="team-edit-code">Spielcode (Kürzel im Plan)</label><select id="team-edit-code" name="code"><option value="">– kein Code –</option></select></div>
+          <p class="auth-info" id="team-edit-code-warning" role="status" hidden></p>
           <p class="auth-error" id="team-edit-error" role="alert"></p>
           <div class="auth-actions"><button type="button" class="secondary" id="team-edit-cancel">Abbrechen</button><button type="submit">Speichern</button></div>
         </form>

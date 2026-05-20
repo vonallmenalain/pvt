@@ -51,6 +51,7 @@ const editModal = document.getElementById("team-edit-modal");
 const editForm = document.getElementById("team-edit-form");
 const editCancelBtn = document.getElementById("team-edit-cancel");
 const editErrorEl = document.getElementById("team-edit-error");
+const editCodeWarningEl = document.getElementById("team-edit-code-warning");
 const editCategorySelect = document.getElementById("team-edit-category");
 const editCodeSelect = document.getElementById("team-edit-code");
 
@@ -147,6 +148,8 @@ function openEditModal(teamId) {
   const team = allTeams.find((t) => t.id === teamId);
   if (!team || !editForm) return;
   if (editErrorEl) editErrorEl.textContent = "";
+  if (editCodeWarningEl) { editCodeWarningEl.textContent = ""; editCodeWarningEl.hidden = true; }
+  editForm.dataset.originalCode = team.code ?? "";
   editForm.teamId.value = team.id;
   editForm.teamName.value = team.name ?? "";
   editForm.community.value = team.community ?? "";
@@ -160,19 +163,21 @@ function openEditModal(teamId) {
 function closeEditModal() {
   if (editModal) editModal.hidden = true;
   if (editErrorEl) editErrorEl.textContent = "";
+  if (editCodeWarningEl) { editCodeWarningEl.textContent = ""; editCodeWarningEl.hidden = true; }
   editForm?.reset();
 }
 
 function refreshEditTeamCodeOptions(category, selectedCode) {
   if (!editCodeSelect) return;
   const codes = CATEGORY_CODES[category] ?? [];
-  const usedCodes = new Set(allTeams.map((t) => t.code).filter(Boolean));
+  const currentTeamId = editForm?.teamId.value ?? "";
   editCodeSelect.innerHTML =
     `<option value="">– kein Code –</option>` +
     codes
       .map((c) => {
-        const taken = usedCodes.has(c) && c !== selectedCode;
-        return `<option value="${c}" ${c === selectedCode ? "selected" : ""} ${taken ? "disabled" : ""}>${c}${taken ? " (vergeben)" : ""}</option>`;
+        const holder = allTeams.find((t) => t.code === c && t.id !== currentTeamId);
+        const suffix = holder ? ` (↔ ${escapeHtml(holder.name)})` : "";
+        return `<option value="${c}" ${c === selectedCode ? "selected" : ""}>${c}${suffix}</option>`;
       })
       .join("");
 }
@@ -1111,8 +1116,30 @@ form?.addEventListener("submit", async (event) => {
 
 editCancelBtn?.addEventListener("click", () => closeEditModal());
 
+editCodeSelect?.addEventListener("change", () => {
+  const selectedCode = editCodeSelect.value;
+  const currentTeamId = editForm?.teamId.value ?? "";
+  const originalCode = editForm?.dataset.originalCode ?? "";
+  const holder = selectedCode
+    ? allTeams.find((t) => t.code === selectedCode && t.id !== currentTeamId)
+    : null;
+  if (editCodeWarningEl) {
+    if (holder) {
+      const swapHint = originalCode
+        ? ` «${escapeHtml(holder.name)}» erhält dann ${originalCode}.`
+        : ` «${escapeHtml(holder.name)}» verliert damit ihren Code.`;
+      editCodeWarningEl.textContent = `Code ${selectedCode} ist momentan «${escapeHtml(holder.name)}» zugewiesen.${swapHint}`;
+      editCodeWarningEl.hidden = false;
+    } else {
+      editCodeWarningEl.textContent = "";
+      editCodeWarningEl.hidden = true;
+    }
+  }
+});
+
 editCategorySelect?.addEventListener("change", () => {
   refreshEditTeamCodeOptions(editCategorySelect.value, "");
+  if (editCodeWarningEl) { editCodeWarningEl.textContent = ""; editCodeWarningEl.hidden = true; }
 });
 
 editForm?.addEventListener("submit", async (event) => {
@@ -1124,6 +1151,7 @@ editForm?.addEventListener("submit", async (event) => {
   const manager = editForm.manager.value.trim();
   const category = editForm.category.value;
   const code = editCodeSelect?.value?.trim() || "";
+  const originalCode = editForm.dataset.originalCode ?? "";
   if (!teamId || !name || !community || !manager || !category) {
     if (editErrorEl) editErrorEl.textContent = "Bitte alle Pflichtfelder ausfüllen.";
     return;
@@ -1132,12 +1160,14 @@ editForm?.addEventListener("submit", async (event) => {
     if (editErrorEl) editErrorEl.textContent = "Spielcode passt nicht zur Kategorie.";
     return;
   }
-  if (code && allTeams.some((t) => t.code === code && t.id !== teamId)) {
-    if (editErrorEl) editErrorEl.textContent = "Dieser Spielcode ist bereits vergeben.";
-    return;
-  }
+  // If the chosen code is already held by another team, swap: that team gets
+  // the current team's original code (or loses their code if there is none).
+  const prevHolder = code ? allTeams.find((t) => t.code === code && t.id !== teamId) : null;
   const payload = { name, community, manager, category, code: code || null };
   try {
+    if (prevHolder) {
+      await updateDoc(doc(db, "teams", prevHolder.id), { code: originalCode || null });
+    }
     await updateDoc(doc(db, "teams", teamId), payload);
     closeEditModal();
   } catch {
