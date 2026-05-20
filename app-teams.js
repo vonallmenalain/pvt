@@ -1561,10 +1561,11 @@ function renderPodium(finalRanking) {
         : "noch offen";
     const nameClass = isPending ? "podium-team-name is-pending" : "podium-team-name";
     const spotClass = `podium-spot is-rank-${rank}${isPending ? " is-pending" : ""}`;
+    const titleAttr = isPending ? "" : ` title="${teamLabel}"`;
     html.push(
       `<div class="${spotClass}">
         <div class="podium-card">
-          <p class="${nameClass}">${teamLabel}</p>
+          <p class="${nameClass}"${titleAttr}>${teamLabel}</p>
         </div>
         <div class="podium-base" aria-label="Rang ${rank}">${rank}</div>
       </div>`
