@@ -791,7 +791,7 @@ function renderTeamDashboard(teamId) {
 
   // Im Dashboard erscheinen zwei getrennte Tabellen:
   //   • "Eigene Spiele"  – das ausgewählte Team spielt selbst mit.
-  //   • "Zählerdienst"   – das Team zählt das Spiel und gibt den
+  //   • "Zählen"         – das Team zählt das Spiel und gibt den
   //                        Resultatzettel ab (gemäss Zähler-Regel).
   // Beide Tabellen haben dasselbe Layout wie der Spielplan: zwei
   // Zeit-Zellen (Start sticky, Ende scrollt mit), Feld als Zahl,
@@ -802,7 +802,7 @@ function renderTeamDashboard(teamId) {
   const allZaehlerMatches = getZaehlerMatchesForTeam(selectedTeam);
   const playerIds = new Set(playerMatches.map((m) => m.id));
   // Spiele, in denen das Team selbst mitspielt UND zählen müsste, gehören
-  // ausschliesslich in "Eigene Spiele". In der Zählerdienst-Liste tauchen
+  // ausschliesslich in "Eigene Spiele". In der Zählen-Liste tauchen
   // sie nicht zusätzlich auf – die Zähler-Verantwortung fällt in solchen
   // Fällen ohnehin an die Turnierorganisation (siehe getZaehlerForMatch).
   const zaehlerMatches = allZaehlerMatches
@@ -841,7 +841,7 @@ function renderTeamDashboard(teamId) {
     if (zaehlerMatches.length) {
       dashboardZaehlerTable.innerHTML = zaehlerMatches.map(renderRow).join("");
     } else {
-      dashboardZaehlerTable.innerHTML = '<tr><td colspan="5">Kein Zählerdienst für dieses Team.</td></tr>';
+      dashboardZaehlerTable.innerHTML = '<tr><td colspan="5">Kein Zählen für dieses Team.</td></tr>';
     }
   }
 }
