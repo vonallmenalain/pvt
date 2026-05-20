@@ -1098,16 +1098,22 @@
         /* Schedule filter on Spielplan panel */
         .schedule-card .schedule-filter { margin-bottom: 0.7rem; }
 
-        /* Kategorie-Kacheln auf Mobile: 4 Spalten so dass alle auf einer Zeile passen */
+        /* Kategorie-Kacheln auf Mobile: alle 4 in einer Zeile, Breite richtet
+           sich nach Inhalt (flex auto), damit längere Labels wie "Ambitioniert"
+           immer vollständig in die Kachel passen. Die Schriftgrösse skaliert
+           zusätzlich mit der Viewport-Breite als weitere Sicherheit. */
         .schedule-category-tiles {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          display: flex;
+          flex-wrap: nowrap;
           gap: 0.5rem;
         }
         .cat-tile {
+          flex: 1 1 auto;
+          min-width: 0;
           text-align: center;
           padding: 0.6rem 0.25rem;
-          font-size: 0.82rem;
+          font-size: clamp(0.62rem, 3.5vw, 0.82rem);
+          overflow-wrap: break-word;
         }
 
         /* Hinweis: Früher stand hier zusätzlich
