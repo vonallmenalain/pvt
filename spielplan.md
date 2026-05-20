@@ -3,7 +3,7 @@
 ## Eckdaten
 
 - **Turnierstart:** 12:00 Uhr
-- **Letzter Spielstart:** 16:45 Uhr (Finals aller drei Turniere)
+- **Letzter Spielstart:** 16:45 Uhr (Finals Plausch & Jugend); Ambitioniert-Finale: 16:30
 - **Turnierende:** ca. 16:58 Uhr (plus kurzer Abschluss/Puffer)
 - **3 Spielfelder:** Feld 1, Feld 2, Feld 3
 
@@ -16,7 +16,7 @@ Der Turniertag besteht aus zwei Slot-Phasen, alle drei Felder bleiben jeweils sy
 | Vorrunde / Zwischenrunde | 12:00 – 15:48 | 10 Min | 2 Min | 12 Min |
 | Finalrunde | ab 16:00 (16:00 / 16:15 / 16:30 / 16:45) | 13 Min | 2 Min | 15 Min |
 
-Ab 16:00 starten und enden alle drei Felder synchron. Alle Finals (Ambitioniert, Plausch, Junioren) starten um **16:45**.
+Ab 16:00 starten alle drei Felder synchron. Das Ambitioniert-Finale startet um **16:30**; die Finals von Plausch und Jugend um **16:45**.
 
 ## Felder & Netzhöhe
 
@@ -56,9 +56,8 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 - Halbfinal 1: Sieger Zwischenrunde 1 vs Sieger Zwischenrunde 3
 - Halbfinal 2: Verlierer Zwischenrunde 1 vs Sieger Zwischenrunde 2
 - Spiel um Platz 5: Verlierer Zwischenrunde 2 vs Verlierer Zwischenrunde 3 (16:00, Feld 1)
-- 16:15 auf Feld 1: Puffer / Finalvorbereitung / Einspielen (kein offizielles Spiel)
-- Spiel um Platz 3: Verlierer Halbfinal 1 vs Verlierer Halbfinal 2 (16:30, Feld 1)
-- Finale: Sieger Halbfinal 1 vs Sieger Halbfinal 2 (16:45, Feld 1)
+- Spiel um Platz 3: Verlierer Halbfinal 1 vs Verlierer Halbfinal 2 (16:15, Feld 1)
+- Finale: Sieger Halbfinal 1 vs Sieger Halbfinal 2 (16:30, Feld 1)
 - **Total: 23 Spiele**
 
 ### Erwachsene Plausch – Feld 2 (4 Teams: P1–P4)
