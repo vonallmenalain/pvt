@@ -848,13 +848,24 @@ function renderTeamDashboard(teamId) {
 
 function renderDashboardTeamOptions() {
   if (!dashboardTeamSelect) return;
-  const options = allTeams
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name, "de"))
-    .map((team) => {
-      return `<option value="${team.id}">${escapeHtml(team.name)} (${CATEGORY_SHORT_LABELS[team.category]})</option>`;
-    }).join("");
-  dashboardTeamSelect.innerHTML = `<option value="">Bitte Team auswählen</option>${options}`;
+  const categoryOrder = ["youth", "adult_fun", "adult_ambitious"];
+  const categoryGroupLabels = {
+    youth: "Jugendliche",
+    adult_fun: "Plausch",
+    adult_ambitious: "Ambitioniert",
+  };
+  const byCategory = { youth: [], adult_fun: [], adult_ambitious: [] };
+  allTeams.slice().sort((a, b) => a.name.localeCompare(b.name, "de")).forEach((team) => {
+    if (byCategory[team.category]) byCategory[team.category].push(team);
+  });
+  const groups = categoryOrder.map((cat) => {
+    if (!byCategory[cat].length) return "";
+    const opts = byCategory[cat].map((team) =>
+      `<option value="${team.id}">${escapeHtml(team.name)}</option>`
+    ).join("");
+    return `<optgroup label="${categoryGroupLabels[cat]}">${opts}</optgroup>`;
+  }).join("");
+  dashboardTeamSelect.innerHTML = `<option value="">Bitte Team auswählen</option>${groups}`;
   dashboardTeamSelect.value = selectedTeamId || "";
 }
 
@@ -1159,7 +1170,44 @@ function setInfosSection(section, { updateHash = true } = {}) {
   if (updateHash && currentView === "infos") commitNavigation();
 }
 
-// ── View-Navigation ─────────────────────────────────────────────────────────
+// ── Teams-Subnav ────────────────────────────────────────────────────────────
+const teamsSubButtons = {
+  youth: document.querySelector("[data-teams-category='youth']"),
+  adult_fun: document.querySelector("[data-teams-category='adult_fun']"),
+  adult_ambitious: document.querySelector("[data-teams-category='adult_ambitious']"),
+};
+const teamsSubPanels = {
+  youth: document.getElementById("teams-category-youth"),
+  adult_fun: document.getElementById("teams-category-adult-fun"),
+  adult_ambitious: document.getElementById("teams-category-adult-ambitious"),
+};
+let selectedTeamsCategory = "youth";
+
+function setTeamsCategory(category) {
+  selectedTeamsCategory = category;
+  Object.entries(teamsSubPanels).forEach(([key, panel]) => {
+    if (!panel) return;
+    panel.hidden = key !== category;
+  });
+  Object.entries(teamsSubButtons).forEach(([key, button]) => {
+    if (!button) return;
+    const active = key === category;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  const btn = target.closest("[data-teams-category]");
+  if (!btn) return;
+  event.preventDefault();
+  const category = btn.getAttribute("data-teams-category");
+  if (category) setTeamsCategory(category);
+});
+
+
 const infosViewBtn = document.getElementById("show-infos");
 const teamsViewBtn = document.getElementById("show-teams");
 const scheduleViewBtn = document.getElementById("show-schedule");
