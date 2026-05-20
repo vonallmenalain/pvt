@@ -11,7 +11,7 @@
 //                          → gilt für alle Slots bis und mit 15:48
 //   • Slotdauer Finalrunde: 15 Min (13 Min Spiel + 2 Min Pause/Wechsel)
 //                          → gilt für alle Slots ab 16:00
-//   • Letzter Start:       16:45 Uhr (Finals aller drei Turniere)
+//   • Letzter Start:       16:45 Uhr (Finals Plausch & Jugend); Ambitioniert-Finale: 16:30
 //   • 3 Felder:            Feld 1 (Ambitioniert), Feld 2 (Plausch+Jugend), Feld 3 (Jugend)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -151,19 +151,18 @@ const SCHEDULE_AMBI_FINALS = [
     home: { loserOf: "a-qtop" }, away: { winnerOf: "a-q1" },
   }),
   // Ab hier 15-Minuten-Slots (13 Min Spielzeit + 2 Min Pause).
-  // 16:15 bleibt auf Feld 1 bewusst frei (Puffer / Finalvorbereitung).
   makeEntry({
     id: "a-p5", time: "16:00", field: "1", category: "adult_ambitious",
     phase: "Spiel um Platz 5", phaseKind: "placement",
     home: { loserOf: "a-q1" }, away: { loserOf: "a-q2" },
   }),
   makeEntry({
-    id: "a-p3", time: "16:30", field: "1", category: "adult_ambitious",
+    id: "a-p3", time: "16:15", field: "1", category: "adult_ambitious",
     phase: "Spiel um Platz 3", phaseKind: "placement",
     home: { loserOf: "a-quali1" }, away: { loserOf: "a-quali2" },
   }),
   makeEntry({
-    id: "a-fin", time: "16:45", field: "1", category: "adult_ambitious",
+    id: "a-fin", time: "16:30", field: "1", category: "adult_ambitious",
     phase: "Finale", phaseKind: "final",
     home: { winnerOf: "a-quali1" }, away: { winnerOf: "a-quali2" },
   }),
