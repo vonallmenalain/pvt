@@ -680,7 +680,7 @@ function renderSchedule() {
   const focus = captureResultInputFocus();
   const matches = scheduleMatchesFiltered();
   if (!matches.length) {
-    scheduleTableBody.innerHTML = '<tr><td colspan="6">Keine Spiele für die gewählten Filter.</td></tr>';
+    scheduleTableBody.innerHTML = '<tr><td colspan="8">Keine Spiele für die gewählten Filter.</td></tr>';
     restoreResultInputFocus(focus);
     return;
   }
@@ -694,22 +694,19 @@ function renderSchedule() {
     // Zeit ist in zwei Zellen aufgeteilt: nur die Start-Zeit (linke Zelle)
     // bleibt beim horizontalen Scrollen am linken Rand sticky; die End-Zeit
     // (z. B. "– 12:10") scrollt ganz normal mit dem Rest der Zeile mit.
-    // Die Spalte "Zähler" steht ganz rechts und nennt das Team, das beim
-    // aktuellen Spiel zählt und den Resultatzettel abgibt (Heim des
-    // vorherigen Spiels auf dem Feld – beim 1. Spiel und wenn das Team
-    // selbst mitspielt: "Turnierorganisation").
+    // Heimteam, Resultat und Gastteam stehen in drei separaten Zellen, damit
+    // der Browser die Spaltenbreiten automatisch nach dem längsten Namen
+    // berechnet und das Resultat immer auf derselben horizontalen Position
+    // bleibt – unabhängig davon, wie lang die Teamnamen in der jeweiligen
+    // Zeile sind.
     return `<tr class="${rowCls}">
       <td class="col-time-start">${match.time}</td>
       <td class="col-time-end">– ${match.endTime}</td>
       <td class="col-field">${escapeHtml(match.field)}</td>
       <td class="col-category">${phaseBadge}</td>
-      <td class="col-game">
-        <div class="col-game-inner">
-          <span class="col-game-home">${homeCell}</span>
-          <span class="col-game-score">${scoreCell}</span>
-          <span class="col-game-away">${awayCell}</span>
-        </div>
-      </td>
+      <td class="col-game-home">${homeCell}</td>
+      <td class="col-game-score">${scoreCell}</td>
+      <td class="col-game-away">${awayCell}</td>
       <td class="col-zaehler">${zaehlerCell}</td>
     </tr>`;
   }).join("");
@@ -766,9 +763,9 @@ function renderDashboardEmptyState() {
   dashboardTitle.textContent = "Team-Dashboard";
   dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
   dashboardGroupTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
-  dashboardMatchTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
+  dashboardMatchTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
   if (dashboardZaehlerTable) {
-    dashboardZaehlerTable.innerHTML = '<tr><td colspan="5">Noch kein Team ausgewählt.</td></tr>';
+    dashboardZaehlerTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
   }
 }
 
@@ -870,29 +867,25 @@ function renderTeamDashboard(teamId) {
       <td class="col-time-end">– ${match.endTime}</td>
       <td class="col-field">${escapeHtml(match.field)}</td>
       <td class="col-category">${phaseBadge}</td>
-      <td class="col-game">
-        <div class="col-game-inner">
-          <span class="col-game-home">${homeCell}</span>
-          <span class="col-game-score">${scoreCell}</span>
-          <span class="col-game-away">${awayCell}</span>
-        </div>
-      </td>
+      <td class="col-game-home">${homeCell}</td>
+      <td class="col-game-score">${scoreCell}</td>
+      <td class="col-game-away">${awayCell}</td>
     </tr>`;
   };
 
   if (playerMatches.length) {
     dashboardMatchTable.innerHTML = playerMatches.map(renderRow).join("");
   } else if (!code) {
-    dashboardMatchTable.innerHTML = '<tr><td colspan="5">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
+    dashboardMatchTable.innerHTML = '<tr><td colspan="7">Diesem Team ist noch kein Spielcode zugewiesen.</td></tr>';
   } else {
-    dashboardMatchTable.innerHTML = '<tr><td colspan="5">Keine eigenen Spiele gefunden.</td></tr>';
+    dashboardMatchTable.innerHTML = '<tr><td colspan="7">Keine eigenen Spiele gefunden.</td></tr>';
   }
 
   if (dashboardZaehlerTable) {
     if (zaehlerMatches.length) {
       dashboardZaehlerTable.innerHTML = zaehlerMatches.map(renderRow).join("");
     } else {
-      dashboardZaehlerTable.innerHTML = '<tr><td colspan="5">Kein Zählen für dieses Team.</td></tr>';
+      dashboardZaehlerTable.innerHTML = '<tr><td colspan="7">Kein Zählen für dieses Team.</td></tr>';
     }
   }
 }
