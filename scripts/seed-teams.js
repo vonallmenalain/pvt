@@ -20,11 +20,11 @@ const API_KEY    = "AIzaSyD9bq5TKrfMhbQyDa6FgbbZjoxp0wOTrFc";
 
 // ── Team data ──────────────────────────────────────────────────────────────
 // Categories: "youth" | "adult_fun" | "adult_ambitious"
-// Codes:      J1–J8   | P1–P4      | A1–A6
+// Codes:      J1–J9   | P1–P4      | A1–A6
 // Code assignment follows the order teams appear in the definitive list.
 
 const TEAMS = [
-  // ── Jugendliche (youth) ── J1–J8
+  // ── Jugendliche (youth) ── J1–J9
   { name: "Zaziki Sauce",                   community: "Solothurn",                                    category: "youth",            code: "J1", manager: "Raphael Huber" },
   { name: "Serve the ball - serve the lord",community: "Aarau, Zollikofen, Interlaken, Biel, Pratteln",category: "youth",            code: "J2", manager: "Elias Moyao" },
   { name: "Niemer",                         community: "Zollikofen",                                   category: "youth",            code: "J3", manager: "Ashleen" },
@@ -32,7 +32,8 @@ const TEAMS = [
   { name: "Team Fuego",                     community: "Gemischtes Team von verschiedenen Gemeinden",  category: "youth",            code: "J5", manager: "Lavinia Stähli" },
   { name: "Joey und die Anderen",           community: "Basel",                                        category: "youth",            code: "J6", manager: "Joey" },
   { name: "Wildcats",                       community: "Solothurn",                                    category: "youth",            code: "J7", manager: "Samuel Schmidtke" },
-  { name: "Blockblusters",                  community: "Solothurn",                                    category: "youth",            code: "J8", manager: "Elin Schumacher" },
+  { name: "Blockbusters",                   community: "Solothurn",                                    category: "youth",            code: "J8", manager: "Elin Schumacher" },
+  { name: "67",                             community: "Burgdorf",                                     category: "youth",            code: "J9", manager: "Lia Wilson" },
 
   // ── Erwachsene Plausch (adult_fun) ── P1–P4
   { name: "Basler Läckerli",                community: "Basel",                                        category: "adult_fun",        code: "P1", manager: "Simon Bader" },

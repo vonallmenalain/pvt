@@ -315,13 +315,32 @@ function autoResolveCodeFromName(team) {
 
 function annotateTeamsWithAutoCodes(teams) {
   const taken = new Set(teams.filter((t) => t.code).map((t) => t.code));
-  return teams.map((team) => {
+
+  // First pass: name-pattern based auto-assignment.
+  const result = teams.map((team) => {
     if (team.code) return team;
     const auto = autoResolveCodeFromName(team);
     if (!auto || taken.has(auto)) return team;
     taken.add(auto);
     return { ...team, code: auto, autoCode: true };
   });
+
+  // Second pass: unambiguous fallback — if exactly one code slot in a category
+  // is unoccupied and exactly one team in that category still has no code,
+  // the assignment is deterministic and is applied automatically.
+  for (const { prefix, max, category } of AUTO_CODE_PATTERNS) {
+    const allCodes = Array.from({ length: max }, (_, i) => `${prefix}${i + 1}`);
+    const freeCodes = allCodes.filter((c) => !taken.has(c));
+    if (freeCodes.length !== 1) continue;
+    const uncodedInCategory = result.filter((t) => !t.code && t.category === category);
+    if (uncodedInCategory.length !== 1) continue;
+    const freeCode = freeCodes[0];
+    const target   = uncodedInCategory[0];
+    taken.add(freeCode);
+    result[result.indexOf(target)] = { ...target, code: freeCode, autoCode: true };
+  }
+
+  return result;
 }
 
 // ── Standings (per Kategorie, nur Gruppenspiele) ─────────────────────────────
