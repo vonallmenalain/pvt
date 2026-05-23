@@ -288,14 +288,14 @@ function getTeamById(id) {
 }
 
 // Auto-Zuordnung von Spielcodes über das Namens-Schema der Teams in der DB:
-//   "Jugendliche 1"  → J1 … "Jugendliche 8"   → J8
+//   "Jugendliche 1"  → J1 … "Jugendliche 9"   → J9
 //   "Plausch 1"      → P1 … "Plausch 4"       → P4
 //   "Ambitioniert 1" → A1 … "Ambitioniert 6"  → A6
 // So sind Teams ohne explizit gesetzten Code automatisch an den Spielplan
 // gekoppelt. Ein bereits gesetzter Code hat Vorrang; doppelte Codes werden
 // nicht überschrieben.
 const AUTO_CODE_PATTERNS = [
-  { prefix: "J", re: /^Jugendliche\s+(\d+)$/i,  max: 8, category: "youth" },
+  { prefix: "J", re: /^Jugendliche\s+(\d+)$/i,  max: 9, category: "youth" },
   { prefix: "P", re: /^Plausch\s+(\d+)$/i,      max: 4, category: "adult_fun" },
   { prefix: "A", re: /^Ambitioniert\s+(\d+)$/i, max: 6, category: "adult_ambitious" },
 ];
@@ -369,8 +369,8 @@ function getSortedStandings(category) {
 
 // ── Schlussrangliste (Gruppe + Finalspiele) ─────────────────────────────────
 // Beschreibt, welche Finalspiel-Resultate welchen Schluss-Rang bestimmen.
-// Ränge, die hier nicht aufgeführt sind (z.B. Jugend 5–8), werden aus der
-// Gruppenphase übernommen.
+// Jugend Rang 3 wird nicht per Einzelspiel bestimmt (Finalrunde Top 3 ist
+// ein Round-Robin) und fällt daher auf den Qualifikationsrang zurück.
 const FINAL_RANK_RULES = {
   adult_ambitious: [
     { rank: 1, kind: "winner", matchId: "a-fin" },
@@ -389,12 +389,12 @@ const FINAL_RANK_RULES = {
   youth: [
     { rank: 1, kind: "winner", matchId: "j-fin" },
     { rank: 2, kind: "loser",  matchId: "j-fin" },
-    { rank: 3, kind: "winner", matchId: "j-p3"  },
-    { rank: 4, kind: "loser",  matchId: "j-p3"  },
-    { rank: 5, kind: "winner", matchId: "j-p5"  },
-    { rank: 6, kind: "loser",  matchId: "j-p5"  },
-    { rank: 7, kind: "winner", matchId: "j-p7"  },
-    { rank: 8, kind: "loser",  matchId: "j-p7"  },
+    { rank: 4, kind: "winner", matchId: "j-p4"  },
+    { rank: 5, kind: "loser",  matchId: "j-p4"  },
+    { rank: 6, kind: "winner", matchId: "j-p6"  },
+    { rank: 7, kind: "loser",  matchId: "j-p6"  },
+    { rank: 8, kind: "winner", matchId: "j-p8"  },
+    { rank: 9, kind: "loser",  matchId: "j-p8"  },
   ],
 };
 
