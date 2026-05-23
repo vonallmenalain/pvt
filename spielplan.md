@@ -88,24 +88,24 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 
 | Zeit  | Feld 1 | Feld 2 | Feld 3 |
 |-------|--------|--------|--------|
-| 12:00 | J J5–J6 | P P1–P2 | J J4–J9 |
+| 12:00 | J J5–J6 | P P1–P2 | J J9–J4 |
 | 12:12 | A A1–A6 | P P4–P3 | J J1–J2 |
-| 12:24 | A A2–A5 | P P3–P1 | J J3–J7 |
+| 12:24 | A A2–A5 | P P3–P1 | J J7–J3 |
 | 12:36 | A A3–A4 | P P2–P4 | J J5–J8 |
 | 12:48 | A A1–A5 | P P1–P4 | J J2–J4 |
-| 13:00 | A A6–A4 | P P2–P3 | J J6–J9 |
-| 13:12 | A A2–A3 | J J2–J8 | J J1–J5 |
+| 13:00 | A A6–A4 | P P2–P3 | J J9–J6 |
+| 13:12 | A A2–A3 | J J8–J2 | J J5–J1 |
 | 13:24 | A A1–A4 | J J4–J6 | J J3–J9 |
-| 13:36 | A A5–A3 | J J2–J7 | J J1–J8 |
-| 13:48 | A A6–A2 | J J5–J9 | J J3–J4 |
+| 13:36 | A A5–A3 | J J7–J2 | J J1–J8 |
+| 13:48 | A A6–A2 | J J9–J5 | J J3–J4 |
 | 14:00 | A A3–A1 | P P2–P1 | J J6–J7 |
 | 14:12 | A A4–A2 | P P4–P3 | J J2–J3 |
 | 14:24 | A A5–A6 | P P3–P1 | J J4–J7 |
 | 14:36 | A A2–A1 | P P4–P2 | J J1–J3 |
 | 14:48 | A A3–A6 | P P3–P2 | J J8–J9 |
-| 15:00 | A A4–A5 | P P1–P4 | J J1–J6 |
+| 15:00 | A A4–A5 | P P1–P4 | J J6–J1 |
 | 15:12 | A Zwischenrunde 1 (Rang 1–2) | J J7–J8 | J J3–J5 |
-| 15:24 | A Zwischenrunde 2 (Rang 3–6) | J J2–J9 | J J1–J4 |
+| 15:24 | A Zwischenrunde 2 (Rang 3–6) | J J2–J9 | J J4–J1 |
 | 15:36 | A Zwischenrunde 3 (Rang 4–5) | J J5–J7 | J J6–J8 |
 | 15:48 | A Halbfinal 1 | J Spiel um Rang 8 (Rang 8–9) | J Finalrunde Top 3: Rang 1–3 |
 | 16:00 | A Halbfinal 2 | P Halbfinal 1 | J Spiel um Rang 6 (Rang 6–7) |
@@ -119,6 +119,27 @@ Der vollständige, ausführbare Spielplan ist als zentrale Datenstruktur in
 [`tournament-schedule.js`](./tournament-schedule.js) hinterlegt
 (`TOURNAMENT_SCHEDULE`). Alle Views (Spielplan, Dashboard,
 Turnierorganisation, Schlussrangliste) leiten ihre Anzeige direkt daraus ab.
+
+## Resultatverantwortung (Jugend)
+
+Das erstgenannte Team ist beim **nächsten Spiel auf dem Feld** fürs Zählen und das Abgeben des Resultatzettels verantwortlich. Die Reihenfolge (erstgenannt/zweitgenannt) in den Jugend-Vorrundenspielen wurde entsprechend gewählt, sodass:
+
+- keine Zählpflicht entsteht, wenn das erstgenannte Team gleichzeitig auf einem anderen Feld spielt
+- die Pflicht möglichst gleichmässig auf alle Teams verteilt ist
+
+| Team | Zählpflichten F3 | Zählpflichten F2 | Total |
+|------|-----------------|-----------------|-------|
+| J1 | 3× (12:24, 13:48, 14:48) | – | **3** |
+| J2 | 2× (13:00, 14:24) | 1× (15:36) | **3** |
+| J3 | 3× (13:36, 14:00, 15:24) | – | **3** |
+| J4 | 2× (14:36, 15:36) | 1× (13:36) | **3** |
+| J5 | 2× (12:48, 13:24) | 1× (15:48 Playoff) | **3** |
+| J6 | 3× (14:12, 15:12, 15:48) | – | **3** |
+| J7 | 1× (12:36) | 2× (13:48, 15:24) | **3** |
+| J8 | 1× (15:00) | 1× (13:24) | **2** |
+| J9 | 2× (12:12, 13:12) | 1× (15:12) | **3** |
+
+*Zeitangaben = Startzeit des Spiels, das gezählt werden muss.*
 
 ## Wertung
 

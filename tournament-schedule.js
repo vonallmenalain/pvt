@@ -236,14 +236,23 @@ const SCHEDULE_YOUTH_F1 = [
 // 19 Vorrundenspiele auf Feld 3 (J1–J9, 9 Teams).
 // Das erste Spiel auf Feld 3 beginnt um 12:00 gleichzeitig mit dem Jugendspiel
 // auf Feld 1 (j-g00).
+// Resultatverantwortung: Das erstgenannte Team (home) ist beim nächsten Spiel
+// auf dem Feld fürs Zählen und das Abgeben des Resultatzettels verantwortlich.
+// Die Reihenfolge (home/away) wurde so gewählt, dass die Pflicht möglichst
+// gleichmässig verteilt ist und keine logischen Konflikte entstehen
+// (Zählpflicht-Team spielt nicht gleichzeitig auf einem anderen Feld):
+//
+//   Zählpflichten F3 (19) + F2 (7) = 26 total:
+//   J1: 3×  J2: 3×  J3: 3×  J4: 3×  J5: 3×
+//   J6: 3×  J7: 3×  J8: 2×  J9: 3×
 const SCHEDULE_YOUTH_F3 = [
-  ["j-g01", "12:00", "J4", "J9"],
+  ["j-g01", "12:00", "J9", "J4"],   // war J4–J9
   ["j-g02", "12:12", "J1", "J2"],
-  ["j-g03", "12:24", "J3", "J7"],
+  ["j-g03", "12:24", "J7", "J3"],   // war J3–J7
   ["j-g04", "12:36", "J5", "J8"],
   ["j-g05", "12:48", "J2", "J4"],
-  ["j-g06", "13:00", "J6", "J9"],
-  ["j-g07", "13:12", "J1", "J5"],
+  ["j-g06", "13:00", "J9", "J6"],   // war J6–J9
+  ["j-g07", "13:12", "J5", "J1"],   // war J1–J5
   ["j-g08", "13:24", "J3", "J9"],
   ["j-g09", "13:36", "J1", "J8"],
   ["j-g10", "13:48", "J3", "J4"],
@@ -252,9 +261,9 @@ const SCHEDULE_YOUTH_F3 = [
   ["j-g13", "14:24", "J4", "J7"],
   ["j-g14", "14:36", "J1", "J3"],
   ["j-g15", "14:48", "J8", "J9"],
-  ["j-g16", "15:00", "J1", "J6"],
+  ["j-g16", "15:00", "J6", "J1"],   // war J1–J6
   ["j-g17", "15:12", "J3", "J5"],
-  ["j-g18", "15:24", "J1", "J4"],
+  ["j-g18", "15:24", "J4", "J1"],   // war J1–J4
   ["j-g19", "15:36", "J6", "J8"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "3", category: "youth",
@@ -266,10 +275,10 @@ const SCHEDULE_YOUTH_F3 = [
 //   Block 1: 13:12–13:48 (4 Spiele)
 //   Block 2: 15:12–15:36 (3 Spiele)
 const SCHEDULE_YOUTH_F2 = [
-  ["j-g21", "13:12", "J2", "J8"],
+  ["j-g21", "13:12", "J8", "J2"],   // war J2–J8
   ["j-g22", "13:24", "J4", "J6"],
-  ["j-g23", "13:36", "J2", "J7"],
-  ["j-g24", "13:48", "J5", "J9"],
+  ["j-g23", "13:36", "J7", "J2"],   // war J2–J7
+  ["j-g24", "13:48", "J9", "J5"],   // war J5–J9 (Pflicht-Korrektur: J5 spielte gleichzeitig auf F3)
   ["j-g25", "15:12", "J7", "J8"],
   ["j-g26", "15:24", "J2", "J9"],
   ["j-g27", "15:36", "J5", "J7"],
