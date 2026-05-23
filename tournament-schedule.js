@@ -155,12 +155,12 @@ const SCHEDULE_AMBI_FINALS = [
   // Ab hier 15-Minuten-Slots (13 Min Spielzeit + 2 Min Pause).
   makeEntry({
     id: "a-p5", time: "16:15", field: "1", category: "adult_ambitious",
-    phase: "Spiel um Platz 5", phaseKind: "placement",
+    phase: "Spiel um Rang 5", phaseKind: "placement",
     home: { loserOf: "a-q1" }, away: { loserOf: "a-q2" },
   }),
   makeEntry({
     id: "a-p3", time: "16:30", field: "1", category: "adult_ambitious",
-    phase: "Spiel um Platz 3", phaseKind: "placement",
+    phase: "Spiel um Rang 3", phaseKind: "placement",
     home: { loserOf: "a-quali1" }, away: { loserOf: "a-quali2" },
   }),
   makeEntry({
@@ -172,7 +172,7 @@ const SCHEDULE_AMBI_FINALS = [
 
 // ── Feld 2: Erwachsene Plausch + Jugend-Blöcke ───────────────────────────────
 // 12 Vorrundenspiele Plausch (Doppel-Round-Robin) auf Feld 2,
-// dazu Halbfinals, Spiel um Platz 3 und Finale auf Feld 2.
+// dazu Halbfinals, Spiel um Rang 3 und Finale auf Feld 2.
 //
 // Block-Struktur Feld 2:
 //   12:00–13:00  Plausch 1. Round-Robin komplett (6 Spiele)
@@ -212,7 +212,7 @@ const SCHEDULE_PLAUSCH_FINALS = [
   }),
   makeEntry({
     id: "p-p3", time: "16:30", field: "2", category: "adult_fun",
-    phase: "Spiel um Platz 3", phaseKind: "placement",
+    phase: "Spiel um Rang 3", phaseKind: "placement",
     home: { loserOf: "p-hf1" }, away: { loserOf: "p-hf2" },
   }),
   makeEntry({
@@ -280,15 +280,15 @@ const SCHEDULE_YOUTH_F2 = [
 }));
 
 // Jugend-Finalspiele (9 Teams):
-//   15:48 – Spiel um Platz 8 (Feld 2) + Finalrunde Top 3 Spiel 1 (Feld 3)
-//   16:00 – Spiel um Platz 6 (Feld 3)
+//   15:48 – Spiel um Rang 8 (Feld 2) + Finalrunde Top 3 Spiel 1 (Feld 3)
+//   16:00 – Spiel um Rang 6 (Feld 3)
 //   16:15 – Finalrunde Top 3 Spiel 2 (Feld 3)
-//   16:30 – Spiel um Platz 4 (Feld 3)
+//   16:30 – Spiel um Rang 4 (Feld 3)
 //   16:45 – Finalrunde Top 3 Spiel 3 / Finale (Feld 3)
 const SCHEDULE_YOUTH_FINALS = [
   makeEntry({
     id: "j-p8", time: "15:48", field: "2", category: "youth",
-    phase: "Spiel um Platz 8", phaseKind: "placement",
+    phase: "Spiel um Rang 8", phaseKind: "placement",
     home: { rank: 8 }, away: { rank: 9 },
   }),
   makeEntry({
@@ -299,7 +299,7 @@ const SCHEDULE_YOUTH_FINALS = [
   // Ab hier 15-Minuten-Slots (13 Min Spielzeit + 2 Min Pause).
   makeEntry({
     id: "j-p6", time: "16:00", field: "3", category: "youth",
-    phase: "Spiel um Platz 6", phaseKind: "placement",
+    phase: "Spiel um Rang 6", phaseKind: "placement",
     home: { rank: 6 }, away: { rank: 7 },
   }),
   makeEntry({
@@ -309,7 +309,7 @@ const SCHEDULE_YOUTH_FINALS = [
   }),
   makeEntry({
     id: "j-p4", time: "16:30", field: "3", category: "youth",
-    phase: "Spiel um Platz 4", phaseKind: "placement",
+    phase: "Spiel um Rang 4", phaseKind: "placement",
     home: { rank: 4 }, away: { rank: 5 },
   }),
   makeEntry({

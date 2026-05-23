@@ -36,7 +36,7 @@ Vor folgenden Blöcken muss das Netz auf Feld 2 umgestellt werden:
 | 1. Juniorenblock (4 Spiele) | 13:12–13:48 | Jugend |
 | Plausch 2. Round-Robin | 14:00–15:00 | Erwachsene |
 | 2. Juniorenblock (3 Spiele + 1 Playoff) | 15:12–15:48 | Jugend |
-| Plausch-Finalrunde (Halbfinals, Spiel um Platz 3, Finale) | 16:00–16:45 | Erwachsene |
+| Plausch-Finalrunde (Halbfinals, Spiel um Rang 3, Finale) | 16:00–16:45 | Erwachsene |
 
 Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 
@@ -55,8 +55,8 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 - Zwischenrunde 3 (Rang 4 vs 5) – 15:36 auf Feld 1
 - Halbfinal 1: Sieger Zwischenrunde 1 vs Sieger Zwischenrunde 3 – 15:48 auf Feld 1
 - Halbfinal 2: Verlierer Zwischenrunde 1 vs Sieger Zwischenrunde 2 – 16:00 auf Feld 1
-- Spiel um Platz 5: Verlierer Zwischenrunde 2 vs Verlierer Zwischenrunde 3 (16:15, Feld 1)
-- Spiel um Platz 3: Verlierer Halbfinal 1 vs Verlierer Halbfinal 2 (16:30, Feld 1)
+- Spiel um Rang 5: Verlierer Zwischenrunde 2 vs Verlierer Zwischenrunde 3 (16:15, Feld 1)
+- Spiel um Rang 3: Verlierer Halbfinal 1 vs Verlierer Halbfinal 2 (16:30, Feld 1)
 - Finale: Sieger Halbfinal 1 vs Sieger Halbfinal 2 (16:45, Feld 1)
 - **Total: 23 Spiele**
 
@@ -66,7 +66,7 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 - 2. Round-Robin (6 Spiele): 14:00–15:00 auf Feld 2
 - Halbfinal 1 (Rang 1 vs Rang 4) – 16:00 auf Feld 2
 - Halbfinal 2 (Rang 2 vs Rang 3) – 16:15 auf Feld 2
-- Spiel um Platz 3 – 16:30 auf Feld 2
+- Spiel um Rang 3 – 16:30 auf Feld 2
 - Finale – 16:45 auf Feld 2
 - **Total: 16 Spiele**
 
@@ -76,11 +76,11 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
   - 1 Spiel auf Feld 1 (12:00): J5–J6
   - 19 Spiele auf Feld 3 (12:00–15:36)
   - 7 Spiele auf Feld 2 (zwei Blöcke: 13:12–13:48 und 15:12–15:36)
-- Spiel um Platz 8: Rang 8 vs Rang 9 – 15:48 auf Feld 2
+- Spiel um Rang 8: Rang 8 vs Rang 9 – 15:48 auf Feld 2
 - Finalrunde Top 3 Spiel 1: Rang 1 vs Rang 3 – 15:48 auf Feld 3
-- Spiel um Platz 6: Rang 6 vs Rang 7 – 16:00 auf Feld 3
+- Spiel um Rang 6: Rang 6 vs Rang 7 – 16:00 auf Feld 3
 - Finalrunde Top 3 Spiel 2: Rang 2 vs Rang 3 – 16:15 auf Feld 3
-- Spiel um Platz 4: Rang 4 vs Rang 5 – 16:30 auf Feld 3
+- Spiel um Rang 4: Rang 4 vs Rang 5 – 16:30 auf Feld 3
 - Finalrunde Top 3 Finale: Rang 1 vs Rang 2 – 16:45 auf Feld 3
 - **Total: 33 Spiele (27 Quali + 6 Finals)**
 
@@ -107,10 +107,10 @@ Das ergibt genau **4 Netzhöhen-Wechsel** auf Feld 2:
 | 15:12 | A Zwischenrunde 1 (Rang 1–2) | J J7–J8 | J J3–J5 |
 | 15:24 | A Zwischenrunde 2 (Rang 3–6) | J J2–J9 | J J1–J4 |
 | 15:36 | A Zwischenrunde 3 (Rang 4–5) | J J5–J7 | J J6–J8 |
-| 15:48 | A Halbfinal 1 | J Spiel um Platz 8 (Rang 8–9) | J Finalrunde Top 3: Rang 1–3 |
-| 16:00 | A Halbfinal 2 | P Halbfinal 1 | J Spiel um Platz 6 (Rang 6–7) |
-| 16:15 | A Spiel um Platz 5 | P Halbfinal 2 | J Finalrunde Top 3: Rang 2–3 |
-| 16:30 | A Spiel um Platz 3 | P Spiel um Platz 3 | J Spiel um Platz 4 (Rang 4–5) |
+| 15:48 | A Halbfinal 1 | J Spiel um Rang 8 (Rang 8–9) | J Finalrunde Top 3: Rang 1–3 |
+| 16:00 | A Halbfinal 2 | P Halbfinal 1 | J Spiel um Rang 6 (Rang 6–7) |
+| 16:15 | A Spiel um Rang 5 | P Halbfinal 2 | J Finalrunde Top 3: Rang 2–3 |
+| 16:30 | A Spiel um Rang 3 | P Spiel um Rang 3 | J Spiel um Rang 4 (Rang 4–5) |
 | 16:45 | A Finale | P Finale | J Finalrunde Top 3: Rang 1–2 |
 
 ## Quelle der Wahrheit
