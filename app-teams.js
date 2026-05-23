@@ -416,7 +416,7 @@ function getGroupMatchesForCategory(category) {
 }
 
 function calcStatsForCode(code, category) {
-  let pts = 0, gf = 0, ga = 0, played = 0;
+  let pts = 0, wins = 0, gf = 0, ga = 0, played = 0;
   const groupMatches = getGroupMatchesForCategory(category);
   for (const match of groupMatches) {
     const homeCode = match.home.code;
@@ -432,31 +432,32 @@ function calcStatsForCode(code, category) {
     if (isHome) { gf += h; ga += a; }
     else { gf += a; ga += h; }
     if (h === a) pts += 1;
-    else if ((isHome && h > a) || (isAway && a > h)) pts += 2;
+    else if ((isHome && h > a) || (isAway && a > h)) { pts += 2; wins++; }
   }
-  return { pts, gf, ga, played };
+  return { pts, wins, gf, ga, played };
 }
 
-// Sortiert die Codes einer Kategorie nach: Punkte > Tordifferenz > geschossene Punkte > Code.
-// Liefert Array von { code, team, pts, gf, ga, played }.
+// Sortiert die Codes einer Kategorie nach: Punkte > Siege > Erzielte Punkte > Punkteverhältnis > Code.
+// Liefert Array von { code, team, pts, wins, gf, ga, played }.
 function getSortedStandings(category) {
   const codes = CATEGORY_CODES[category] || [];
   return codes
     .map((code) => ({ code, team: getTeamByCode(code), ...calcStatsForCode(code, category) }))
     .sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
-      const diffA = a.gf - a.ga;
-      const diffB = b.gf - b.ga;
-      if (diffB !== diffA) return diffB - diffA;
+      if (b.wins !== a.wins) return b.wins - a.wins;
       if (b.gf !== a.gf) return b.gf - a.gf;
+      const ratioA = a.ga === 0 ? (a.gf > 0 ? Infinity : 0) : a.gf / a.ga;
+      const ratioB = b.ga === 0 ? (b.gf > 0 ? Infinity : 0) : b.gf / b.ga;
+      if (ratioB !== ratioA) return ratioB - ratioA;
       return a.code.localeCompare(b.code);
     });
 }
 
 // ── Schlussrangliste (Gruppe + Finalspiele) ─────────────────────────────────
 // Beschreibt, welche Finalspiel-Resultate welchen Schluss-Rang bestimmen.
-// Jugend Rang 3 wird nicht per Einzelspiel bestimmt (Finalrunde Top 3 ist
-// ein Round-Robin) und fällt daher auf den Qualifikationsrang zurück.
+// Jugend Ränge 1–3 werden nicht hier gelistet: sie folgen aus der
+// Round-Robin-Tabelle der Finalrunde Top 3 (getFinalrundeTop3Standings).
 const FINAL_RANK_RULES = {
   adult_ambitious: [
     { rank: 1, kind: "winner", matchId: "a-fin" },
@@ -473,8 +474,8 @@ const FINAL_RANK_RULES = {
     { rank: 4, kind: "loser",  matchId: "p-p3"  },
   ],
   youth: [
-    { rank: 1, kind: "winner", matchId: "j-fin" },
-    { rank: 2, kind: "loser",  matchId: "j-fin" },
+    // Ränge 1–3 werden durch die Finalrunde Top 3 (Round-Robin) bestimmt,
+    // nicht durch Einzelspiele – siehe getFinalRanking / getFinalrundeTop3Standings.
     { rank: 4, kind: "winner", matchId: "j-p4"  },
     { rank: 5, kind: "loser",  matchId: "j-p4"  },
     { rank: 6, kind: "winner", matchId: "j-p6"  },
@@ -486,8 +487,8 @@ const FINAL_RANK_RULES = {
 
 // Berechnet die Round-Robin-Tabelle der «Finalrunde Top 3» (nur Jugend).
 // Gewertet werden die Matches j-fr1, j-fr2 und j-fin; jedes der drei Teams
-// spielt genau zweimal. Das Ergebnis wird nach Punkten / Tordifferenz /
-// erzielten Punkten / Code sortiert.
+// spielt genau zweimal. Das Ergebnis wird nach Punkten / Siege /
+// erzielten Punkten / Punkteverhältnis / Code sortiert.
 // Gibt null zurück, solange die drei Finalisten noch nicht feststehen.
 function getFinalrundeTop3Standings() {
   const category = "youth";
@@ -515,7 +516,7 @@ function getFinalrundeTop3Standings() {
 
   // Statistiken für die Top-3-Teams aus den Finalrunde-Matches berechnen
   const statsMap = {};
-  for (const code of top3Codes) statsMap[code] = { pts: 0, gf: 0, ga: 0, played: 0 };
+  for (const code of top3Codes) statsMap[code] = { pts: 0, wins: 0, gf: 0, ga: 0, played: 0 };
 
   for (const match of finalrundeMatches) {
     if (!hasCompleteScore(match.id)) continue;
@@ -531,14 +532,14 @@ function getFinalrundeTop3Standings() {
       statsMap[homeCode].played++;
       statsMap[homeCode].gf += h;
       statsMap[homeCode].ga += a;
-      if (h > a) statsMap[homeCode].pts += 2;
+      if (h > a) { statsMap[homeCode].pts += 2; statsMap[homeCode].wins++; }
       else if (h === a) statsMap[homeCode].pts += 1;
     }
     if (statsMap[awayCode] !== undefined) {
       statsMap[awayCode].played++;
       statsMap[awayCode].gf += a;
       statsMap[awayCode].ga += h;
-      if (a > h) statsMap[awayCode].pts += 2;
+      if (a > h) { statsMap[awayCode].pts += 2; statsMap[awayCode].wins++; }
       else if (h === a) statsMap[awayCode].pts += 1;
     }
   }
@@ -550,13 +551,14 @@ function getFinalrundeTop3Standings() {
     ...statsMap[code],
   }));
 
-  // Nach Finalrunden-Tabelle sortieren: Punkte > Tordiff > Tore > Code
+  // Nach Finalrunden-Tabelle sortieren: Punkte > Siege > Erzielte Punkte > Punkteverhältnis > Code
   rows.sort((a, b) => {
     if (b.pts !== a.pts) return b.pts - a.pts;
-    const diffA = a.gf - a.ga;
-    const diffB = b.gf - b.ga;
-    if (diffB !== diffA) return diffB - diffA;
+    if (b.wins !== a.wins) return b.wins - a.wins;
     if (b.gf !== a.gf) return b.gf - a.gf;
+    const ratioA = a.ga === 0 ? (a.gf > 0 ? Infinity : 0) : a.gf / a.ga;
+    const ratioB = b.ga === 0 ? (b.gf > 0 ? Infinity : 0) : b.gf / b.ga;
+    if (ratioB !== ratioA) return ratioB - ratioA;
     return a.code.localeCompare(b.code);
   });
 
@@ -567,11 +569,13 @@ function getFinalrundeTop3Standings() {
 // { rank, code, team, pts, gf, ga, played, definitive }.
 //
 // Ein Rang gilt als `definitive`, sobald sein endgültiger Platz feststeht:
+//   - Jugend Ränge 1–3: alle drei Finalrunde-Matches (j-fr1, j-fr2, j-fin) müssen
+//     gespielt sein (Round-Robin-Tabelle über getFinalrundeTop3Standings).
 //   - Wird er durch ein Finalspiel bestimmt (FINAL_RANK_RULES), muss dieses
 //     Spiel ein vollständiges Resultat haben.
-//   - Wird er nicht durch ein Finalspiel bestimmt (z.B. Jugend Rang 3),
-//     muss der Gruppenrang gesichert sein (entweder alle Gruppenspiele gespielt
-//     oder via getEarlyResolvedGroupRanks mathematisch gesichert).
+//   - Wird er durch keinen Eintrag in FINAL_RANK_RULES abgedeckt, muss der
+//     Gruppenrang gesichert sein (alle Gruppenspiele gespielt oder via
+//     getEarlyResolvedGroupRanks mathematisch gesichert).
 //
 // Nicht-definitive Ränge bleiben in der Schlussrangliste leer (code/team =
 // null), so dass die Ansicht nichts Vorläufiges als „endgültig" suggeriert.
@@ -588,24 +592,32 @@ function getFinalRanking(category) {
   const result = [];
   for (let i = 0; i < total; i++) {
     const rank = i + 1;
-    const rule = ruleByRank.get(rank);
     let code = null;
     let definitive = false;
 
-    if (rule) {
-      const { winnerCode, loserCode } = getWinnerLoserOf(rule.matchId);
-      const candidate = rule.kind === "winner" ? winnerCode : loserCode;
-      if (candidate) {
-        code = candidate;
+    // Jugend Ränge 1–3: Round-Robin-Tabelle der Finalrunde Top 3 ist massgebend.
+    if (category === "youth" && rank <= 3) {
+      const top3 = getFinalrundeTop3Standings();
+      if (top3 && top3.length >= rank && top3[rank - 1].definitive) {
+        code = top3[rank - 1].code;
         definitive = true;
       }
-    } else if (groupComplete) {
-      code = groupStandings[i]?.code ?? null;
-      definitive = code != null;
-    } else if (earlyRanks && earlyRanks.has(rank)) {
-      // Gruppenrang bereits mathematisch gesichert
-      code = earlyRanks.get(rank);
-      definitive = true;
+    } else {
+      const rule = ruleByRank.get(rank);
+      if (rule) {
+        const { winnerCode, loserCode } = getWinnerLoserOf(rule.matchId);
+        const candidate = rule.kind === "winner" ? winnerCode : loserCode;
+        if (candidate) {
+          code = candidate;
+          definitive = true;
+        }
+      } else if (groupComplete) {
+        code = groupStandings[i]?.code ?? null;
+        definitive = code != null;
+      } else if (earlyRanks && earlyRanks.has(rank)) {
+        code = earlyRanks.get(rank);
+        definitive = true;
+      }
     }
 
     const statsByCode = code
