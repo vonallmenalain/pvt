@@ -1158,7 +1158,7 @@ function renderOrganizationPanel() {
       ? `<span class="${timeSpanClass}">${slot.time}${labelHtml}</span>`
       : `<span>${slot.time}</span>`;
 
-    return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}">${timeHtml}<span>${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
+    return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}">${timeHtml}<span class="org-arrow">${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
   }).join("");
 
   // Spaltenbreiten (--org-team-w / --org-zaehler-w) berechnen, damit alle
@@ -1259,7 +1259,7 @@ document.addEventListener("click", (event) => {
   if (body) body.hidden = !isOpen;
   toggle.setAttribute("aria-expanded", String(isOpen));
   toggle.classList.toggle("is-open", isOpen);
-  const arrowEl = toggle.querySelector("span:last-child");
+  const arrowEl = toggle.querySelector(".org-arrow");
   if (arrowEl) arrowEl.textContent = isOpen ? "▴" : "▾";
 });
 
