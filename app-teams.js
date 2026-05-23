@@ -961,26 +961,18 @@ function getMatchesForTeam(team) {
   // 2. Finals/Playoffs: aufgelöste Codes
   const playoffMatches = TOURNAMENT_SCHEDULE.filter((m) => m.category === category && m.phaseKind !== "group");
 
-  // Reveal-Logic: zeige nur Playoff-Spiele, die für dieses Team relevant sind.
-  // Ein Playoff-Spiel erscheint, sobald ENTWEDER das vorherige Spiel des Teams
-  // fertig gespielt ist (sequenzielles Enthüllen) ODER beide Teilnehmer des
-  // Spiels bereits feststehen (z.B. Rang bereits gesichert → frühzeitig sichtbar).
+  // Reveal-Logic: zeige Playoff-Spiele, sobald das eigene Team auf einer Seite
+  // feststeht (Rang mathematisch gesichert oder Vorrundenspiel bereits beendet).
+  // Der Gegner kann noch offen sein – er erscheint dann als "Rang N" / "Sieger …".
   const sortedPlayoffs = playoffMatches.slice().sort((a, b) => a.time.localeCompare(b.time));
-  let previousVisibleId = teamMatches.length ? teamMatches[teamMatches.length - 1].id : null;
   for (const m of sortedPlayoffs) {
     const homeCode = refTeamCode(m.home, m.category);
     const awayCode = refTeamCode(m.away, m.category);
     const isMine = homeCode === code || awayCode === code;
     if (!isMine) continue;
-    const prevComplete = !previousVisibleId || hasCompleteScore(previousVisibleId);
-    // Auch anzeigen wenn beide Spieler bereits feststehen (Rang frühzeitig gesichert)
-    const matchReady = homeCode !== null && awayCode !== null;
-    if (prevComplete || matchReady) {
-      teamMatches.push(m);
-      previousVisibleId = m.id;
-    } else {
-      break;
-    }
+    // Eigenes Team steht auf mindestens einer Seite fest → Spiel anzeigen,
+    // auch wenn der Gegner noch nicht aufgelöst ist.
+    teamMatches.push(m);
   }
   return teamMatches.sort((a, b) => a.time.localeCompare(b.time));
 }
