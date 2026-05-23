@@ -1154,7 +1154,7 @@ function renderOrganizationPanel() {
   // Feste Abhängigkeits-Hinweise: Zeiten, bei denen das Folge-Playoff-Spiel
   // vom Ergebnis der vorherigen Runde abhängt, werden ebenfalls rot markiert.
   const ORG_DEPENDENCY_LABELS = {
-    "15:00": ["(Abhängigkeit Vorangehendes Spiel Ambitioniert)"],
+    "15:12": ["(Abhängigkeit Vorangehendes Spiel Ambitioniert)"],
     "15:48": [
       "(Abhängigkeit Vorangehendes Spiel Junioren)",
       "(Abhängigkeit Vorangehendes Spiel Ambitioniert)",
