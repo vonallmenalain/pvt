@@ -32,6 +32,8 @@ const ranglistePanel = document.getElementById("rangliste-panel");
 const ranglisteTableBody = document.getElementById("rangliste-table-body");
 const ranglisteFinalList = document.getElementById("rangliste-final-list");
 const ranglisteCategoryTiles = document.querySelectorAll(".rangliste-category-tiles .cat-tile");
+const ranglisteFinaleTop3Section = document.getElementById("rangliste-finale-top3-section");
+const ranglisteFinaleTop3Body = document.getElementById("rangliste-finale-top3-body");
 
 const teamLists = {
   youth: document.getElementById("teams-list-youth"),
@@ -231,17 +233,75 @@ function allGroupMatchesPlayed(category) {
   return groupMatches.every((m) => hasCompleteScore(m.id));
 }
 
+// Liefert eine Map<rank, teamCode> für Gruppenränge, die bereits mathematisch
+// feststehen – auch wenn noch nicht alle Gruppenspiele gespielt sind.
+// Ein Rang gilt als gesichert, wenn:
+//   • Mindestens (R-1) andere Teams unabhängig vom Ausgang aller noch offenen
+//     Spiele mehr Punkte erzielen werden als dieses Team maximal erreichen kann.
+//   • Höchstens (R-1) andere Teams noch mehr Punkte erzielen könnten als dieses
+//     Team aktuell hat (d.h. niemand von weiter unten kann vorbeikommen).
+// Tiebreaker werden bei dieser vereinfachten Prüfung nicht berücksichtigt –
+// bei Punktegleichheit werden Ränge erst nach Abschluss aller Gruppenspiele
+// als gesichert gewertet.
+function getEarlyResolvedGroupRanks(category) {
+  if (allGroupMatchesPlayed(category)) return new Map();
+
+  const standings = getSortedStandings(category);
+  const groupMatches = getGroupMatchesForCategory(category);
+
+  // Verbleibende Spiele pro Team zählen
+  const remainingPerTeam = {};
+  for (const { code } of standings) remainingPerTeam[code] = 0;
+  for (const m of groupMatches) {
+    if (!hasCompleteScore(m.id)) {
+      if (m.home.code) remainingPerTeam[m.home.code] = (remainingPerTeam[m.home.code] || 0) + 1;
+      if (m.away.code) remainingPerTeam[m.away.code] = (remainingPerTeam[m.away.code] || 0) + 1;
+    }
+  }
+
+  const resolved = new Map();
+
+  for (let i = 0; i < standings.length; i++) {
+    const team = standings[i];
+    const myMax = team.pts + 2 * (remainingPerTeam[team.code] || 0);
+
+    // Teams, die DEFINITIV über mir liegen (ihre aktuellen Punkte > mein Maximum)
+    const definitelyAbove = standings.filter((o, j) => j !== i && o.pts > myMax).length;
+
+    // Teams, die mich noch überholen KÖNNTEN (ihr Maximum > meine aktuellen Punkte)
+    const couldExceed = standings.filter((o, j) => {
+      if (j === i) return false;
+      const oMax = o.pts + 2 * (remainingPerTeam[o.code] || 0);
+      return oMax > team.pts;
+    }).length;
+
+    const rank = i + 1;
+    // Gesichert wenn: genau (R-1) Teams sind definitiv über mir UND
+    // höchstens (R-1) Teams könnten mich noch überholen.
+    if (definitelyAbove >= rank - 1 && couldExceed <= rank - 1) {
+      resolved.set(rank, team.code);
+    }
+  }
+
+  return resolved;
+}
+
 // Liefert für eine Match-Referenz (z.B. { rank: 3 }, { code: "A1" }, { winnerOf: "a-q1" })
 // den zugehörigen Team-Code (A1/P3/...) – oder null, falls noch nicht aufgelöst.
-// Rang-Referenzen werden erst aufgelöst, wenn alle Gruppenspiele der Kategorie
-// gespielt sind, damit Platzierungen final feststehen.
+// Rang-Referenzen werden aufgelöst, sobald der Gruppenrang mathematisch feststeht –
+// entweder weil alle Gruppenspiele gespielt sind oder weil der Rang bereits gesichert
+// ist (getEarlyResolvedGroupRanks).
 function resolveRefCode(ref, category) {
   if (!ref) return null;
   if (ref.code) return ref.code;
   if (ref.rank) {
-    if (!allGroupMatchesPlayed(category)) return null;
-    const standings = getSortedStandings(category);
-    return standings[ref.rank - 1]?.code ?? null;
+    if (allGroupMatchesPlayed(category)) {
+      const standings = getSortedStandings(category);
+      return standings[ref.rank - 1]?.code ?? null;
+    }
+    // Früherkennung: Rang bereits mathematisch gesichert?
+    const earlyRanks = getEarlyResolvedGroupRanks(category);
+    return earlyRanks.get(ref.rank) ?? null;
   }
   if (ref.winnerOf) return getWinnerLoserOf(ref.winnerOf).winnerCode;
   if (ref.loserOf) return getWinnerLoserOf(ref.loserOf).loserCode;
@@ -417,14 +477,94 @@ const FINAL_RANK_RULES = {
   ],
 };
 
+// Berechnet die Round-Robin-Tabelle der «Finalrunde Top 3» (nur Jugend).
+// Gewertet werden die Matches j-fr1, j-fr2 und j-fin; jedes der drei Teams
+// spielt genau zweimal. Das Ergebnis wird nach Punkten / Tordifferenz /
+// erzielten Punkten / Code sortiert.
+// Gibt null zurück, solange die drei Finalisten noch nicht feststehen.
+function getFinalrundeTop3Standings() {
+  const category = "youth";
+  const FINALRUNDE_IDS = ["j-fr1", "j-fr2", "j-fin"];
+
+  // Die 3 Teams feststellen (Gruppenränge 1–3, sobald gesichert oder Gruppe fertig)
+  const groupComplete = allGroupMatchesPlayed(category);
+  let top3Codes;
+
+  if (groupComplete) {
+    const gs = getSortedStandings(category);
+    top3Codes = [gs[0]?.code, gs[1]?.code, gs[2]?.code].filter(Boolean);
+  } else {
+    const early = getEarlyResolvedGroupRanks(category);
+    top3Codes = [early.get(1), early.get(2), early.get(3)].filter(Boolean);
+  }
+
+  if (top3Codes.length === 0) return null;
+
+  // Nur mit vollständiger Dreiergruppe weiterarbeiten
+  if (top3Codes.length < 3) return null;
+
+  const finalrundeMatches = TOURNAMENT_SCHEDULE.filter((m) => FINALRUNDE_IDS.includes(m.id));
+  const allDone = finalrundeMatches.every((m) => hasCompleteScore(m.id));
+
+  // Statistiken für die Top-3-Teams aus den Finalrunde-Matches berechnen
+  const statsMap = {};
+  for (const code of top3Codes) statsMap[code] = { pts: 0, gf: 0, ga: 0, played: 0 };
+
+  for (const match of finalrundeMatches) {
+    if (!hasCompleteScore(match.id)) continue;
+    const homeCode = resolveRefCode(match.home, match.category);
+    const awayCode = resolveRefCode(match.away, match.category);
+    if (!homeCode || !awayCode) continue;
+
+    const score = resultMap[match.id];
+    const h = Number(score.home);
+    const a = Number(score.away);
+
+    if (statsMap[homeCode] !== undefined) {
+      statsMap[homeCode].played++;
+      statsMap[homeCode].gf += h;
+      statsMap[homeCode].ga += a;
+      if (h > a) statsMap[homeCode].pts += 2;
+      else if (h === a) statsMap[homeCode].pts += 1;
+    }
+    if (statsMap[awayCode] !== undefined) {
+      statsMap[awayCode].played++;
+      statsMap[awayCode].gf += a;
+      statsMap[awayCode].ga += h;
+      if (a > h) statsMap[awayCode].pts += 2;
+      else if (h === a) statsMap[awayCode].pts += 1;
+    }
+  }
+
+  const rows = top3Codes.map((code) => ({
+    code,
+    team: getTeamByCode(code),
+    definitive: allDone,
+    ...statsMap[code],
+  }));
+
+  // Nach Finalrunden-Tabelle sortieren: Punkte > Tordiff > Tore > Code
+  rows.sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const diffA = a.gf - a.ga;
+    const diffB = b.gf - b.ga;
+    if (diffB !== diffA) return diffB - diffA;
+    if (b.gf !== a.gf) return b.gf - a.gf;
+    return a.code.localeCompare(b.code);
+  });
+
+  return rows;
+}
+
 // Liefert die Schlussrangliste einer Kategorie als Array von
 // { rank, code, team, pts, gf, ga, played, definitive }.
 //
 // Ein Rang gilt als `definitive`, sobald sein endgültiger Platz feststeht:
 //   - Wird er durch ein Finalspiel bestimmt (FINAL_RANK_RULES), muss dieses
 //     Spiel ein vollständiges Resultat haben.
-//   - Wird er nicht durch ein Finalspiel bestimmt (z.B. Jugend Platz 5–8),
-//     muss die Gruppenphase der Kategorie komplett gespielt sein.
+//   - Wird er nicht durch ein Finalspiel bestimmt (z.B. Jugend Rang 3),
+//     muss der Gruppenrang gesichert sein (entweder alle Gruppenspiele gespielt
+//     oder via getEarlyResolvedGroupRanks mathematisch gesichert).
 //
 // Nicht-definitive Ränge bleiben in der Schlussrangliste leer (code/team =
 // null), so dass die Ansicht nichts Vorläufiges als „endgültig" suggeriert.
@@ -433,6 +573,7 @@ function getFinalRanking(category) {
   const total = groupStandings.length;
   const rules = FINAL_RANK_RULES[category] || [];
   const groupComplete = allGroupMatchesPlayed(category);
+  const earlyRanks = groupComplete ? null : getEarlyResolvedGroupRanks(category);
 
   const ruleByRank = new Map();
   for (const rule of rules) ruleByRank.set(rule.rank, rule);
@@ -454,6 +595,10 @@ function getFinalRanking(category) {
     } else if (groupComplete) {
       code = groupStandings[i]?.code ?? null;
       definitive = code != null;
+    } else if (earlyRanks && earlyRanks.has(rank)) {
+      // Gruppenrang bereits mathematisch gesichert
+      code = earlyRanks.get(rank);
+      definitive = true;
     }
 
     const statsByCode = code
@@ -816,8 +961,10 @@ function getMatchesForTeam(team) {
   // 2. Finals/Playoffs: aufgelöste Codes
   const playoffMatches = TOURNAMENT_SCHEDULE.filter((m) => m.category === category && m.phaseKind !== "group");
 
-  // Reveal-Logic: zeige nur Playoff-Spiele, die für dieses Team relevant sind,
-  // und sukzessive (sobald das vorherige Spiel des Teams ein Resultat hat).
+  // Reveal-Logic: zeige nur Playoff-Spiele, die für dieses Team relevant sind.
+  // Ein Playoff-Spiel erscheint, sobald ENTWEDER das vorherige Spiel des Teams
+  // fertig gespielt ist (sequenzielles Enthüllen) ODER beide Teilnehmer des
+  // Spiels bereits feststehen (z.B. Rang bereits gesichert → frühzeitig sichtbar).
   const sortedPlayoffs = playoffMatches.slice().sort((a, b) => a.time.localeCompare(b.time));
   let previousVisibleId = teamMatches.length ? teamMatches[teamMatches.length - 1].id : null;
   for (const m of sortedPlayoffs) {
@@ -825,8 +972,10 @@ function getMatchesForTeam(team) {
     const awayCode = refTeamCode(m.away, m.category);
     const isMine = homeCode === code || awayCode === code;
     if (!isMine) continue;
-    // Erstes Playoff direkt nach Gruppenphase, sobald aufgelöst → anzeigen
-    if (!previousVisibleId || hasCompleteScore(previousVisibleId)) {
+    const prevComplete = !previousVisibleId || hasCompleteScore(previousVisibleId);
+    // Auch anzeigen wenn beide Spieler bereits feststehen (Rang frühzeitig gesichert)
+    const matchReady = homeCode !== null && awayCode !== null;
+    if (prevComplete || matchReady) {
       teamMatches.push(m);
       previousVisibleId = m.id;
     } else {
@@ -1598,6 +1747,7 @@ function renderRangliste() {
     if (ranglisteTableBody) {
       ranglisteTableBody.innerHTML = '<tr><td colspan="7">Keine Daten verfügbar.</td></tr>';
     }
+    if (ranglisteFinaleTop3Section) ranglisteFinaleTop3Section.hidden = true;
     return;
   }
 
@@ -1625,7 +1775,7 @@ function renderRangliste() {
     }
   }
 
-  // Untere Tabelle: reine Gruppenphasen-Rangliste (gespielt/Punkte/Tore).
+  // Mittlere Tabelle: reine Gruppenphasen-Rangliste (gespielt/Punkte/Tore).
   if (ranglisteTableBody) {
     const rows = getSortedStandings(selectedRanglisteCategory).map(
       ({ code, team, pts, gf, ga, played }, idx) => {
@@ -1636,6 +1786,27 @@ function renderRangliste() {
       }
     );
     ranglisteTableBody.innerHTML = rows.join("");
+  }
+
+  // Untere Tabelle «Rangliste Finalrunde Top 3» – nur für die Jugend-Kategorie.
+  if (ranglisteFinaleTop3Section) {
+    const isYouth = selectedRanglisteCategory === "youth";
+    ranglisteFinaleTop3Section.hidden = !isYouth;
+
+    if (isYouth && ranglisteFinaleTop3Body) {
+      const top3 = getFinalrundeTop3Standings() || [];
+      const tableRows = [0, 1, 2].map((i) => {
+        const entry = top3[i];
+        if (!entry) {
+          return `<tr><td>${i + 1}</td><td><span class="team-placeholder">noch offen</span></td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>`;
+        }
+        const teamLabel = entry.team
+          ? escapeHtml(entry.team.name)
+          : (entry.code ? escapeHtml(entry.code) : `<span class="team-placeholder">noch offen</span>`);
+        return `<tr><td>${i + 1}</td><td>${teamLabel}</td><td>${entry.played}</td><td>${entry.pts}</td><td>${entry.gf}</td><td>${entry.ga}</td><td>${ratioText(entry.gf, entry.ga)}</td></tr>`;
+      });
+      ranglisteFinaleTop3Body.innerHTML = tableRows.join("");
+    }
   }
 }
 
