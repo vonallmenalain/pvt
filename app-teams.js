@@ -62,6 +62,8 @@ const dashboardTeamSelect = document.getElementById("dashboard-team-select");
 const dashboardTitle = document.getElementById("dashboard-team-title");
 const dashboardInfo = document.getElementById("dashboard-team-info");
 const dashboardGroupTable = document.getElementById("dashboard-group-table");
+const dashboardFinalrundeSection = document.getElementById("dashboard-finalrunde-section");
+const dashboardFinalrundeTable = document.getElementById("dashboard-finalrunde-table");
 const dashboardMatchTable = document.getElementById("dashboard-match-table");
 const dashboardZaehlerTable = document.getElementById("dashboard-zaehler-table");
 
@@ -71,6 +73,10 @@ const scheduleStandingsWrap = document.getElementById("schedule-standings");
 const scheduleStandingsToggle = document.getElementById("schedule-standings-toggle");
 const scheduleStandingsBody = document.getElementById("schedule-standings-body");
 const scheduleStandingsTable = document.getElementById("schedule-standings-table");
+const scheduleFinalrundeStandingsWrap = document.getElementById("schedule-finalrunde-standings");
+const scheduleFinalrundeToggle = document.getElementById("schedule-finalrunde-toggle");
+const scheduleFinalrundeBody = document.getElementById("schedule-finalrunde-body");
+const scheduleFinalrundeTable = document.getElementById("schedule-finalrunde-table");
 
 // ── State ────────────────────────────────────────────────────────────────────
 let currentUser = null;
@@ -84,6 +90,7 @@ let ranglistePublished = false;
 // bleibt über Kategorie-Wechsel hinweg erhalten, damit Nutzer:innen die
 // Tabelle nicht bei jedem Wechsel erneut aufklappen müssen.
 let scheduleStandingsOpen = false;
+let scheduleFinalrundeOpen = false;
 
 // ── Focus-Preservation für Result-Inputs ────────────────────────────────────
 // Beim Speichern eines Punktestands triggert Firestore via onSnapshot ein
@@ -837,8 +844,45 @@ function renderScheduleStandings() {
     .join("");
 }
 
+// Füllt ein <tbody>-Element mit den 3 Zeilen der Finalrunde Top 3.
+// Solange die Top-3-Teams noch nicht feststehen, erscheint «noch offen» als
+// Teamname. Ein optionaler selectedCode hebt die eigene Zeile hervor.
+function renderFinalrundeTop3Table(tbodyEl, selectedCode = null) {
+  if (!tbodyEl) return;
+  const top3 = getFinalrundeTop3Standings();
+  const tableRows = [0, 1, 2].map((i) => {
+    const entry = top3 ? top3[i] : null;
+    const isSelected = entry && selectedCode && entry.code === selectedCode;
+    const rowClass = isSelected ? ' class="is-selected-row"' : "";
+    if (!entry) {
+      return `<tr${rowClass}><td>${i + 1}</td><td><span class="team-placeholder">noch offen</span></td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>`;
+    }
+    const nameCell = entry.team
+      ? `<button type="button" class="team-link" data-team-select="${entry.team.id}">${escapeHtml(entry.team.name)}</button>`
+      : (entry.code ? escapeHtml(entry.code) : `<span class="team-placeholder">noch offen</span>`);
+    return `<tr${rowClass}><td>${i + 1}</td><td>${nameCell}</td><td>${entry.played}</td><td>${entry.pts}</td><td>${entry.gf}</td><td>${entry.ga}</td><td>${ratioText(entry.gf, entry.ga)}</td></tr>`;
+  });
+  tbodyEl.innerHTML = tableRows.join("");
+}
+
+function renderScheduleFinalrundeStandings() {
+  if (!scheduleFinalrundeStandingsWrap) return;
+  const showFinalrunde = selectedScheduleCategory === "youth";
+  scheduleFinalrundeStandingsWrap.hidden = !showFinalrunde;
+  if (!showFinalrunde) return;
+
+  if (scheduleFinalrundeBody) scheduleFinalrundeBody.hidden = !scheduleFinalrundeOpen;
+  if (scheduleFinalrundeToggle) {
+    scheduleFinalrundeToggle.setAttribute("aria-expanded", String(scheduleFinalrundeOpen));
+    scheduleFinalrundeToggle.classList.toggle("is-open", scheduleFinalrundeOpen);
+  }
+
+  renderFinalrundeTop3Table(scheduleFinalrundeTable);
+}
+
 function renderSchedule() {
   renderScheduleStandings();
+  renderScheduleFinalrundeStandings();
   if (!scheduleTableBody) return;
   const focus = captureResultInputFocus();
   const matches = scheduleMatchesFiltered();
@@ -926,6 +970,7 @@ function renderDashboardEmptyState() {
   dashboardTitle.textContent = "Team-Dashboard";
   dashboardInfo.textContent = "Wähle ein Team aus, um Spiele und Tabelle zu sehen.";
   dashboardGroupTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
+  if (dashboardFinalrundeSection) dashboardFinalrundeSection.hidden = true;
   dashboardMatchTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
   if (dashboardZaehlerTable) {
     dashboardZaehlerTable.innerHTML = '<tr><td colspan="7">Noch kein Team ausgewählt.</td></tr>';
@@ -995,6 +1040,17 @@ function renderTeamDashboard(teamId) {
   dashboardInfo.textContent = CATEGORY_LABELS[category];
 
   renderGroupStandings(category, code);
+
+  // Tabelle Finalrunde Top 3 – nur für Jugend-Teams, die zur Top 3 gehören.
+  if (dashboardFinalrundeSection) {
+    const isYouth = category === "youth";
+    const top3 = isYouth ? getFinalrundeTop3Standings() : null;
+    const isInTop3 = top3 ? top3.some((e) => e.code === code) : false;
+    dashboardFinalrundeSection.hidden = !isInTop3;
+    if (isInTop3) {
+      renderFinalrundeTop3Table(dashboardFinalrundeTable, code);
+    }
+  }
 
   // Im Dashboard erscheinen zwei getrennte Tabellen:
   //   • "Eigene Spiele"  – das ausgewählte Team spielt selbst mit.
@@ -1229,6 +1285,11 @@ function applyOrgColumnWidths() {
 scheduleStandingsToggle?.addEventListener("click", () => {
   scheduleStandingsOpen = !scheduleStandingsOpen;
   renderScheduleStandings();
+});
+
+scheduleFinalrundeToggle?.addEventListener("click", () => {
+  scheduleFinalrundeOpen = !scheduleFinalrundeOpen;
+  renderScheduleFinalrundeStandings();
 });
 
 // Schriftgrösse des Org-Panels kann sich beim Wechsel zwischen Desktop und

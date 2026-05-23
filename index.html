@@ -1195,6 +1195,20 @@
               </div>
             </div>
           </div>
+          <div class="schedule-standings" id="schedule-finalrunde-standings" hidden>
+            <button type="button" class="schedule-standings-toggle" id="schedule-finalrunde-toggle" aria-expanded="false" aria-controls="schedule-finalrunde-body">
+              <span class="schedule-standings-title">Tabelle Finalrunde</span>
+              <span class="schedule-standings-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="schedule-standings-body" id="schedule-finalrunde-body" hidden>
+              <div class="table-scroll">
+                <table class="schedule-table" aria-label="Tabelle Finalrunde">
+                  <thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead>
+                  <tbody id="schedule-finalrunde-table"><tr><td colspan="7">–</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
           <div class="table-scroll">
             <table class="schedule-table" aria-label="Spielplan">
               <thead><tr><th class="col-time-start">Zeit</th><th class="col-time-end" aria-hidden="true"></th><th>Feld</th><th>Phase</th><th class="col-game-home"></th><th class="col-game-score">Spiel</th><th class="col-game-away"></th><th class="col-zaehler">Zählen</th></tr></thead>
@@ -1233,6 +1247,15 @@
         <h4 class="dashboard-subtitle">Tabelle Gruppenphase</h4>
         <div class="table-scroll">
           <table class="schedule-table"><thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead><tbody id="dashboard-group-table"><tr><td colspan="7">Noch kein Team ausgewählt.</td></tr></tbody></table>
+        </div>
+        <div id="dashboard-finalrunde-section" hidden>
+          <h4 class="dashboard-subtitle">Tabelle Finalrunde</h4>
+          <div class="table-scroll">
+            <table class="schedule-table" aria-label="Tabelle Finalrunde">
+              <thead><tr><th>#</th><th>Team</th><th>Sp</th><th>P</th><th>+</th><th>-</th><th>Verh.</th></tr></thead>
+              <tbody id="dashboard-finalrunde-table"><tr><td colspan="7">–</td></tr></tbody>
+            </table>
+          </div>
         </div>
         <h4 class="dashboard-subtitle">Eigene Spiele</h4>
         <div class="table-scroll">
