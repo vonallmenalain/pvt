@@ -11,7 +11,7 @@
 //                          → gilt für alle Slots bis und mit 15:48
 //   • Slotdauer Finalrunde: 15 Min (13 Min Spiel + 2 Min Pause/Wechsel)
 //                          → gilt für alle Slots ab 16:00
-//   • Letzter Start:       16:45 Uhr (Finals Plausch & Jugend); Ambitioniert-Finale: 16:30
+//   • Letzter Start:       16:45 Uhr (Finals aller Kategorien)
 //   • 3 Felder:            Feld 1 (Ambitioniert), Feld 2 (Plausch+Jugend), Feld 3 (Jugend)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -45,7 +45,7 @@ export const CATEGORY_COLORS = {
 export const CATEGORY_CODES = {
   adult_ambitious: ["A1", "A2", "A3", "A4", "A5", "A6"],
   adult_fun:       ["P1", "P2", "P3", "P4"],
-  youth:           ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8"],
+  youth:           ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"],
 };
 
 // Zuordnung Code → Kategorie (für Validierung / Anzeige)
@@ -101,23 +101,25 @@ function makeEntry({ id, time, field, category, phase, phaseKind, home, away }) 
 
 // ── Feld 1: Erwachsene Ambitioniert ──────────────────────────────────────────
 // 15 Vorrundenspiele (Round-Robin) + Zwischenrunde + Quali + Platzierungs-/Finalspiele
+// Alle Ambitioniert-Spiele starten um 12:12 (statt 12:00), da um 12:00 auf Feld 1
+// ein Jugendspiel (J5–J6) stattfindet.
 const SCHEDULE_AMBI = [
-  // Vorrunde (15 Spiele)
-  ["a-g01", "12:00", "A1", "A6"],
-  ["a-g02", "12:12", "A2", "A5"],
-  ["a-g03", "12:24", "A3", "A4"],
-  ["a-g04", "12:36", "A1", "A5"],
-  ["a-g05", "12:48", "A6", "A4"],
-  ["a-g06", "13:00", "A2", "A3"],
-  ["a-g07", "13:12", "A1", "A4"],
-  ["a-g08", "13:24", "A5", "A3"],
-  ["a-g09", "13:36", "A6", "A2"],
-  ["a-g10", "13:48", "A3", "A1"],
-  ["a-g11", "14:00", "A4", "A2"],
-  ["a-g12", "14:12", "A5", "A6"],
-  ["a-g13", "14:24", "A2", "A1"],
-  ["a-g14", "14:36", "A3", "A6"],
-  ["a-g15", "14:48", "A4", "A5"],
+  // Vorrunde (15 Spiele) – verschoben +12 Minuten gegenüber ursprünglichem Plan
+  ["a-g01", "12:12", "A1", "A6"],
+  ["a-g02", "12:24", "A2", "A5"],
+  ["a-g03", "12:36", "A3", "A4"],
+  ["a-g04", "12:48", "A1", "A5"],
+  ["a-g05", "13:00", "A6", "A4"],
+  ["a-g06", "13:12", "A2", "A3"],
+  ["a-g07", "13:24", "A1", "A4"],
+  ["a-g08", "13:36", "A5", "A3"],
+  ["a-g09", "13:48", "A6", "A2"],
+  ["a-g10", "14:00", "A3", "A1"],
+  ["a-g11", "14:12", "A4", "A2"],
+  ["a-g12", "14:24", "A5", "A6"],
+  ["a-g13", "14:36", "A2", "A1"],
+  ["a-g14", "14:48", "A3", "A6"],
+  ["a-g15", "15:00", "A4", "A5"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "1", category: "adult_ambitious",
   phase: "RoundRobin", phaseKind: "group",
@@ -126,43 +128,43 @@ const SCHEDULE_AMBI = [
 
 const SCHEDULE_AMBI_FINALS = [
   makeEntry({
-    id: "a-qtop", time: "15:00", field: "1", category: "adult_ambitious",
+    id: "a-qtop", time: "15:12", field: "1", category: "adult_ambitious",
     phase: "Zwischenrunde 1", phaseKind: "quali",
     home: { rank: 1 }, away: { rank: 2 },
   }),
   makeEntry({
-    id: "a-q1", time: "15:12", field: "1", category: "adult_ambitious",
+    id: "a-q1", time: "15:24", field: "1", category: "adult_ambitious",
     phase: "Zwischenrunde 2", phaseKind: "quali",
     home: { rank: 3 }, away: { rank: 6 },
   }),
   makeEntry({
-    id: "a-q2", time: "15:24", field: "1", category: "adult_ambitious",
+    id: "a-q2", time: "15:36", field: "1", category: "adult_ambitious",
     phase: "Zwischenrunde 3", phaseKind: "quali",
     home: { rank: 4 }, away: { rank: 5 },
   }),
   makeEntry({
-    id: "a-quali1", time: "15:36", field: "1", category: "adult_ambitious",
+    id: "a-quali1", time: "15:48", field: "1", category: "adult_ambitious",
     phase: "Halbfinal 1", phaseKind: "semifinal",
     home: { winnerOf: "a-qtop" }, away: { winnerOf: "a-q2" },
   }),
   makeEntry({
-    id: "a-quali2", time: "15:48", field: "1", category: "adult_ambitious",
+    id: "a-quali2", time: "16:00", field: "1", category: "adult_ambitious",
     phase: "Halbfinal 2", phaseKind: "semifinal",
     home: { loserOf: "a-qtop" }, away: { winnerOf: "a-q1" },
   }),
   // Ab hier 15-Minuten-Slots (13 Min Spielzeit + 2 Min Pause).
   makeEntry({
-    id: "a-p5", time: "16:00", field: "1", category: "adult_ambitious",
+    id: "a-p5", time: "16:15", field: "1", category: "adult_ambitious",
     phase: "Spiel um Platz 5", phaseKind: "placement",
     home: { loserOf: "a-q1" }, away: { loserOf: "a-q2" },
   }),
   makeEntry({
-    id: "a-p3", time: "16:15", field: "1", category: "adult_ambitious",
+    id: "a-p3", time: "16:30", field: "1", category: "adult_ambitious",
     phase: "Spiel um Platz 3", phaseKind: "placement",
     home: { loserOf: "a-quali1" }, away: { loserOf: "a-quali2" },
   }),
   makeEntry({
-    id: "a-fin", time: "16:30", field: "1", category: "adult_ambitious",
+    id: "a-fin", time: "16:45", field: "1", category: "adult_ambitious",
     phase: "Finale", phaseKind: "final",
     home: { winnerOf: "a-quali1" }, away: { winnerOf: "a-quali2" },
   }),
@@ -176,7 +178,7 @@ const SCHEDULE_AMBI_FINALS = [
 //   12:00–13:00  Plausch 1. Round-Robin komplett (6 Spiele)
 //   13:12–13:48  1. Juniorenblock (4 Spiele)
 //   14:00–15:00  Plausch 2. Round-Robin komplett (6 Spiele)
-//   15:12–15:48  2. Juniorenblock (4 Spiele)
+//   15:12–15:48  2. Juniorenblock (4 Spiele + 1 Playoff)
 //   16:00–16:45  Plausch-Finalrunde
 const SCHEDULE_PLAUSCH = [
   ["p-g01", "12:00", "P1", "P2"],
@@ -220,79 +222,99 @@ const SCHEDULE_PLAUSCH_FINALS = [
   }),
 ];
 
-// ── Feld 3: Jugend (durchgehend) + Feld 2 (Block-weise) ──────────────────────
-// 28 Vorrundenspiele Jugend total: 20 auf Feld 3, 8 auf Feld 2 (zwei Blöcke).
-// Spiel um Platz 7, Platz 5, Platz 3 und Finale auf Feld 3.
+// ── Feld 1 (Einzel): Jugend 12:00 ────────────────────────────────────────────
+// Einziges Jugendspiel auf Feld 1: J5–J6 um 12:00, bevor Ambitioniert um 12:12 startet.
+const SCHEDULE_YOUTH_F1 = [
+  makeEntry({
+    id: "j-g00", time: "12:00", field: "1", category: "youth",
+    phase: "RoundRobin", phaseKind: "group",
+    home: { code: "J5" }, away: { code: "J6" },
+  }),
+];
 
-// Feld 3 (immer Jugend-Netzhöhe) – 20 Vorrundenspiele:
-// Die ersten vier Junioren-Spiele decken alle 8 Teams ab
-// (J1–J2, J3–J4, J5–J6, J7–J8), danach komplettes Round-Robin.
+// ── Feld 3: Jugend (durchgehend) ─────────────────────────────────────────────
+// 19 Vorrundenspiele auf Feld 3 (J1–J9, 9 Teams).
+// Das erste Spiel auf Feld 3 beginnt um 12:00 gleichzeitig mit dem Jugendspiel
+// auf Feld 1 (j-g00).
 const SCHEDULE_YOUTH_F3 = [
-  ["j-g01", "12:00", "J1", "J2"],
-  ["j-g02", "12:12", "J3", "J4"],
-  ["j-g03", "12:24", "J5", "J6"],
-  ["j-g04", "12:36", "J7", "J8"],
-  ["j-g05", "12:48", "J1", "J4"],
-  ["j-g06", "13:00", "J2", "J3"],
-  ["j-g07", "13:12", "J5", "J7"],
-  ["j-g08", "13:24", "J1", "J3"],
-  ["j-g09", "13:36", "J4", "J7"],
-  ["j-g10", "13:48", "J7", "J2"],
-  ["j-g11", "14:00", "J8", "J1"],
-  ["j-g12", "14:12", "J4", "J6"],
-  ["j-g13", "14:24", "J2", "J5"],
-  ["j-g14", "14:36", "J7", "J3"],
-  ["j-g15", "14:48", "J6", "J1"],
-  ["j-g16", "15:00", "J8", "J2"],
-  ["j-g17", "15:12", "J6", "J7"],
-  ["j-g18", "15:24", "J1", "J5"],
-  ["j-g19", "15:36", "J8", "J6"],
-  ["j-g20", "15:48", "J7", "J1"],
+  ["j-g01", "12:00", "J4", "J9"],
+  ["j-g02", "12:12", "J1", "J2"],
+  ["j-g03", "12:24", "J3", "J7"],
+  ["j-g04", "12:36", "J5", "J8"],
+  ["j-g05", "12:48", "J2", "J4"],
+  ["j-g06", "13:00", "J6", "J9"],
+  ["j-g07", "13:12", "J1", "J5"],
+  ["j-g08", "13:24", "J3", "J9"],
+  ["j-g09", "13:36", "J1", "J8"],
+  ["j-g10", "13:48", "J3", "J4"],
+  ["j-g11", "14:00", "J6", "J7"],
+  ["j-g12", "14:12", "J2", "J3"],
+  ["j-g13", "14:24", "J4", "J7"],
+  ["j-g14", "14:36", "J1", "J3"],
+  ["j-g15", "14:48", "J8", "J9"],
+  ["j-g16", "15:00", "J1", "J6"],
+  ["j-g17", "15:12", "J3", "J5"],
+  ["j-g18", "15:24", "J1", "J4"],
+  ["j-g19", "15:36", "J6", "J8"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "3", category: "youth",
   phase: "RoundRobin", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
-// Feld 2 Jugend-Blöcke (Netzhöhen-Wechsel nötig) – 8 Vorrundenspiele in zwei Blöcken:
+// Feld 2 Jugend-Blöcke (Netzhöhen-Wechsel nötig) – 7 Vorrundenspiele in zwei Blöcken:
 //   Block 1: 13:12–13:48 (4 Spiele)
-//   Block 2: 15:12–15:48 (4 Spiele)
+//   Block 2: 15:12–15:36 (3 Spiele)
 const SCHEDULE_YOUTH_F2 = [
-  ["j-g21", "13:12", "J4", "J8"],
-  ["j-g22", "13:24", "J2", "J6"],
-  ["j-g23", "13:36", "J5", "J8"],
-  ["j-g24", "13:48", "J6", "J3"],
-  ["j-g25", "15:12", "J4", "J5"],
-  ["j-g26", "15:24", "J3", "J8"],
-  ["j-g27", "15:36", "J2", "J4"],
-  ["j-g28", "15:48", "J3", "J5"],
+  ["j-g21", "13:12", "J2", "J8"],
+  ["j-g22", "13:24", "J4", "J6"],
+  ["j-g23", "13:36", "J2", "J7"],
+  ["j-g24", "13:48", "J5", "J9"],
+  ["j-g25", "15:12", "J7", "J8"],
+  ["j-g26", "15:24", "J2", "J9"],
+  ["j-g27", "15:36", "J5", "J7"],
 ].map(([id, time, h, a]) => makeEntry({
   id, time, field: "2", category: "youth",
   phase: "RoundRobin", phaseKind: "group",
   home: { code: h }, away: { code: a },
 }));
 
-// Jugend-Finalspiele: Alle Platzierungsspiele und das Finale auf Feld 3
-// (15-Minuten-Slots ab 16:00).
+// Jugend-Finalspiele (9 Teams):
+//   15:48 – Spiel um Platz 8 (Feld 2) + Finalrunde Top 3 Spiel 1 (Feld 3)
+//   16:00 – Spiel um Platz 6 (Feld 3)
+//   16:15 – Finalrunde Top 3 Spiel 2 (Feld 3)
+//   16:30 – Spiel um Platz 4 (Feld 3)
+//   16:45 – Finalrunde Top 3 Spiel 3 / Finale (Feld 3)
 const SCHEDULE_YOUTH_FINALS = [
   makeEntry({
-    id: "j-p7", time: "16:00", field: "3", category: "youth",
-    phase: "Spiel um Platz 7", phaseKind: "placement",
-    home: { rank: 7 }, away: { rank: 8 },
+    id: "j-p8", time: "15:48", field: "2", category: "youth",
+    phase: "Spiel um Platz 8", phaseKind: "placement",
+    home: { rank: 8 }, away: { rank: 9 },
   }),
   makeEntry({
-    id: "j-p5", time: "16:15", field: "3", category: "youth",
-    phase: "Spiel um Platz 5", phaseKind: "placement",
-    home: { rank: 5 }, away: { rank: 6 },
+    id: "j-fr1", time: "15:48", field: "3", category: "youth",
+    phase: "Finalrunde Top 3", phaseKind: "final",
+    home: { rank: 1 }, away: { rank: 3 },
+  }),
+  // Ab hier 15-Minuten-Slots (13 Min Spielzeit + 2 Min Pause).
+  makeEntry({
+    id: "j-p6", time: "16:00", field: "3", category: "youth",
+    phase: "Spiel um Platz 6", phaseKind: "placement",
+    home: { rank: 6 }, away: { rank: 7 },
   }),
   makeEntry({
-    id: "j-p3", time: "16:30", field: "3", category: "youth",
-    phase: "Spiel um Platz 3", phaseKind: "placement",
-    home: { rank: 3 }, away: { rank: 4 },
+    id: "j-fr2", time: "16:15", field: "3", category: "youth",
+    phase: "Finalrunde Top 3", phaseKind: "final",
+    home: { rank: 2 }, away: { rank: 3 },
+  }),
+  makeEntry({
+    id: "j-p4", time: "16:30", field: "3", category: "youth",
+    phase: "Spiel um Platz 4", phaseKind: "placement",
+    home: { rank: 4 }, away: { rank: 5 },
   }),
   makeEntry({
     id: "j-fin", time: "16:45", field: "3", category: "youth",
-    phase: "Finale", phaseKind: "final",
+    phase: "Finalrunde Top 3", phaseKind: "final",
     home: { rank: 1 }, away: { rank: 2 },
   }),
 ];
@@ -303,6 +325,7 @@ export const TOURNAMENT_SCHEDULE = [
   ...SCHEDULE_AMBI_FINALS,
   ...SCHEDULE_PLAUSCH,
   ...SCHEDULE_PLAUSCH_FINALS,
+  ...SCHEDULE_YOUTH_F1,
   ...SCHEDULE_YOUTH_F3,
   ...SCHEDULE_YOUTH_F2,
   ...SCHEDULE_YOUTH_FINALS,
