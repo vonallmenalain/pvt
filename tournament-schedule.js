@@ -367,6 +367,30 @@ export function getField2NetSwitches() {
   return switches;
 }
 
+// ── Netzhöhen-Wechsel über alle Felder ───────────────────────────────────────
+// Erkennt Netzhöhen-Wechsel auf jedem Feld separat.
+// Neben den vier Wechseln auf Feld 2 gibt es auch auf Feld 1 einen Wechsel
+// um 12:12, wenn nach dem Jugend-Auftaktspiel (j-g00, Jugend-Höhe) die
+// Ambitioniert-Runde beginnt (Erwachsenen-Höhe).
+// Gibt eine Map matchId → { field, from, to } zurück.
+export function getAllNetSwitches() {
+  const fields = [...new Set(TOURNAMENT_SCHEDULE.map((m) => m.field))];
+  const switches = new Map();
+  for (const field of fields) {
+    const matches = TOURNAMENT_SCHEDULE
+      .filter((m) => m.field === field)
+      .sort((a, b) => a.time.localeCompare(b.time));
+    let prev = null;
+    for (const m of matches) {
+      if (prev !== null && m.netHeight !== prev) {
+        switches.set(m.id, { field, from: prev, to: m.netHeight });
+      }
+      prev = m.netHeight;
+    }
+  }
+  return switches;
+}
+
 // Liste der zusammenhängenden Field-2-Blöcke je Netzhöhe – für die Anzeige
 // in den Infos / Legenden ("Feld 2 muss von … bis … auf Jugend gestellt sein").
 export function getField2Blocks() {
