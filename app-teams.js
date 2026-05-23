@@ -20,7 +20,7 @@ import {
   CATEGORY_CODES,
   CATEGORY_PREFIX,
   CODE_TO_CATEGORY,
-  getField2NetSwitches,
+  getAllNetSwitches,
 } from "./tournament-schedule.js";
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
@@ -950,10 +950,20 @@ function renderOrganizationPanel() {
     return { time, matches };
   });
 
-  // Field-2-Matches, vor denen die Netzhöhe gewechselt werden muss.
-  // Wenn ein Match in einem Zeitslot davon betroffen ist, wird die Startzeit
-  // dieses Slots rot markiert, damit klar ist: vorher Netz anpassen!
-  const netSwitches = getField2NetSwitches();
+  // Netzhöhen-Wechsel über alle Felder: Feld 1 wechselt bei 12:12 (Jugend →
+  // Ambitioniert), Feld 2 bei 13:12, 14:00, 15:12 und 16:00.
+  const netSwitches = getAllNetSwitches();
+
+  // Feste Abhängigkeits-Hinweise: Zeiten, bei denen das Folge-Playoff-Spiel
+  // vom Ergebnis der vorherigen Runde abhängt, werden ebenfalls rot markiert.
+  const ORG_DEPENDENCY_LABELS = {
+    "15:00": ["(Abhängigkeit Vorangehendes Spiel Ambitioniert)"],
+    "15:48": [
+      "(Abhängigkeit Vorangehendes Spiel Junioren)",
+      "(Abhängigkeit Vorangehendes Spiel Ambitioniert)",
+    ],
+    "16:30": ["(Abhängigkeit Vorangehendes Spiel Plausch)"],
+  };
 
   orgRows.innerHTML = slots.map((slot, idx) => {
     const inner = slot.matches.map((match) => {
@@ -981,13 +991,33 @@ function renderOrganizationPanel() {
     const isOpen = openOrgSlots.has(idx);
     const hiddenAttr = isOpen ? "" : " hidden";
     const arrow = isOpen ? "▴" : "▾";
+
+    // Alle Labels für diesen Slot sammeln (Netzhöhe + Abhängigkeiten).
+    const slotLabels = [];
     const netSwitchMatch = slot.matches.find((m) => netSwitches.has(m.id));
-    const needsNetSwitch = Boolean(netSwitchMatch);
-    const timeClass = needsNetSwitch ? "org-time-netswitch" : "";
-    const timeTitle = needsNetSwitch
-      ? ` title="Vor diesem Spiel muss die Netzhöhe auf Feld 2 auf ${netSwitchMatch.netHeight === "youth" ? "Jugend" : "Erwachsene"} angepasst werden."`
-      : "";
-    return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}"><span class="${timeClass}"${timeTitle}>${slot.time}</span><span>${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
+    if (netSwitchMatch) {
+      const sw = netSwitches.get(netSwitchMatch.id);
+      const toLabel = sw.to === "youth" ? "Jugend" : "Erwachsene";
+      slotLabels.push({
+        text: "(Wechsel Netzhöhe)",
+        title: `Vor diesem Spiel muss die Netzhöhe auf Feld ${sw.field} auf ${toLabel} angepasst werden.`,
+      });
+    }
+    const depLabels = ORG_DEPENDENCY_LABELS[slot.time] || [];
+    for (const label of depLabels) {
+      slotLabels.push({ text: label, title: "" });
+    }
+
+    const hasAlert = slotLabels.length > 0;
+    const timeSpanClass = hasAlert ? "org-time-alert" : "";
+    const labelHtml = slotLabels
+      .map((l) => `<span class="org-time-label"${l.title ? ` title="${escapeHtml(l.title)}"` : ""}>${escapeHtml(l.text)}</span>`)
+      .join("");
+    const timeHtml = hasAlert
+      ? `<span class="${timeSpanClass}">${slot.time}${labelHtml}</span>`
+      : `<span>${slot.time}</span>`;
+
+    return `<div class="org-row"><button type="button" class="org-toggle${isOpen ? " is-open" : ""}" data-org-toggle="${idx}" aria-expanded="${isOpen}">${timeHtml}<span>${arrow}</span></button><div class="org-body" id="org-body-${idx}"${hiddenAttr}><div class="org-grid">${inner || '<div>Keine Paarung</div>'}</div></div></div>`;
   }).join("");
 
   // Spaltenbreiten (--org-team-w / --org-zaehler-w) berechnen, damit alle
