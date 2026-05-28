@@ -1229,6 +1229,13 @@ function renderOrganizationPanel() {
     for (const label of depLabels) {
       slotLabels.push({ text: label, title: "" });
     }
+    const hasOrgZaehler = slot.matches.some((m) => getZaehlerForMatch(m).kind === "org");
+    if (hasOrgZaehler) {
+      slotLabels.push({
+        text: "(Zähler organisieren)",
+        title: "Bei mindestens einem Spiel in diesem Zeitslot muss die Turnierorganisation einen Zähler stellen.",
+      });
+    }
 
     const hasAlert = slotLabels.length > 0;
     const timeSpanClass = hasAlert ? "org-time-alert" : "";
