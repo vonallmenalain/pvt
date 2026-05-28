@@ -467,6 +467,43 @@ console.log("\n=== Test suite 12: Reproducing the original bug (strict > vs >=) 
   assertEqual(resolved.get(5), "E", "Rank 5 secured for E: E max=2, everyone else ≥ 6");
 }
 
+
+// ── Test suite 13: Plausch scenario – rank 1 not safe with potential tie ──
+
+console.log("\n=== Test suite 13: Plausch scenario from screenshot – rank 1 must not resolve early ===");
+
+/*
+ * Real scenario (Plausch, double round-robin, 4 teams, 12 group games):
+ *
+ *   🤷‍♂️:          10 pts, 5 played, 1 remaining (vs Kei Ahnig)
+ *   Kei Ahnig:      6 pts, 4 played, 2 remaining (vs Klek, vs 🤷‍♂️)
+ *   Basler Läckerli: 1 pt,  5 played, 1 remaining (vs Klek)
+ *   Klek:            1 pt,  4 played, 2 remaining (vs Kei Ahnig, vs Basler Läckerli)
+ *
+ * Kei Ahnig max = 6 + 4 = 10 → could tie 🤷‍♂️ on points.
+ * If Kei Ahnig wins both remaining games by large margins, tiebreakers
+ * (wins, gf, ratio) could flip in Kei Ahnig's favour.
+ * → Rank 1 must NOT be resolved for 🤷‍♂️.
+ *
+ * Halbfinal uses { rank: 1 } vs { rank: 4 }.  Neither should resolve.
+ */
+{
+  const standings = [
+    { code: "P1", pts: 10, wins: 5, gf: 93, ga: 68, played: 5 }, // 🤷‍♂️
+    { code: "P2", pts:  6, wins: 3, gf: 57, ga: 45, played: 4 }, // Kei Ahnig
+    { code: "P3", pts:  1, wins: 0, gf: 67, ga: 92, played: 5 }, // Basler Läckerli
+    { code: "P4", pts:  1, wins: 0, gf: 64, ga: 76, played: 4 }, // Klek
+  ];
+  const remaining = { P1: 1, P2: 2, P3: 1, P4: 2 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assert(!resolved.has(1), "Rank 1 NOT resolved: Kei Ahnig could tie 🤷‍♂️ at 10 pts and win on tiebreakers");
+  assert(!resolved.has(2), "Rank 2 NOT resolved: multiple outcomes still possible");
+  assert(!resolved.has(3), "Rank 3 NOT resolved: Klek could still change position");
+  assert(!resolved.has(4), "Rank 4 NOT resolved: Klek could overtake Basler Läckerli");
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────
 
 console.log(`\n${"─".repeat(50)}`);
