@@ -467,6 +467,115 @@ console.log("\n=== Test suite 12: Reproducing the original bug (strict > vs >=) 
   assertEqual(resolved.get(5), "E", "Rank 5 secured for E: E max=2, everyone else ≥ 6");
 }
 
+// ── Test suite 13: Plausch double-RR – leader must not resolve when
+//    challenger can tie on points (exact screenshot scenario) ──────────────
+
+console.log("\n=== Test suite 13: Plausch double-RR – leader can be caught on points ===");
+
+/*
+ * Reproduces the exact state from the reported screenshot:
+ *   4 teams, double round-robin (12 games), 9 played / 3 remaining.
+ *
+ * Current standings:
+ *   P3 (🤷‍♂️):        5 played, 5 wins, 10 pts, gf=93, ga=68
+ *   P2 (Kei Ahnig):    4 played, 3 wins,  6 pts, gf=57, ga=45
+ *   P1 (Basler Läckerli): 5 played, 0 wins, 1 pt,  gf=67, ga=92  (1 draw)
+ *   P4 (Klek):          4 played, 0 wins, 1 pt,  gf=64, ga=76  (1 draw)
+ *
+ * Remaining games:
+ *   p-g10: P4 vs P2  (Klek vs Kei Ahnig)
+ *   p-g11: P3 vs P2  (🤷‍♂️ vs Kei Ahnig)
+ *   p-g12: P1 vs P4  (Basler Läckerli vs Klek)
+ *
+ * Max points: P3=12, P2=10, P1=3, P4=5
+ *
+ * Key scenario: P2 wins both remaining games → P2 reaches 10 pts = P3 pts.
+ * P3 loses to P2 (the direct encounter) → P3 stays at 10 pts.
+ * Both at 10 pts, P3 with 5 wins, P2 with 5 wins → tiebreaker by gf/ratio.
+ * Since tiebreakers are not finalized, NO rank should be resolved early
+ * (except possibly rank 3/4 under certain conditions).
+ *
+ * BUG (old code): Rank 1 was resolved for P3 because the strict >
+ * comparison didn't count P2 as a threat (10 > 10 is false).
+ */
+{
+  const standings = [
+    { code: "P3", pts: 10, wins: 5, gf: 93, ga: 68, played: 5 },
+    { code: "P2", pts:  6, wins: 3, gf: 57, ga: 45, played: 4 },
+    { code: "P1", pts:  1, wins: 0, gf: 67, ga: 92, played: 5 },
+    { code: "P4", pts:  1, wins: 0, gf: 64, ga: 76, played: 4 },
+  ];
+  const remaining = { P3: 1, P2: 2, P1: 1, P4: 2 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assert(!resolved.has(1), "Rank 1 NOT resolved: P2 can tie P3 at 10 pts (wins both remaining)");
+  assert(!resolved.has(2), "Rank 2 NOT resolved: P2 still has 2 games, final position uncertain");
+  assert(!resolved.has(3), "Rank 3 NOT resolved: P1/P4 positions depend on remaining results");
+  assert(!resolved.has(4), "Rank 4 NOT resolved: P4 can tie P1 at 3 pts via remaining games");
+}
+
+// ── Test suite 14: Plausch – all group games done, ranks resolve normally ─
+
+console.log("\n=== Test suite 14: Plausch – all games done, all ranks resolved ===");
+
+/*
+ * Same scenario but all 12 games are played. All remaining games resolved:
+ *   P2 wins both → P2 = 10 pts, 5 wins
+ *   P3 loses to P2 → P3 stays at 10 pts, 5 wins
+ *   P4 beats P1 → P4 = 3 pts, P1 stays at 1 pt
+ *
+ * With equal pts/wins, tiebreaker goes to gf. If P3 still has higher gf,
+ * P3 stays rank 1 – but the point is: with 0 remaining, all ranks resolve.
+ */
+{
+  const standings = [
+    { code: "P3", pts: 10, wins: 5, gf: 103, ga: 83, played: 6 },
+    { code: "P2", pts: 10, wins: 5, gf: 82,  ga: 60, played: 6 },
+    { code: "P4", pts:  3, wins: 1, gf: 79,  ga: 86, played: 6 },
+    { code: "P1", pts:  1, wins: 0, gf: 72,  ga: 107, played: 6 },
+  ];
+  const remaining = { P3: 0, P2: 0, P1: 0, P4: 0 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assertEqual(resolved.get(1), "P3", "Rank 1 resolved for P3: all done, P3 leads on gf tiebreaker");
+  assertEqual(resolved.get(2), "P2", "Rank 2 resolved for P2: all done, finalized tiebreaker");
+  assertEqual(resolved.get(3), "P4", "Rank 3 resolved for P4: all done");
+  assertEqual(resolved.get(4), "P1", "Rank 4 resolved for P1: all done");
+}
+
+// ── Test suite 15: Leader safe when point gap is strict ───────────────────
+
+console.log("\n=== Test suite 15: Leader safe – nobody can reach leader's points ===");
+
+/*
+ * Variation of the Plausch scenario where the leader has a strict point gap:
+ *   P3: 12 pts, 0 remaining
+ *   P2:  6 pts, 2 remaining (max = 10 < 12)
+ *   P1:  2 pts, 0 remaining
+ *   P4:  0 pts, 2 remaining (max = 4)
+ *
+ * Nobody can reach 12 → Rank 1 safe.
+ * P2 max (10) > P1 pts (2) → P2 could overtake P1. But P2 max (10) < 12.
+ */
+{
+  const standings = [
+    { code: "P3", pts: 12, wins: 6, gf: 100, ga: 60, played: 6 },
+    { code: "P2", pts:  6, wins: 3, gf:  50, ga: 50, played: 4 },
+    { code: "P1", pts:  2, wins: 1, gf:  40, ga: 80, played: 6 },
+    { code: "P4", pts:  0, wins: 0, gf:  30, ga: 90, played: 4 },
+  ];
+  const remaining = { P3: 0, P2: 2, P1: 0, P4: 2 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assertEqual(resolved.get(1), "P3", "Rank 1 secured for P3: max opponent pts (10) < 12");
+  assertEqual(resolved.get(2), "P2", "Rank 2 secured for P2: P1 max=2 and P4 max=4, neither can reach P2's 6 pts");
+  assert(!resolved.has(3), "Rank 3 NOT resolved: P4 max=4 > P1 pts=2, could overtake");
+  assert(!resolved.has(4), "Rank 4 NOT resolved: P4 could rise to rank 3");
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────
 
 console.log(`\n${"─".repeat(50)}`);
