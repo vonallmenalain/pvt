@@ -244,12 +244,12 @@ function allGroupMatchesPlayed(category) {
 // feststehen – auch wenn noch nicht alle Gruppenspiele gespielt sind.
 // Ein Rang gilt als gesichert, wenn:
 //   • Mindestens (R-1) andere Teams unabhängig vom Ausgang aller noch offenen
-//     Spiele mehr Punkte erzielen werden als dieses Team maximal erreichen kann.
+//     Spiele mehr Punkte erzielen werden als dieses Team maximal erreichen kann
+//     (oder beide Teams fertig sind und die Tiebreaker-Reihenfolge feststeht).
 //   • Höchstens (R-1) andere Teams noch mehr Punkte erzielen könnten als dieses
-//     Team aktuell hat (d.h. niemand von weiter unten kann vorbeikommen).
-// Tiebreaker werden bei dieser vereinfachten Prüfung nicht berücksichtigt –
-// bei Punktegleichheit werden Ränge erst nach Abschluss aller Gruppenspiele
-// als gesichert gewertet.
+//     Team aktuell hat – dabei gilt eine Punktegleichheit (oMax == team.pts)
+//     als Bedrohung, solange mindestens eines der beiden Teams noch offene
+//     Spiele hat (Tiebreaker stehen dann noch nicht fest).
 function getEarlyResolvedGroupRanks(category) {
   if (allGroupMatchesPlayed(category)) return new Map();
 
