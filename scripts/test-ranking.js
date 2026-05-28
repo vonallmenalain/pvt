@@ -243,6 +243,230 @@ console.log("\n=== Test suite 6: Group-phase circular tiebreak (wins first, then
   assertEqual(rows[2].code, "Beta",  "Beta third (worst ratio)");
 }
 
+// ── Early rank resolution logic (mirrors getEarlyResolvedGroupRanks) ─────
+
+/**
+ * Pure reimplementation of getEarlyResolvedGroupRanks for testing.
+ *
+ * @param {Array<{code, pts, wins, gf, ga, played}>} standings – sorted by standingsSort
+ * @param {Object} remainingPerTeam – { code: numberOfRemainingGames }
+ * @returns {Map<number, string>} rank → team code (only mathematically secured ranks)
+ */
+function getEarlyResolvedGroupRanks(standings, remainingPerTeam) {
+  const resolved = new Map();
+
+  for (let i = 0; i < standings.length; i++) {
+    const team = standings[i];
+    const myMax = team.pts + 2 * (remainingPerTeam[team.code] || 0);
+    const myRemaining = remainingPerTeam[team.code] || 0;
+
+    const definitelyAbove = standings.filter((o, j) => {
+      if (j === i) return false;
+      if (o.pts > myMax) return true;
+      if (myRemaining === 0 && (remainingPerTeam[o.code] || 0) === 0 && j < i) return true;
+      return false;
+    }).length;
+    const couldExceed = standings.filter((o, j) => {
+      if (j === i) return false;
+      const oRemaining = remainingPerTeam[o.code] || 0;
+      const oMax = o.pts + 2 * oRemaining;
+      if (oMax > team.pts) return true;
+      if (oMax === team.pts && (oRemaining > 0 || myRemaining > 0)) return true;
+      return false;
+    }).length;
+
+    const rank = i + 1;
+    if (definitelyAbove >= rank - 1 && couldExceed <= rank - 1) {
+      resolved.set(rank, team.code);
+    }
+  }
+
+  return resolved;
+}
+
+// ── Test suite 7: Early rank – tiebreaker tie must NOT resolve early ─────
+
+console.log("\n=== Test suite 7: Early rank – potential points tie prevents early resolution ===");
+
+/*
+ * Bug scenario: Team A leads on tiebreaker, Team B can still tie on points.
+ *
+ *   A: 10 pts, 0 remaining  (currently rank 1 by tiebreaker)
+ *   B:  8 pts, 1 remaining  (max = 10 pts → could tie A)
+ *   C:  4 pts, 1 remaining  (max = 6 pts → no threat to top)
+ *
+ * B vs C is the remaining game.  If B wins → B has 10 pts and could overtake
+ * A on tiebreakers (e.g. more wins, more goals).  Rank 1 must NOT be resolved
+ * early for A.
+ */
+{
+  const standings = [
+    { code: "A", pts: 10, wins: 5, gf: 50, ga: 20, played: 5 },
+    { code: "B", pts:  8, wins: 4, gf: 48, ga: 22, played: 4 },
+    { code: "C", pts:  4, wins: 2, gf: 30, ga: 40, played: 4 },
+  ];
+  const remaining = { A: 0, B: 1, C: 1 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assert(!resolved.has(1), "Rank 1 NOT resolved: B could tie A on points and win on tiebreakers");
+  assert(!resolved.has(2), "Rank 2 NOT resolved: B or C could still change position");
+  assertEqual(resolved.get(3), "C", "Rank 3 secured for C: max 6 pts, can't reach A(10) or B(8+2=10)… wait, C max=6 < B min=8, and A=10");
+}
+
+// ── Test suite 8: Early rank – clear leader is safe ──────────────────────
+
+console.log("\n=== Test suite 8: Early rank – clear points leader is safe ===");
+
+/*
+ *   A: 14 pts, 0 remaining
+ *   B: 10 pts, 1 remaining  (max = 12)
+ *   C:  6 pts, 1 remaining  (max = 8)
+ *
+ * Nobody can reach 14 → Rank 1 is safe for A.
+ * B max (12) > A pts? No (12 < 14).  C max (8) < 14.
+ */
+{
+  const standings = [
+    { code: "A", pts: 14, wins: 7, gf: 70, ga: 30, played: 7 },
+    { code: "B", pts: 10, wins: 5, gf: 50, ga: 40, played: 6 },
+    { code: "C", pts:  6, wins: 3, gf: 30, ga: 50, played: 6 },
+  ];
+  const remaining = { A: 0, B: 1, C: 1 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assertEqual(resolved.get(1), "A", "Rank 1 secured for A: nobody can reach 14 pts");
+  assertEqual(resolved.get(2), "B", "Rank 2 secured for B: C max=8 cannot reach B(10), A definitely above");
+}
+
+// ── Test suite 9: Early rank – both finalized at same points ─────────────
+
+console.log("\n=== Test suite 9: Early rank – finalized teams with equal points ===");
+
+/*
+ *   A: 10 pts, 0 remaining, 5 wins  (rank 1 by tiebreaker)
+ *   B: 10 pts, 0 remaining, 4 wins  (rank 2 by tiebreaker)
+ *   C:  4 pts, 2 remaining          (max = 8, has open games)
+ *
+ * A and B are both done.  Their tiebreaker order is final (A > B).
+ * C's max is 8 < 10, so C can't reach either.
+ * Both rank 1 and 2 should be resolved.
+ */
+{
+  const standings = [
+    { code: "A", pts: 10, wins: 5, gf: 55, ga: 30, played: 5 },
+    { code: "B", pts: 10, wins: 4, gf: 50, ga: 35, played: 5 },
+    { code: "C", pts:  4, wins: 2, gf: 20, ga: 40, played: 3 },
+  ];
+  const remaining = { A: 0, B: 0, C: 2 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assertEqual(resolved.get(1), "A", "Rank 1 secured for A: B is finalized below, C can't reach 10");
+  assertEqual(resolved.get(2), "B", "Rank 2 secured for B: A is finalized above, C can't reach 10");
+  assertEqual(resolved.get(3), "C", "Rank 3 secured for C: only one left");
+}
+
+// ── Test suite 10: Early rank – team with remaining games could lose rank ─
+
+console.log("\n=== Test suite 10: Early rank – team with own remaining games not safe on tie ===");
+
+/*
+ *   A: 10 pts, 1 remaining, 5 wins  (rank 1 by tiebreaker)
+ *   B: 10 pts, 0 remaining, 4 wins  (rank 2 by tiebreaker)
+ *
+ * A has 1 remaining game.  If A loses, A stays at 10 but tiebreaker stats
+ * change (fewer wins relative).  This doesn't change points, but the comment
+ * "oRemaining > 0 || myRemaining > 0" catches this: A's own remaining games
+ * mean A's tiebreaker stats are not final.
+ * Rank 1 should NOT be resolved because A could lose tiebreaker to B.
+ */
+{
+  const standings = [
+    { code: "A", pts: 10, wins: 5, gf: 55, ga: 30, played: 5 },
+    { code: "B", pts: 10, wins: 4, gf: 50, ga: 35, played: 6 },
+  ];
+  const remaining = { A: 1, B: 0 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assert(!resolved.has(1), "Rank 1 NOT resolved: A still has games, tiebreakers could change");
+  assert(!resolved.has(2), "Rank 2 NOT resolved: order not yet certain");
+}
+
+// ── Test suite 11: Early rank – last place clearly locked ────────────────
+
+console.log("\n=== Test suite 11: Early rank – last place locked despite open games ===");
+
+/*
+ * 4-team group, 1 game remaining (B vs D):
+ *   A: 8 pts, 0 remaining
+ *   B: 6 pts, 1 remaining (max = 8)
+ *   C: 4 pts, 0 remaining
+ *   D: 2 pts, 1 remaining (max = 4)
+ *
+ * D max = 4 = C pts.  But D has 1 remaining game → tie with C possible, and
+ * tiebreakers uncertain.  So rank 3 is NOT safe for C.
+ * D max (4) < B min (6), < A (8).  So rank 4 is safe for D.
+ * A: B max = 8 = A pts, B has remaining → rank 1 NOT safe.
+ */
+{
+  const standings = [
+    { code: "A", pts: 8, wins: 4, gf: 40, ga: 20, played: 4 },
+    { code: "B", pts: 6, wins: 3, gf: 35, ga: 25, played: 3 },
+    { code: "C", pts: 4, wins: 2, gf: 25, ga: 30, played: 4 },
+    { code: "D", pts: 2, wins: 1, gf: 20, ga: 35, played: 3 },
+  ];
+  const remaining = { A: 0, B: 1, C: 0, D: 1 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assert(!resolved.has(1), "Rank 1 NOT resolved: B could tie A on points (8) with remaining game");
+  assert(!resolved.has(2), "Rank 2 NOT resolved: B/C positions uncertain");
+  assert(!resolved.has(3), "Rank 3 NOT resolved: D could tie C on points (4) with remaining game");
+  assert(!resolved.has(4), "Rank 4 NOT resolved: D could tie C at 4 pts with remaining game and overtake on tiebreakers");
+}
+
+// ── Test suite 12: Early rank – old bug reproduction ─────────────────────
+
+console.log("\n=== Test suite 12: Reproducing the original bug (strict > vs >=) ===");
+
+/*
+ * With the OLD (buggy) logic using strict >, a team that can tie on points
+ * would NOT be counted in couldExceed, wrongly securing ranks.
+ *
+ * This test verifies the fix: if oMax === team.pts and someone has remaining
+ * games, rank must NOT be resolved.
+ *
+ *   A: 12 pts, 0 remaining (rank 1)
+ *   B: 10 pts, 1 remaining (max 12, could tie A)
+ *   C:  8 pts, 0 remaining
+ *   D:  6 pts, 1 remaining (max 8, could tie C)
+ *   E:  2 pts, 0 remaining
+ *
+ * Old bug: rank 1 would be resolved for A (B's max 12 > 12 is false).
+ * Fix: rank 1 NOT resolved (B could tie A at 12 and win on tiebreakers).
+ */
+{
+  const standings = [
+    { code: "A", pts: 12, wins: 6, gf: 60, ga: 25, played: 6 },
+    { code: "B", pts: 10, wins: 5, gf: 58, ga: 28, played: 5 },
+    { code: "C", pts:  8, wins: 4, gf: 40, ga: 35, played: 6 },
+    { code: "D", pts:  6, wins: 3, gf: 35, ga: 40, played: 5 },
+    { code: "E", pts:  2, wins: 1, gf: 20, ga: 55, played: 6 },
+  ];
+  const remaining = { A: 0, B: 1, C: 0, D: 1, E: 0 };
+
+  const resolved = getEarlyResolvedGroupRanks(standings, remaining);
+
+  assert(!resolved.has(1), "BUG FIX: Rank 1 NOT resolved — B could tie A at 12 pts");
+  assert(!resolved.has(2), "Rank 2 NOT resolved — B still has games, order unclear");
+  assert(!resolved.has(3), "Rank 3 NOT resolved — D could tie C at 8 pts");
+  assert(!resolved.has(4), "Rank 4 NOT resolved — D still has a game");
+  assertEqual(resolved.get(5), "E", "Rank 5 secured for E: E max=2, everyone else ≥ 6");
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────
 
 console.log(`\n${"─".repeat(50)}`);

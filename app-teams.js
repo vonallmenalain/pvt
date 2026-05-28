@@ -271,20 +271,33 @@ function getEarlyResolvedGroupRanks(category) {
   for (let i = 0; i < standings.length; i++) {
     const team = standings[i];
     const myMax = team.pts + 2 * (remainingPerTeam[team.code] || 0);
+    const myRemaining = remainingPerTeam[team.code] || 0;
 
-    // Teams, die DEFINITIV über mir liegen (ihre aktuellen Punkte > mein Maximum)
-    const definitelyAbove = standings.filter((o, j) => j !== i && o.pts > myMax).length;
+    // Teams, die DEFINITIV über mir liegen:
+    //  – ihre aktuellen Punkte > mein Maximum, ODER
+    //  – beide Teams haben keine offenen Spiele mehr UND das andere Team
+    //    steht in der aktuellen Rangliste über mir (Tiebreaker sind endgültig).
+    const definitelyAbove = standings.filter((o, j) => {
+      if (j === i) return false;
+      if (o.pts > myMax) return true;
+      if (myRemaining === 0 && (remainingPerTeam[o.code] || 0) === 0 && j < i) return true;
+      return false;
+    }).length;
 
-    // Teams, die mich noch überholen KÖNNTEN (ihr Maximum > meine aktuellen Punkte)
+    // Teams, die mich noch überholen KÖNNTEN:
+    //  – ihr Maximum > meine aktuellen Punkte, ODER
+    //  – sie könnten auf gleiche Punktzahl kommen UND die Tiebreaker stehen
+    //    noch nicht fest (mindestens eines der beiden Teams hat offene Spiele).
     const couldExceed = standings.filter((o, j) => {
       if (j === i) return false;
-      const oMax = o.pts + 2 * (remainingPerTeam[o.code] || 0);
-      return oMax > team.pts;
+      const oRemaining = remainingPerTeam[o.code] || 0;
+      const oMax = o.pts + 2 * oRemaining;
+      if (oMax > team.pts) return true;
+      if (oMax === team.pts && (oRemaining > 0 || myRemaining > 0)) return true;
+      return false;
     }).length;
 
     const rank = i + 1;
-    // Gesichert wenn: genau (R-1) Teams sind definitiv über mir UND
-    // höchstens (R-1) Teams könnten mich noch überholen.
     if (definitelyAbove >= rank - 1 && couldExceed <= rank - 1) {
       resolved.set(rank, team.code);
     }
