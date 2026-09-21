@@ -64,10 +64,13 @@ async function signIn(email, password) {
     throw new Error(`Auth failed: ${err.error?.message ?? res.status}`);
   }
   const data = await res.json();
-  return data.idToken;
+  // localId ist die UID des angemeldeten Kontos. Die Security Rules
+  // verlangen, dass `ownerUid` genau dazu passt (firestore.rules), deshalb
+  // reichen wir sie mit durch.
+  return { idToken: data.idToken, uid: data.localId };
 }
 
-function toFirestoreDoc(team, idToken) {
+function toFirestoreDoc(team, uid) {
   // Build a Firestore REST document with a serverTimestamp write transform.
   return {
     fields: {
@@ -76,13 +79,13 @@ function toFirestoreDoc(team, idToken) {
       manager:   { stringValue: team.manager },
       category:  { stringValue: team.category },
       code:      team.code ? { stringValue: team.code } : { nullValue: null },
-      ownerUid:  { stringValue: "seed-script" },
+      ownerUid:  { stringValue: uid },
       // createdAt is set via a write transform below
     },
   };
 }
 
-async function createTeam(team, idToken) {
+async function createTeam(team, idToken, uid) {
   const collectionUrl =
     `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/teams` +
     `?key=${API_KEY}`;
@@ -93,7 +96,7 @@ async function createTeam(team, idToken) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${idToken}`,
     },
-    body: JSON.stringify(toFirestoreDoc(team)),
+    body: JSON.stringify(toFirestoreDoc(team, uid)),
   });
 
   if (!res.ok) {
@@ -120,7 +123,7 @@ async function main() {
   }
 
   console.log(`Signing in as ${email} …`);
-  const idToken = await signIn(email, password);
+  const { idToken, uid } = await signIn(email, password);
   console.log("Authenticated.\n");
 
   let ok = 0;
@@ -128,7 +131,7 @@ async function main() {
 
   for (const team of TEAMS) {
     try {
-      const docPath = await createTeam(team, idToken);
+      const docPath = await createTeam(team, idToken, uid);
       const docId = docPath.split("/").pop();
       console.log(`✓  [${team.code ?? "----"}] ${team.name} → ${docId}`);
       ok++;
