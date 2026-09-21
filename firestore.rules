@@ -1,0 +1,147 @@
+rules_version = '2';
+
+// Firestore Security Rules für das Pfahl-Volleyballturnier (pvt.alae.app).
+//
+// Diese Datei ist die Quelle der Wahrheit für die im Firebase-Projekt
+// `pfahlvolleyballturnier` hinterlegten Regeln. Sie lässt sich 1:1 in die
+// Firebase-Console (Firestore Database → Rules) kopieren.
+//
+// Vorher galt:
+//
+//     match /{document=**} {
+//       allow read: if true;
+//       allow write: if request.auth != null;
+//     }
+//
+// Das hatte zwei Probleme. Erstens galt es für *jede* Sammlung, auch für
+// solche, die es noch gar nicht gibt – eine neue Sammlung wäre automatisch
+// öffentlich gewesen. Zweitens genügte irgendein Konto auf dem Projekt, um
+// alles zu überschreiben und zu löschen; Firebase nimmt Registrierungen
+// über seine REST-Schnittstelle entgegen, das Login-Formular der App ist
+// dafür unerheblich.
+//
+// Jetzt gilt: Lesen ist pro Sammlung ausdrücklich freigegeben, Schreiben
+// nur für benannte Konten, und alles Übrige ist verschlossen.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ────────────────────────────────────────────────────────────────────
+    // Wer darf schreiben?
+    //
+    // Die App kennt keine Rollen: Wer angemeldet ist, darf jedes Team
+    // bearbeiten und löschen (app-teams.js, `.team-edit` / `.team-delete`),
+    // und beim Vergeben eines Spielcodes schreibt sie sogar in das Dokument
+    // eines *anderen* Teams, um den Code dort freizugeben. Regeln nach dem
+    // Muster „jeder nur sein eigenes Team" würden die App also brechen.
+    //
+    // Das Modell ist: eine kleine Gruppe von Organisierenden, die einander
+    // vertraut. Genau das steht hier – als Namensliste.
+    //
+    // UIDs findest du in der Firebase-Console unter Authentication → Users
+    // (Spalte „User UID").
+    //
+    // Alternative, falls die Liste zu oft wechselt: eine Sammlung
+    // `organisatoren` anlegen, pro Person ein leeres Dokument mit der UID
+    // als Dokument-ID, und hier stattdessen
+    //     exists(/databases/$(database)/documents/organisatoren/$(request.auth.uid))
+    // prüfen. Dann kommen neue Personen ohne Regeländerung dazu – dafür ist
+    // ein Fehlgriff dort weniger sichtbar als hier.
+    // ────────────────────────────────────────────────────────────────────
+    function istOrganisator() {
+      return request.auth != null
+          && request.auth.uid in [
+               'Ex6WxxBBkfdzsPvFphD63osFYbz1',
+               '8nzim1LnkrZB8wLAHOPNlNhEbWD3',
+               // weitere Organisierende hier ergänzen
+             ];
+    }
+
+    function text(feld, maxLaenge) {
+      return feld is string && feld.size() > 0 && feld.size() <= maxLaenge;
+    }
+
+    // ── teams ───────────────────────────────────────────────────────────
+    //
+    // Geschrieben von app-teams.js:
+    //   { name, community, manager, category, code, createdAt, ownerUid }
+    //
+    // `manager` ist ein Personenname, `community` eine Gemeinde. Beides ist
+    // öffentlich lesbar, weil die Teamliste auf der Turnierseite für alle
+    // sichtbar sein soll. Kommen später Telefonnummern oder Adressen dazu,
+    // gehören die NICHT in dieses Dokument.
+    match /teams/{teamId} {
+      allow read: if true;
+
+      allow create: if istOrganisator()
+                    && request.resource.data.keys().hasAll(
+                         ['name', 'community', 'manager', 'category', 'ownerUid']
+                       )
+                    && request.resource.data.keys().hasOnly(
+                         ['name', 'community', 'manager', 'category', 'code',
+                          'createdAt', 'ownerUid']
+                       )
+                    && text(request.resource.data.name, 80)
+                    && text(request.resource.data.community, 80)
+                    && text(request.resource.data.manager, 80)
+                    && text(request.resource.data.category, 40)
+                    && (request.resource.data.code == null
+                        || text(request.resource.data.code, 20))
+                    && request.resource.data.ownerUid == request.auth.uid;
+
+      // Update deckt auch das Freigeben eines Spielcodes bei einem fremden
+      // Team ab. `ownerUid` bleibt dabei unverändert – wer ein Team
+      // angelegt hat, bleibt vermerkt.
+      allow update: if istOrganisator()
+                    && request.resource.data.keys().hasOnly(
+                         ['name', 'community', 'manager', 'category', 'code',
+                          'createdAt', 'ownerUid']
+                       )
+                    && text(request.resource.data.name, 80)
+                    && text(request.resource.data.community, 80)
+                    && text(request.resource.data.manager, 80)
+                    && text(request.resource.data.category, 40)
+                    && (request.resource.data.code == null
+                        || text(request.resource.data.code, 20))
+                    // Robust gegenüber Alt-Dokumenten: Teams, die vor der
+                    // Einführung von `ownerUid` angelegt wurden, haben das
+                    // Feld nicht. Ein starrer Vergleich würde das Bearbeiten
+                    // solcher Teams unmöglich machen.
+                    && (!('ownerUid' in resource.data)
+                        || request.resource.data.ownerUid == resource.data.ownerUid);
+
+      allow delete: if istOrganisator();
+    }
+
+    // ── resultate ───────────────────────────────────────────────────────
+    //
+    // Ein Dokument pro Spiel, Dokument-ID ist die matchId:
+    //   { home, away }  – beides Zeichenketten aus den Eingabefeldern.
+    match /resultate/{matchId} {
+      allow read: if true;
+      allow create, update: if istOrganisator()
+                   && request.resource.data.keys().hasOnly(['home', 'away'])
+                   && request.resource.data.home is string
+                   && request.resource.data.home.size() <= 10
+                   && request.resource.data.away is string
+                   && request.resource.data.away.size() <= 10;
+    }
+
+    // ── rangliste ───────────────────────────────────────────────────────
+    //
+    // Ein einziges Dokument `status` mit dem Schalter, ob die Rangliste
+    // öffentlich sichtbar ist.
+    match /rangliste/{dokument} {
+      allow read: if true;
+      allow create, update: if istOrganisator()
+                   && dokument == 'status'
+                   && request.resource.data.keys().hasOnly(['published'])
+                   && request.resource.data.published is bool;
+    }
+
+    // ── Alles andere ist zu ─────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
